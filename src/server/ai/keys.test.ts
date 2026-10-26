@@ -118,17 +118,22 @@ describe("Gemini calls", () => {
     expect(modelChain("judge", { GEMINI_MODEL: "my-model" })).toEqual(["my-model", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"]);
   });
 
-  it("retries without thinkingConfig, then without the JSON schema, when a model rejects them", async () => {
+  it("on a 400, drops the schema field first (moving the schema into the prompt), then thinking", async () => {
     const bodies: string[] = [];
     const pool = new KeyPool([{ label: "a", value: "1" }]);
-    const fetchImpl = (async (_url: string, init: RequestInit) => {
-      const g = JSON.parse(String(init.body)).generationConfig;
-      bodies.push(`${g.thinkingConfig?.thinkingLevel ?? "-"}/${g.responseJsonSchema ? "schema" : "-"}`);
-      return g.responseJsonSchema ? err(400) : ok({ fine: true });
-    }) as typeof fetch;
-    const r = await callGemini(pool, { system: "s", user: "u", tier: "lite", schema: { type: "object" } }, { fetchImpl, env });
-    expect(r.ok).toBe(true);
-    expect(bodies).toEqual(["minimal/schema", "-/schema", "-/-"]);
+    const reject = (thinkingOk: boolean) =>
+      (async (_url: string, init: RequestInit) => {
+        const b = JSON.parse(String(init.body));
+        const g = b.generationConfig;
+        const inPrompt = b.systemInstruction.parts[0].text.includes('{"type":"object"}');
+        bodies.push(`${g.thinkingConfig?.thinkingLevel ?? "-"}/${g.responseJsonSchema ? "schema" : inPrompt ? "prompt" : "-"}`);
+        return g.responseJsonSchema || (g.thinkingConfig && !thinkingOk) ? err(400) : ok({ fine: true });
+      }) as typeof fetch;
+    const call = { system: "s", user: "u", tier: "lite" as const, schema: { type: "object" } };
+    expect((await callGemini(pool, call, { fetchImpl: reject(true), env })).ok).toBe(true);
+    expect(bodies.splice(0)).toEqual(["minimal/schema", "minimal/prompt"]);
+    expect((await callGemini(pool, call, { fetchImpl: reject(false), env })).ok).toBe(true);
+    expect(bodies).toEqual(["minimal/schema", "minimal/prompt", "-/schema", "-/prompt"]);
   });
 
   it("moves to the next model when one is overloaded (5xx), without burning the other keys on it", async () => {

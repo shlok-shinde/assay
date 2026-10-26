@@ -68,22 +68,30 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
   const deadline = Date.now() + (opts.budgetMs ?? 20_000);
   let sawRateLimit = false;
 
+  // A model may reject thinkingConfig or responseJsonSchema with a 400. Each 400 moves this key to the
+  // next request shape; without the schema field the schema goes in the prompt, and the output is
+  // zod-validated either way.
+  const shapes = call.schema
+    ? [{ schema: true, thinking: true }, { schema: false, thinking: true }, { schema: true, thinking: false }, { schema: false, thinking: false }]
+    : [{ schema: false, thinking: true }, { schema: false, thinking: false }];
+  const schemaInPrompt = call.schema ? `${call.system}\n\nAnswer with one JSON object that matches this JSON Schema:\n${JSON.stringify(call.schema)}` : call.system;
+
   for (const model of modelChain(call.tier, opts.env)) {
-    let useSchema = !!call.schema;
-    let useThinking = true;
+    let shape = 0;
     const keys = pool.order();
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const remaining = deadline - Date.now();
       if (remaining <= 0) return { ok: false, reason: "timeout", message: "AI time budget used up" };
+      const { schema, thinking } = shapes[shape];
       const body = {
-        systemInstruction: { parts: [{ text: call.system }] },
+        systemInstruction: { parts: [{ text: schema ? call.system : schemaInPrompt }] },
         contents: [{ role: "user", parts: [{ text: call.user }] }],
         generationConfig: {
           temperature: 0.2,
           responseMimeType: "application/json",
-          ...(useSchema ? { responseJsonSchema: call.schema } : {}),
-          ...(useThinking ? { thinkingConfig: { thinkingLevel: THINKING[call.tier] } } : {}),
+          ...(schema ? { responseJsonSchema: call.schema } : {}),
+          ...(thinking ? { thinkingConfig: { thinkingLevel: THINKING[call.tier] } } : {}),
         },
       };
       let res: Response;
@@ -124,11 +132,8 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
         continue;
       }
       if (res.status === 404 || res.status >= 500) break; // retired or overloaded: next model in the chain
-      if (res.status === 400 && (useThinking || useSchema)) {
-        // A model may reject thinkingConfig or responseJsonSchema: retry this key without one, thinking first
-        // (the output is still zod-validated either way).
-        if (useThinking) useThinking = false;
-        else useSchema = false;
+      if (res.status === 400 && shape < shapes.length - 1) {
+        shape++;
         i--;
         continue;
       }
