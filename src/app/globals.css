@@ -1,26 +1,248 @@
 @import "tailwindcss";
 
+/* Assay tokens. Style: framed sheet (tasteskill app sheet, seed 1397914635).
+   The chrome is one warm, gold-tinted frame; the work sits on a white sheet.
+   Gold is the one data hue (marks, the tab underline, the Hallmark); status uses pale pairs. */
+@theme {
+  --color-chrome: #f6f3ea;
+  --color-sheet: #ffffff;
+  --color-raised: #faf8f2;
+  --color-active: #ebe5d6;
+  --color-line: #ebe7dd;
+  --color-rule: #f2efe8;
+  --color-control: #d6d0c2;
+  --color-ink: #17140f;
+  --color-muted: #5c574c;
+  --color-faint: #6b665a;
+  --color-primary: #17140f;
+  --color-gold: #8a6100;
+  --color-gold-soft: #f3e6c4;
+  --color-gold-mark: #b8860b;
+  --color-positive: #247b50;
+  --color-pos-bg: #dcfae5;
+  --color-pos-ink: #04250e;
+  --color-negative: #c4242a;
+  --color-neg-bg: #ffedea;
+  --color-neg-ink: #831c1e;
+  --color-warn-bg: #fffbeb;
+  --color-warn-line: #fde68a;
+  --color-warn-ink: #92400e;
+  --color-neutral-bg: #efece4;
+  --color-neutral-ink: #3d3a33;
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-display: var(--font-fraunces), Georgia, serif;
+
+  --radius-sheet: 20px;
+  --radius-card: 16px;
+  --radius-well: 10px;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html,
+body {
+  background: var(--color-chrome);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+::selection {
+  background: var(--color-gold-soft);
+}
+
+@layer components {
+/* Buttons: pills, one height per row. Primary is near-black. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    transform 120ms;
+  cursor: pointer;
+}
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #2c2820;
+}
+.btn-secondary {
+  background: var(--color-sheet);
+  color: var(--color-ink);
+  border: 1px solid var(--color-control);
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-faint);
+}
+.btn-ghost {
+  color: var(--color-ink);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+.btn-sm {
+  height: 28px;
+  padding: 0 11px;
+  font-size: 13px;
+}
+
+.pill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.field {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--color-line);
+  background: #fff;
+  font-size: 14px;
+  color: var(--color-ink);
+}
+textarea.field {
+  height: auto;
+  padding: 12px 14px;
+  line-height: 1.55;
+}
+.field::placeholder {
+  color: var(--color-faint);
+}
+.field:focus {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 0;
+  border-color: transparent;
+}
+
+.card {
+  background: var(--color-sheet);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
+}
+
+/* Evidence highlights: colour is never the only signal. High is a solid underline,
+   medium dashed, low dotted, and each carries a numbered marker. */
+.hl {
+  border-radius: 4px;
+  padding: 1px 1px;
+  cursor: pointer;
+  text-decoration-line: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  transition: background-color 150ms;
+}
+.hl-high {
+  background: var(--color-neg-bg);
+  text-decoration-style: solid;
+  text-decoration-color: var(--color-negative);
+}
+.hl-medium {
+  background: var(--color-warn-bg);
+  text-decoration-style: dashed;
+  text-decoration-color: #b45309;
+}
+.hl-low {
+  background: var(--color-neutral-bg);
+  text-decoration-style: dotted;
+  text-decoration-color: var(--color-faint);
+}
+.hl-done {
+  background: transparent;
+  text-decoration-color: var(--color-control);
+}
+.hl[data-selected="true"] {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+.marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.diff-del {
+  background: var(--color-neg-bg);
+  color: var(--color-neg-ink);
+  text-decoration: line-through;
+  border-radius: 3px;
+}
+.diff-ins {
+  background: var(--color-pos-bg);
+  color: var(--color-pos-ink);
+  border-radius: 3px;
+  text-decoration: none;
+}
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #fff;
+  }
 }

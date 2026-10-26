@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
+// Assay's workspace lives in the browser (IndexedDB), so pages are client
+// rendered and Cache Components / partial prefetching are not used.
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
   turbopack: {
     rules: {
       "*.css": {
@@ -12,6 +11,7 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  poweredByHeader: false,
 };
 
 export default nextConfig;
