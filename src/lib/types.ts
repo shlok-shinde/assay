@@ -176,6 +176,10 @@ export interface Version {
   createdAt: string;
   author: string;
   note: string;
+  /** Set on versions created by applying fixes. */
+  intentCheck?: { kept: boolean; summary: string; ai?: { kept: boolean; explanation: string; model: string } };
+  /** Findings whose fixes made this version. */
+  appliedFindingIds?: string[];
 }
 
 export type FindingStatus =
