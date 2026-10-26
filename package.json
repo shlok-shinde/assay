@@ -17,7 +17,6 @@
     "eval": "tsx --tsconfig tsconfig.json scripts/eval.ts"
   },
   "dependencies": {
-    "@google/genai": "2.31.0",
     "culori": "4.0.2",
     "dexie": "4.4.7",
     "dexie-react-hooks": "4.4.0",
