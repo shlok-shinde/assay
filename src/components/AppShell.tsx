@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Activity, BookOpen, Check, ClipboardCheck, FilePlus2, Inbox, Menu, RotateCcw, ShieldCheck, Stamp, X } from "lucide-react";
 import type { Role } from "@/lib/types";
@@ -168,9 +168,8 @@ function AiBadge() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const ws = useWorkspace();
+  // The phone menu closes through each link's onNavigate.
   const [open, setOpen] = useState(false);
-  const path = usePathname();
-  useEffect(() => setOpen(false), [path]);
 
   return (
     <div className="min-h-screen bg-chrome lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">

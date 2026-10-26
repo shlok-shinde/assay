@@ -8,14 +8,20 @@ export interface Bm25Index {
   df: Map<string, number>;
   avgLen: number;
   synonyms: Map<string, Set<string>>;
+  names: string[];
 }
 
 export function factDocument(f: Fact): string {
   return [f.statement, f.keywords.join(" "), f.triggers.join(" "), f.approvedWording].join(" ");
 }
 
-export function buildIndex(facts: Fact[], synonymGroups: string[][] = []): Bm25Index {
-  const docs = facts.map((f) => ({ id: f.id, terms: stems(factDocument(f)) }));
+/** Removes brand and product names, which appear in many facts and drafts and say nothing about which fact a claim means. */
+export function withoutNames(text: string, names: string[]): string {
+  return names.reduce((t, n) => t.replace(new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " "), text);
+}
+
+export function buildIndex(facts: Fact[], synonymGroups: string[][] = [], names: string[] = []): Bm25Index {
+  const docs = facts.map((f) => ({ id: f.id, terms: stems(withoutNames(factDocument(f), names)) }));
   const df = new Map<string, number>();
   for (const d of docs) for (const t of new Set(d.terms)) df.set(t, (df.get(t) ?? 0) + 1);
   const avgLen = docs.reduce((n, d) => n + d.terms.length, 0) / Math.max(1, docs.length);
@@ -28,11 +34,11 @@ export function buildIndex(facts: Fact[], synonymGroups: string[][] = []): Bm25I
       synonyms.set(t, set);
     }
   }
-  return { docs, df, avgLen, synonyms };
+  return { docs, df, avgLen, synonyms, names };
 }
 
 export function search(index: Bm25Index, query: string, k = 3, only?: (id: string) => boolean): { id: string; score: number }[] {
-  const q = stems(query);
+  const q = stems(withoutNames(query, index.names));
   const expanded = new Map<string, number>();
   for (const t of q) {
     expanded.set(t, Math.max(expanded.get(t) ?? 0, 1));

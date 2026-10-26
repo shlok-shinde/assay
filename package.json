@@ -13,7 +13,8 @@
     "prebuild": "node scripts/copy-vendor.mjs",
     "pretest": "node scripts/copy-vendor.mjs",
     "samples": "python3 scripts/make_samples.py",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "eval": "tsx --tsconfig tsconfig.json scripts/eval.ts"
   },
   "dependencies": {
     "@google/genai": "2.31.0",

@@ -102,6 +102,8 @@ export interface KitContent {
   /** Words that BM25 retrieval treats as the same, e.g. "dark spots" ~ "even tone". */
   synonyms: string[][];
   pillars: string[];
+  /** Brand and product names. They are not evidence when matching a claim to a fact. */
+  products: string[];
 }
 
 export interface BrandKit extends KitContent {

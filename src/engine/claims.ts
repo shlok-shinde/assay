@@ -94,7 +94,7 @@ function collect(text: string, kit: KitContent, index: Bm25Index, choices: Recor
 
 /** Claims whose fact the AI may choose, because BM25 ranks two facts close together. */
 export function claimCandidates(text: string, kit: KitContent): ClaimCandidate[] {
-  return collect(text, kit, buildIndex(kit.facts, kit.synonyms), {}).ambiguous;
+  return collect(text, kit, buildIndex(kit.facts, kit.synonyms, kit.products ?? []), {}).ambiguous;
 }
 
 export function analyzeClaims(
@@ -103,7 +103,7 @@ export function analyzeClaims(
   today: string,
   choices: Record<string, string> = {},
 ): { claims: CheckedClaim[]; findings: RawFinding[] } {
-  const index = buildIndex(kit.facts, kit.synonyms);
+  const index = buildIndex(kit.facts, kit.synonyms, kit.products ?? []);
   const facts = new Map(kit.facts.map((f) => [f.id, f]));
   const rules = new Map(kit.rules.filter((r) => r.active && !r.pending).map((r) => [r.id, r]));
   const claim01 = rules.get("CLAIM-01");

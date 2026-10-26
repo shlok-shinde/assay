@@ -1,0 +1,62 @@
+{
+  "at": "2026-10-26",
+  "drafts": 64,
+  "rows": [
+    {
+      "category": "accessibility",
+      "tp": 5,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1,
+      "recall": 0.833
+    },
+    {
+      "category": "claim",
+      "tp": 16,
+      "fp": 1,
+      "fn": 0,
+      "precision": 0.941,
+      "recall": 1
+    },
+    {
+      "category": "legal",
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "category": "message",
+      "tp": 5,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "category": "term",
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "category": "tone",
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    }
+  ],
+  "overall": {
+    "precision": 0.98,
+    "recall": 0.98
+  },
+  "misses": [
+    "FP claim-16: CLAIM-03 (“best way” is advice, not a product superlative)",
+    "FN a11y-06: A11Y-03"
+  ]
+}

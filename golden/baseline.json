@@ -1,0 +1,26 @@
+{
+  "accessibility": {
+    "precision": 1,
+    "recall": 0.833
+  },
+  "claim": {
+    "precision": 0.941,
+    "recall": 1
+  },
+  "legal": {
+    "precision": 1,
+    "recall": 1
+  },
+  "message": {
+    "precision": 1,
+    "recall": 1
+  },
+  "term": {
+    "precision": 1,
+    "recall": 1
+  },
+  "tone": {
+    "precision": 1,
+    "recall": 1
+  }
+}

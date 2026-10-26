@@ -509,6 +509,7 @@ export const VELVRA_KIT: KitContent = {
     ["water", "sweat", "swim"],
   ],
   pillars: ["daily protection", "visibly even tone"],
+  products: ["Velvra", "Daily Shield"],
 };
 
 export const DEMO_PEOPLE = {

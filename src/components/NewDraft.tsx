@@ -73,7 +73,6 @@ export function NewDraft() {
       autoloaded.current = true;
       void loadSample(s);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params]);
 
   const onFile = async (file: File) => {
