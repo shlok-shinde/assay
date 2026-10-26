@@ -75,6 +75,15 @@ describe("KeyPool", () => {
     expect(pool.available()).toEqual([]);
     expect(nextPacificMidnight(now)).toBe(Date.parse("2026-10-27T07:00:00Z"));
   });
+
+  it("cools a key down on one model only, since free-tier quotas are per model", () => {
+    const pool = new KeyPool([{ label: "a", value: "1" }]);
+    pool.rateLimited("a", { daily: true }, "flash");
+    expect(pool.order("flash")).toEqual([]);
+    expect(pool.order("flash-lite").map((k) => k.label)).toEqual(["a"]);
+    expect(pool.status(["flash"]).keysAvailable).toBe(0);
+    expect(pool.status(["flash", "flash-lite"]).keysAvailable).toBe(1);
+  });
 });
 
 describe("Gemini calls", () => {
@@ -103,7 +112,8 @@ describe("Gemini calls", () => {
     const r = await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env });
     expect(r).toMatchObject({ ok: true, json: { hello: "world" }, keyLabel: "b" });
     expect(seen).toEqual(["gemini-3.8-flash:KEY_A", "gemini-3.8-flash:KEY_B", "gemini-3.6-flash:KEY_B"]);
-    expect(pool.status().keysAvailable).toBe(1);
+    expect(pool.status(["gemini-3.8-flash"]).keysAvailable).toBe(1);
+    expect(pool.status(["gemini-3.6-flash"]).keysAvailable).toBe(2);
   });
 
   it("reports rate_limited when every key is cooling down", async () => {

@@ -85,7 +85,8 @@ export function nextPacificMidnight(now: number): number {
 }
 
 interface KeyState extends KeyEntry {
-  cooldownUntil: number;
+  /** Cooldown end per model ("*" for the whole key): Gemini's free-tier quotas are per model. */
+  cooldownUntil: Record<string, number>;
   disabled: boolean;
 }
 
@@ -97,34 +98,42 @@ export class KeyPool {
     entries: KeyEntry[],
     private now: () => number = Date.now,
   ) {
-    this.keys = entries.map((e) => ({ ...e, cooldownUntil: 0, disabled: false }));
+    this.keys = entries.map((e) => ({ ...e, cooldownUntil: {}, disabled: false }));
   }
 
   get size() {
     return this.keys.length;
   }
 
-  available(): KeyEntry[] {
-    const t = this.now();
-    return this.keys.filter((k) => !k.disabled && k.cooldownUntil <= t);
+  private usable(k: KeyState, model: string | undefined, t: number) {
+    return !k.disabled && (k.cooldownUntil["*"] ?? 0) <= t && (model === undefined || (k.cooldownUntil[model] ?? 0) <= t);
   }
 
-  /** Available keys for one call, starting from the next key in turn. */
-  order(): KeyEntry[] {
+  /** Keys usable right now, on one model if given. */
+  available(model?: string): KeyEntry[] {
+    const t = this.now();
+    return this.keys.filter((k) => this.usable(k, model, t));
+  }
+
+  /** Available keys for one call on a model, starting from the next key in turn. */
+  order(model?: string): KeyEntry[] {
     if (!this.keys.length) return [];
     const start = this.cursor % this.keys.length;
     this.cursor = (this.cursor + 1) % this.keys.length;
     const t = this.now();
     const rotated = [...this.keys.slice(start), ...this.keys.slice(0, start)];
-    return rotated.filter((k) => !k.disabled && k.cooldownUntil <= t).map(({ label, value }) => ({ label, value }));
+    return rotated.filter((k) => this.usable(k, model, t)).map(({ label, value }) => ({ label, value }));
   }
 
-  /** 429: wait for Gemini's retryDelay, 60 s by default, or until Pacific midnight for a daily quota. */
-  rateLimited(label: string, opts: { retryMs?: number; daily?: boolean } = {}) {
+  /**
+   * 429: wait for Gemini's retryDelay, 60 s by default, or until Pacific midnight for a daily quota.
+   * With a model, only that model cools down on this key; the key's other models keep their own quota.
+   */
+  rateLimited(label: string, opts: { retryMs?: number; daily?: boolean } = {}, model = "*") {
     const k = this.keys.find((x) => x.label === label);
     if (!k) return;
     const t = this.now();
-    k.cooldownUntil = opts.daily ? nextPacificMidnight(t) : t + (opts.retryMs ?? 60_000);
+    k.cooldownUntil[model] = opts.daily ? nextPacificMidnight(t) : t + (opts.retryMs ?? 60_000);
   }
 
   /** 401/403: the key is wrong or revoked; stop using it for the life of this instance. */
@@ -133,8 +142,11 @@ export class KeyPool {
     if (k) k.disabled = true;
   }
 
-  status() {
-    return { keyCount: this.keys.length, keysAvailable: this.available().length };
+  /** With models, a key counts as available while any of them can use it. */
+  status(models?: string[]) {
+    const t = this.now();
+    const ready = this.keys.filter((k) => (models?.length ? models.some((m) => this.usable(k, m, t)) : this.usable(k, undefined, t)));
+    return { keyCount: this.keys.length, keysAvailable: ready.length };
   }
 }
 

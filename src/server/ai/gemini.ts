@@ -78,7 +78,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
 
   for (const model of modelChain(call.tier, opts.env)) {
     let shape = 0;
-    const keys = pool.order();
+    const keys = pool.order(model);
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const remaining = deadline - Date.now();
@@ -124,7 +124,9 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
       log(`model=${model} key=${key.label} status=${res.status}${why}`);
       if (res.status === 429) {
         sawRateLimit = true;
-        pool.rateLimited(key.label, parse429(errBody));
+        const limit = parse429(errBody);
+        log(`model=${model} key=${key.label} ${limit.daily ? "daily quota" : `retry in ${Math.round((limit.retryMs ?? 60_000) / 1000)} s`}`);
+        pool.rateLimited(key.label, limit, model);
         continue;
       }
       if (res.status === 401 || res.status === 403) {
@@ -141,7 +143,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
     }
   }
   if (Date.now() >= deadline) return { ok: false, reason: "timeout", message: "AI time budget used up" };
-  return sawRateLimit || pool.available().length === 0
+  return sawRateLimit || modelChain(call.tier, opts.env).every((m) => pool.available(m).length === 0)
     ? { ok: false, reason: "rate_limited", message: "Every Gemini key is rate-limited right now" }
     : { ok: false, reason: "error", message: "Gemini did not return a usable answer" };
 }
