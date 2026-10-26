@@ -50,6 +50,8 @@ export function sentences(text: string): Span[] {
     if (ch === "." || ch === "!" || ch === "?") {
       let j = i;
       while (j + 1 < text.length && /[.!?]/.test(text[j + 1])) j++;
+      // Footnote markers and closing quotes stay with their sentence: "tone.*", "done.”"
+      while (j + 1 < text.length && /[*)\]"'”’]/.test(text[j + 1])) j++;
       const next = text[j + 1];
       const before = text.slice(Math.max(0, i - 3), i).toLowerCase();
       const abbreviation = ch === "." && /(^|\W)no$/.test(before) && /\s?\d/.test(text.slice(j + 1, j + 3));
@@ -63,7 +65,7 @@ export function sentences(text: string): Span[] {
   return out;
 }
 
-const CLAUSE_BREAK = /\s*[;:]\s+|\s+[—–]\s+|,\s+(?=(?:and|but|while|so|plus|because)\b)/giu;
+const CLAUSE_BREAK = /\s*;\s+|\s+[—–]\s+|,\s+(?=(?:and|but|while|so|plus|because)\b)/giu;
 
 /** Clauses inside a sentence. A clause that begins with a conjunction keeps its leading comma. */
 export function clauses(sentence: Span): Span[] {
@@ -105,7 +107,7 @@ export function words(text: string): Span[] {
 
 /** Trims trailing punctuation and spaces from a span. */
 export function trimSpanEnd(text: string, start: number, end: number): number {
-  while (end > start && /[\s.,!?;:]/.test(text[end - 1])) end--;
+  while (end > start && /[\s.,!?;:*]/.test(text[end - 1])) end--;
   return end;
 }
 

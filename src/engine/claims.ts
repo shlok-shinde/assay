@@ -7,7 +7,9 @@ import { dimension, findQuantities, formatQuantity, sameAmount, sameDimension, t
 import { clauses, findPhrases, sentences, trimSpanEnd, type Span } from "./text";
 import type { RawFinding } from "./types";
 
-const STUDY_WORDS = /\b(clinically|clinical|study|studies|trial|proven|tested)\b/i;
+const STUDY_WORDS = /\b(clinically|clinical|proven|tested)\b/i;
+/** Words that make a number read as a claim even when no fact matches it. */
+const CLAIMY = /\b(saw|see|seen|proven|results?|study|studies|tested|clinically|recommend\w*|reduc\w*|improv\w*|boost\w*|increas\w*|better|more|less|fewer|faster)\b/i;
 const CLINICAL = /\bclinical(ly)?\b/i;
 
 export interface ClaimCandidate {
@@ -36,6 +38,7 @@ function collect(text: string, kit: KitContent, index: Bm25Index, choices: Recor
   const out: ClauseClaim[] = [];
   const ambiguous: ClaimCandidate[] = [];
   for (const sentence of sentences(text)) {
+    if (sentence.text.startsWith("*")) continue; // a footnote, not a claim
     for (const clause of clauses(sentence)) {
       const byFact = new Map<string, ClauseClaim>();
       const add = (key: string, factId: string | undefined, anchor: number, q?: FoundQuantity) => {
@@ -59,18 +62,17 @@ function collect(text: string, kit: KitContent, index: Bm25Index, choices: Recor
         const abs = { ...q, start: clause.start + q.start, end: clause.start + q.end };
         const key = `${dimension(q.unit).dim}|${clause.text}`;
         const candidateIds = kit.facts.filter((f) => f.quantities.some((fq) => sameDimension(fq.unit, q.unit))).map((f) => f.id);
-        if (!candidateIds.length) {
-          add(key, undefined, abs.start, abs);
+        const ranked = candidateIds.length ? search(index, clause.text, 3, (id) => candidateIds.includes(id)) : [];
+        if (!ranked.length) {
+          // No related fact. Only a claim if the clause reads like one ("90% of users saw…").
+          if (CLAIMY.test(clause.text)) add(key, undefined, abs.start, abs);
           continue;
         }
-        const ranked = search(index, clause.text, 3, (id) => candidateIds.includes(id));
         const chosen = choices[key] && candidateIds.includes(choices[key]) ? choices[key] : ranked[0]?.id;
         if (ranked.length > 1 && ranked[1].score >= ranked[0].score * 0.7) {
           ambiguous.push({ key, text: clause.text, candidates: ranked.map((r) => r.id) });
         }
-        // A quantity only counts toward a fact the clause is plausibly about.
-        if (!chosen || (!ranked.length && candidateIds.length > 1)) add(key, undefined, abs.start, abs);
-        else add(key, chosen, abs.start, abs);
+        add(key, chosen, abs.start, abs);
       }
 
       // 3. Study wording with no number and no named fact.
@@ -116,7 +118,8 @@ export function analyzeClaims(
     const evaluated = evaluate(c, fact, today);
     checked.push({ text: claimText, start: c.anchor, end, status: evaluated.status, factId: fact?.id, detail: evaluated.detail });
     if (evaluated.status === "supported") {
-      const needsFootnote = fact && ["study", "panel", "clinical"].includes(fact.kind) && !/^\s?\*/.test(text.slice(end, end + 2));
+      const needsFootnote =
+        fact && c.quantities.length > 0 && ["study", "panel", "clinical"].includes(fact.kind) && !/^[.!?]?\s?\*/.test(text.slice(end, end + 3));
       if (needsFootnote && claim05 && fact.footnote) {
         findings.push({
           ruleId: "CLAIM-05",

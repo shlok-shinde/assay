@@ -106,11 +106,13 @@ function superlativeFindings(text: string, kit: KitContent): RawFinding[] {
   for (const s of sentences(text)) {
     for (const m of findPhrases(s.text, r.patterns)) {
       if (supported.has(m.phrase)) continue;
-      const start = s.start + m.start;
-      // The claim runs to the end of the clause: "The best serum in India".
-      const rest = text.slice(start, s.end);
+      let start = s.start + m.start;
+      if (/\b(the|our|a)\s$/i.test(text.slice(Math.max(0, start - 4), start))) start = text.slice(0, start).search(/\S+\s$/);
+      // The claim runs from the phrase to the end of its clause: "The best serum in India".
+      const after = s.start + m.end;
+      const rest = text.slice(after, s.end);
       const stop = rest.search(/[.!?;,:]|\s[—–]\s/);
-      const end = start + (stop < 0 ? rest.length : stop);
+      const end = after + (stop < 0 ? rest.length : stop);
       out.push({
         ruleId: r.id,
         relatedRuleIds: [],
@@ -263,7 +265,7 @@ function structuralFindings(text: string, kit: KitContent, channel: Channel): Ra
   const read = rules.get("A11Y-03");
   if (read) {
     const r = readability(text);
-    if (r.words >= 40 && r.flesch < limits.readabilityMin) {
+    if (r.words >= 60 && r.flesch < limits.readabilityMin) {
       const longest = sentences(text).sort((a, b) => words(b.text).length - words(a.text).length)[0];
       out.push({
         ruleId: read.id,
