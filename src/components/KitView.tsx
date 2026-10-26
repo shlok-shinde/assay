@@ -679,7 +679,7 @@ function ImportTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
       <div>
         <h2 className="text-[16px] font-semibold">Waiting for approval</h2>
         <ul className="mt-3 space-y-3">
-          {pending.length === 0 && <Empty title="No imported rules are waiting." />}
+          {pending.length === 0 && <li><Empty title="No imported rules are waiting." /></li>}
           {pending.map((r) => (
             <li key={r.id} className="rounded-[14px] border border-line p-4">
               <div className="flex flex-wrap items-center gap-2">

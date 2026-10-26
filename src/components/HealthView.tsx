@@ -51,7 +51,7 @@ export function HealthView() {
           top ? (
             <>
               <span className="text-ink">
-                {top.rule.id} looks unclear: {Math.round((top.dismissed / Math.max(1, top.fires)) * 100)}% of its {top.fires} findings were dismissed
+                {top.rule.id} looks unclear: {top.contested > top.dismissed ? `${top.contested} of its ${top.fires} findings were contested` : `${top.dismissed} of its ${top.fires} findings were dismissed`}
                 {top.topAudience && top.topAudience.share >= 0.6 ? `, mostly on “${top.topAudience.audience}” campaigns` : ""}.
               </span>{" "}
               Based on {seededSubs} seeded demo reviews (labelled) and {liveFindings} finding{liveFindings === 1 ? "" : "s"} from this browser.
@@ -76,9 +76,9 @@ export function HealthView() {
             <thead>
               <tr className="text-left text-[12px] text-muted">
                 <th className="pb-2 font-normal">Rule</th>
-                <th className="pb-2 text-right font-normal">Findings</th>
-                <th className="hidden pb-2 text-right font-normal sm:table-cell">Dismissed</th>
-                <th className="hidden pb-2 text-right font-normal sm:table-cell">Contested</th>
+                <th className="pb-2 pl-3 text-right font-normal">Findings</th>
+                <th className="hidden pb-2 pl-3 text-right font-normal sm:table-cell">Dismissed</th>
+                <th className="hidden pb-2 pl-3 text-right font-normal sm:table-cell">Contested</th>
                 <th className="w-[34%] pb-2 pl-4 font-normal">Unclear score</th>
               </tr>
             </thead>
@@ -99,7 +99,7 @@ export function HealthView() {
               Facts expiring within 30 days
             </h2>
             <ul className="mt-2">
-              {alerts.length === 0 && <Empty title="No fact expires in the next 30 days." />}
+              {alerts.length === 0 && <li><Empty title="No fact expires in the next 30 days." /></li>}
               {alerts.map((a) => (
                 <li key={a.fact.id} className="flex items-start justify-between gap-3 border-t border-rule py-2.5 first:border-t-0">
                   <div className="min-w-0 text-[14px]">
@@ -121,7 +121,7 @@ export function HealthView() {
             </h2>
             <p className="text-[13px] text-muted">The same rule, three or more times, by channel or by who wrote it.</p>
             <ul className="mt-2">
-              {patterns.length === 0 && <Empty title="Nothing repeats three times yet." />}
+              {patterns.length === 0 && <li><Empty title="Nothing repeats three times yet." /></li>}
               {patterns.slice(0, 7).map((p) => (
                 <li key={`${p.ruleId}${p.kind}${p.by}`} className="flex items-center justify-between gap-3 border-t border-rule py-2 text-[14px] first:border-t-0">
                   <span>

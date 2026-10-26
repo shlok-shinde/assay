@@ -12,7 +12,8 @@
     "predev": "node scripts/copy-vendor.mjs",
     "prebuild": "node scripts/copy-vendor.mjs",
     "pretest": "node scripts/copy-vendor.mjs",
-    "samples": "python3 scripts/make_samples.py"
+    "samples": "python3 scripts/make_samples.py",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@google/genai": "2.31.0",

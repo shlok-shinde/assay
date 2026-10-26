@@ -54,7 +54,7 @@ export function ReviewQueue() {
           </h2>
           <p className="mt-0.5 text-[13px] text-muted">Every claim finding routes here when a draft is submitted. Decide it on the draft.</p>
           <ul className="mt-3">
-            {data?.claims.length === 0 && <Empty title="No claims are waiting." />}
+            {data?.claims.length === 0 && <li><Empty title="No claims are waiting." /></li>}
             {data?.claims.map((f) => {
               const s = data.subs.get(f.submissionId);
               return (
@@ -80,7 +80,7 @@ export function ReviewQueue() {
           </h2>
           <p className="mt-0.5 text-[13px] text-muted">Oldest first. Dismissed and contested findings come with the creator&apos;s reason.</p>
           <ul className="mt-3">
-            {data?.decided.length === 0 && <Empty title="No drafts are in review." />}
+            {data?.decided.length === 0 && <li><Empty title="No drafts are in review." /></li>}
             {data?.decided.map(({ s, dismissed, pending }) => (
               <li key={s.id} className="flex items-start justify-between gap-3 border-t border-rule py-3 first:border-t-0">
                 <div className="min-w-0">

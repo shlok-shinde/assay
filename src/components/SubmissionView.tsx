@@ -375,7 +375,7 @@ export function SubmissionView({ id }: { id: string }) {
               </div>
             </div>
             <div className="mt-3 space-y-3">
-              {shown.length === 0 && <Empty title={findings.length ? "Nothing needs action here." : "No findings. This draft follows the rulebook."} />}
+              {shown.length === 0 && <li><Empty title={findings.length ? "Nothing needs action here." : "No findings. This draft follows the rulebook."} /></li>}
               {shown.map((f: Finding) => (
                 <FindingCard
                   key={f.id}
@@ -529,7 +529,7 @@ function DraftComments({
           On the draft
         </h2>
         <ul className="mt-3 space-y-2">
-          {comments.length === 0 && <Empty title="No comments on the draft yet." />}
+          {comments.length === 0 && <li><Empty title="No comments on the draft yet." /></li>}
           {comments.map((c) => (
             <li key={c.id} className="rounded-[12px] bg-raised px-3.5 py-2.5 text-[14px] leading-[22px]">
               <span className="font-medium">{c.author}</span> <span className="text-[12px] text-muted">· {fmtTime(c.at)}</span>
@@ -560,7 +560,7 @@ function DraftComments({
           On findings
         </h2>
         <ul className="mt-3 space-y-2">
-          {findingComments.length === 0 && <Empty title="No comments on findings yet." />}
+          {findingComments.length === 0 && <li><Empty title="No comments on findings yet." /></li>}
           {findingComments.map((c) => (
             <li key={c.id} className="rounded-[12px] bg-raised px-3.5 py-2.5 text-[14px] leading-[22px]">
               <span className="marker !ml-0 mr-1.5">{numbers.get(c.findingId!) ?? "–"}</span>

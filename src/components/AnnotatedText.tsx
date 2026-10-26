@@ -37,7 +37,6 @@ export function AnnotatedText({
           id={`hl-${f.id}`}
           role="button"
           tabIndex={0}
-          aria-label={`Finding ${n}: ${f.title} (${f.severity})`}
           data-selected={selected === f.id}
           onClick={() => onSelect?.(f.id)}
           onKeyDown={(e) => {
@@ -51,6 +50,10 @@ export function AnnotatedText({
           {text.slice(f.start, end)}
           <span className="marker" aria-hidden="true">
             {n}
+          </span>
+          <span className="sr-only">
+            {" "}
+            (finding {n}, {f.severity} severity: {f.title})
           </span>
         </mark>,
       );
