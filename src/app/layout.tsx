@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     "Assay checks drafts against a brand's approved rules, facts and assets, explains every issue with its source, suggests a fix that keeps the message, and routes it to a human for approval. CodeStar 30 Round 2, team 24K MAGIC.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${mono.variable} ${fraunces.variable} h-full`}>
       <body className="min-h-full">{children}</body>
