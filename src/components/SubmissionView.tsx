@@ -206,7 +206,7 @@ export function SubmissionView({ id }: { id: string }) {
                 Checked against rulebook v{check.rulebookVersion} · {findings.length} finding{findings.length === 1 ? "" : "s"} ({ruleChecks} rule check
                 {ruleChecks === 1 ? "" : "s"}, {aiJudgments} AI judgment{aiJudgments === 1 ? "" : "s"}) · {check.dropped.length} unverifiable AI finding
                 {check.dropped.length === 1 ? "" : "s"} dropped by the evidence verifier
-                {check.relocated ? ` · ${check.relocated} quote${check.relocated === 1 ? "" : "s"} relocated` : ""} · {(check.ms / 1000).toFixed(1)} s
+                {check.relocated ? ` · ${check.relocated} quote${check.relocated === 1 ? "" : "s"} relocated` : ""} · {check.ms < 1000 ? `${check.ms} ms` : `${(check.ms / 1000).toFixed(1)} s`}
                 {check.segmentsReused ? ` · ${check.segmentsReused} of ${check.segmentsTotal} paragraphs reused from cache` : ""}
               </p>
             )}

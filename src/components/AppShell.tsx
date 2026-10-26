@@ -135,7 +135,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 function RoleSwitcher() {
   const role = useRole();
   return (
-    <div role="radiogroup" aria-label="Viewing as" className="flex items-center gap-1 rounded-full bg-[#ece7db] p-1">
+    <div role="radiogroup" aria-label="Viewing as" className="flex w-max items-center gap-1 rounded-full bg-[#ece7db] p-1">
       <span className="hidden pl-2 pr-1 text-[12px] text-muted lg:inline">Viewing as</span>
       {ROLES.map((r) => (
         <button
@@ -143,7 +143,7 @@ function RoleSwitcher() {
           role="radio"
           aria-checked={role === r}
           onClick={() => setRole(r)}
-          className={`h-7 rounded-full px-3 text-[13px] transition-colors ${role === r ? "bg-sheet text-ink font-medium shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-muted hover:text-ink"}`}
+          className={`h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors ${role === r ? "bg-sheet text-ink font-medium shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-muted hover:text-ink"}`}
         >
           {ROLE_LABEL[r]}
         </button>

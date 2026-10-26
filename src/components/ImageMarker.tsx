@@ -80,7 +80,7 @@ export function ImageMarker({
           }`}
           style={pct(r.box)}
         >
-          <span className="marker absolute -left-2 -top-2">{r.n}</span>
+          <span className="marker absolute left-1 top-1 !ml-0">{r.n}</span>
         </button>
       ))}
     </div>

@@ -29,7 +29,9 @@ function guessCategory(s: string): Category {
 export function heuristicCandidates(pages: { page: number; text: string }[]): Candidate[] {
   const out: Candidate[] = [];
   for (const p of pages) {
-    for (const s of sentences(p.text)) {
+    // Join lines that a PDF wrapped mid-sentence before splitting into sentences.
+    const text = p.text.replace(/([^\n.!?:])\n(?!\n)/g, "$1 ");
+    for (const s of sentences(text)) {
       if (!RULE_WORDS.test(s.text) || s.text.length < 15) continue;
       const words = s.text.replace(/[.!]$/, "").split(/\s+/);
       out.push({

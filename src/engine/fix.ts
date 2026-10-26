@@ -36,7 +36,8 @@ export function applyFixes(text: string, fixes: Fixable[]): FixResult {
     floor = r.start;
     applied.push(r.id);
   }
-  out = out.replace(/ {2,}/g, " ").replace(/ +([.,!?])/g, "$1");
+  // Tidy the seams: double spaces, a space before punctuation, and a footnote marker before punctuation ("tone*!" → "tone!*").
+  out = out.replace(/ {2,}/g, " ").replace(/ +([.,!?])/g, "$1").replace(/\*([.,!?]+)/g, "$1*");
   const tail: string[] = [];
   for (const f of fixes) {
     if (!f.fix) continue;

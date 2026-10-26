@@ -90,7 +90,7 @@ describe("fixes and intent", () => {
       { id: "a", start: 4, end: 12, fix: { kind: "replace", replacement: "Daily Shield SPF 50", label: "" } },
       { id: "b", start: 16, end: 33, fix: { kind: "replace", replacement: "shown in our study*", footnote: "*Study.", label: "" } },
     ]);
-    expect(r.text).toBe("our Daily Shield SPF 50 is shown in our study*. Shop now.\n\n*Study.");
+    expect(r.text).toBe("our Daily Shield SPF 50 is shown in our study.* Shop now.\n\n*Study.");
     expect(r.conflicts).toEqual([]);
   });
 

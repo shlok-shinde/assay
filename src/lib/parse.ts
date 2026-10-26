@@ -64,7 +64,12 @@ export async function pdfText(buffer: ArrayBuffer): Promise<{ text: string; page
       if (item.hasEOL && !pageText.endsWith("\n")) pageText += "\n";
       lastY = y;
     }
-    pageText = pageText.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    // Rejoin lines the PDF wrapped mid-sentence ("in a light\ngel." → "in a light gel.").
+    pageText = pageText
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/([^\n.!?:])\n(?=[a-z(₹0-9])/g, "$1 ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
     if (text) text += "\n\n";
     const start = text.length;
     text += pageText;
