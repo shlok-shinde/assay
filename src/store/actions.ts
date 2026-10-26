@@ -43,10 +43,14 @@ export function ensureSeeded(): Promise<void> {
   seeding ??= (async () => {
     const done = await db.meta.get("seededAt");
     if (done) return;
+    // Everything async that is not IndexedDB (the SHA-256 via Web Crypto) runs before the
+    // transaction: awaiting it inside lets IndexedDB commit early (TransactionInactiveError).
+    const kit: BrandKit = { id: KIT_ID, ...structuredClone(VELVRA_KIT), confidential: false, updatedAt: nowIso() };
+    const snapshot = structuredClone(VELVRA_KIT);
+    const hash = await hashJson(snapshot);
+    const h = seededHistory();
     await db.transaction("rw", [db.kits, db.rulebooks, db.submissions, db.findings, db.audit, db.aiCache, db.meta], async () => {
-      const kit: BrandKit = { id: KIT_ID, ...structuredClone(VELVRA_KIT), confidential: false, updatedAt: nowIso() };
       await db.kits.put(kit);
-      const snapshot = structuredClone(VELVRA_KIT);
       await db.rulebooks.put({
         id: "rb_3.2",
         kitId: KIT_ID,
@@ -54,10 +58,9 @@ export function ensureSeeded(): Promise<void> {
         publishedAt: "2026-09-01T09:00:00.000Z",
         publishedBy: "Kabir (brand admin)",
         notes: "Imported from Velvra Brand Book v3 (seeded demo rulebook).",
-        hash: await hashJson(snapshot),
+        hash,
         snapshot,
       });
-      const h = seededHistory();
       await db.submissions.bulkPut(h.submissions);
       await db.findings.bulkPut(h.findings);
       await db.audit.bulkPut(h.audit);
