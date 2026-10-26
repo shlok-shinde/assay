@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { card, freshWorkspace, LIVE, role, stubAi } from "./helpers";
+import { freshWorkspace, LIVE, role, ruleCard, stubAi } from "./helpers";
 
 test.describe("judge path", () => {
   test("sample → findings → fixes → submit → Compliance → Reviewer → Hallmark → Health", async ({ page }) => {
@@ -17,12 +17,12 @@ test.describe("judge path", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Monsoon launch: Instagram post", { timeout: 60_000 });
     mark("check");
 
-    // 2. The Round 1 worked example: 8 findings, two high, cited.
-    await expect(page.getByRole("tab", { name: /Findings 8/ })).toBeVisible();
+    // 2. The Round 1 worked example: 8 findings from rule checks (live AI may add judgment findings), two high, cited.
+    await expect(page.getByRole("tab", { name: LIVE ? /Findings (8|9|1\d)/ : /Findings 8/ })).toBeVisible();
     await expect(page.getByText("2 high-severity still open")).toBeVisible();
-    await expect(card(page, 1)).toContainText("CLAIM-01");
-    await expect(card(page, 1)).toContainText("F-112");
-    await expect(card(page, 1)).toContainText("p.18 §6.1");
+    const claim = ruleCard(page, "CLAIM-01");
+    await expect(claim).toContainText("F-112");
+    await expect(claim).toContainText("p.18 §6.1");
     for (const id of ["VOICE-02", "TERM-04", "VIS-01", "A11Y-01", "A11Y-04", "VIS-03"]) await expect(page.getByText(id).first()).toBeVisible();
     if (!LIVE) {
       await expect(page.getByText(/1 unverifiable AI finding dropped by the evidence verifier/)).toBeVisible();
@@ -31,13 +31,14 @@ test.describe("judge path", () => {
     mark("findings");
 
     // 3. Accept the claim and term fixes, dismiss the tone finding with a reason, apply.
-    await card(page, 1).getByRole("button", { name: "Accept" }).click();
-    await card(page, 2).getByRole("button", { name: "Accept" }).click();
-    await card(page, 4).getByRole("button", { name: "Accept" }).click();
-    await expect(card(page, 1).getByRole("button", { name: "Dismiss with reason" })).toHaveCount(0);
-    await card(page, 3).getByRole("button", { name: "Dismiss with reason" }).click();
-    await card(page, 3).getByRole("textbox").fill("Launch-day post, playful tone agreed with the brand lead");
-    await card(page, 3).getByRole("button", { name: "Confirm" }).click();
+    await ruleCard(page, "CLAIM-01").getByRole("button", { name: "Accept" }).click();
+    await ruleCard(page, "CLAIM-03").getByRole("button", { name: "Accept" }).click();
+    await ruleCard(page, "TERM-04").getByRole("button", { name: "Accept" }).click();
+    await expect(ruleCard(page, "CLAIM-01").getByRole("button", { name: "Dismiss with reason" })).toHaveCount(0);
+    const tone = ruleCard(page, "VOICE-02");
+    await tone.getByRole("button", { name: "Dismiss with reason" }).click();
+    await tone.getByRole("textbox").fill("Launch-day post, playful tone agreed with the brand lead");
+    await tone.getByRole("button", { name: "Confirm" }).click();
     await page.getByRole("button", { name: "Apply 3 fixes" }).click();
     await expect(page.getByText(/Intent kept: key message intact and strengthened/).first()).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole("tab", { name: /Versions 2/ })).toBeVisible();

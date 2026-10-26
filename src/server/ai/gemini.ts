@@ -3,9 +3,11 @@
 // model in the fallback chain, all inside one time budget.
 import type { KeyPool } from "./keys";
 
+// The chain ends on Google's "-latest" aliases, so a renamed or retired model
+// degrades to the current Flash model instead of turning AI off.
 export const DEFAULT_MODELS = {
-  judge: ["gemini-3.8-flash", "gemini-3.6-flash"],
-  lite: ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite"],
+  judge: ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"],
+  lite: ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"],
 };
 
 export function modelChain(tier: "judge" | "lite", env: Record<string, string | undefined> = process.env): string[] {

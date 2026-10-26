@@ -115,7 +115,7 @@ describe("Gemini calls", () => {
 
   it("is unconfigured with no keys, and honours GEMINI_MODEL overrides", async () => {
     expect(await callGemini(new KeyPool([]), { system: "s", user: "u", tier: "judge" }, { env })).toMatchObject({ reason: "unconfigured" });
-    expect(modelChain("judge", { GEMINI_MODEL: "my-model" })).toEqual(["my-model", "gemini-3.8-flash", "gemini-3.6-flash"]);
+    expect(modelChain("judge", { GEMINI_MODEL: "my-model" })).toEqual(["my-model", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"]);
   });
 
   it("retries once without the JSON schema when a model rejects it", async () => {

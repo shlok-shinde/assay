@@ -72,8 +72,9 @@ export function SubmissionView({ id }: { id: string }) {
   const pendingCompliance = [...findings, ...earlier].filter((f) => f.status === "sent_to_compliance");
   const editable = sub.status === "draft" || sub.status === "checked" || sub.status === "changes_requested";
   const shown = filter === "todo" ? findings.filter((f) => TODO.has(f.status)) : findings;
-  const ruleChecks = findings.filter((f) => f.origin === "rule").length;
-  const aiJudgments = findings.filter((f) => f.origin === "ai" || f.confidence !== undefined).length;
+  const ruleChecks = findings.filter((f) => f.origin === "rule" && f.confidence === undefined).length;
+  const aiJudgments = findings.filter((f) => f.origin === "ai").length;
+  const both = findings.filter((f) => f.origin === "rule" && f.confidence !== undefined).length;
   const channel = CHANNELS.find((c) => c.id === sub.channel)?.label;
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
@@ -204,7 +205,8 @@ export function SubmissionView({ id }: { id: string }) {
             {check && (
               <p className="num text-[13px] leading-5 text-muted">
                 Checked against rulebook v{check.rulebookVersion} · {findings.length} finding{findings.length === 1 ? "" : "s"} ({ruleChecks} rule check
-                {ruleChecks === 1 ? "" : "s"}, {aiJudgments} AI judgment{aiJudgments === 1 ? "" : "s"}) · {check.dropped.length} unverifiable AI finding
+                {ruleChecks === 1 ? "" : "s"}, {aiJudgments} AI judgment{aiJudgments === 1 ? "" : "s"}
+                {both ? `, ${both} found by both` : ""}) · {check.dropped.length} unverifiable AI finding
                 {check.dropped.length === 1 ? "" : "s"} dropped by the evidence verifier
                 {check.relocated ? ` · ${check.relocated} quote${check.relocated === 1 ? "" : "s"} relocated` : ""} · {check.ms < 1000 ? `${check.ms} ms` : `${(check.ms / 1000).toFixed(1)} s`}
                 {check.segmentsReused ? ` · ${check.segmentsReused} of ${check.segmentsTotal} paragraphs reused from cache` : ""}

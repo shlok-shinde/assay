@@ -45,3 +45,8 @@ export async function role(page: Page, name: "Creator" | "Reviewer" | "Complianc
 export function card(page: Page, n: number) {
   return page.getByRole("article", { name: `Finding ${n}`, exact: true });
 }
+
+/** The current version's finding card that cites a rule, whatever its position. */
+export function ruleCard(page: Page, ruleId: string) {
+  return page.getByRole("article").filter({ hasText: new RegExp(`${ruleId} ·`) }).filter({ hasNot: page.getByText(/^v\d+ · /) }).first();
+}

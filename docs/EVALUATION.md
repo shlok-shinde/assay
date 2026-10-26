@@ -51,7 +51,18 @@ CI runs the eval and fails if any category drops below `golden/baseline.json`.
 
 The same suite is meant to run against the live deployment with `E2E_BASE_URL` set (and `E2E_LIVE=1` to turn the stubs off) once the deployment is up.
 
-## 4. Timing (scripted, not human)
+## 4. The AI path, tested against a mock Gemini server
+
+There was no Gemini key on the machine during the build, so the server's AI path was tested against `scripts/mock-gemini.mjs`, a local stand-in that speaks Gemini's REST format. With two mock keys (`{"first":…,"second":…}`), one of which always answers 429, and the primary models answering 404:
+
+- `/api/status` reported `aiConfigured: true, keyCount: 2` and never a key value;
+- a judge call went key `first` (429, cooled down) → key `second` (404) → the next model in the chain, and succeeded; the server log shows only key labels and status codes;
+- an email address in the draft reached the mock as `[EMAIL]`, and the returned offsets were mapped back to the original text;
+- the full judge path (`E2E_BASE_URL=… E2E_LIVE=1`, no stubs) passed: the verifier dropped the mock's invented quote, kept its MSG-01 and VOICE-02 findings, the intent check went to the lite model chain, and the re-check after fixes sent only the changed paragraph while the rate-limited key was skipped.
+
+This proves the plumbing, not the quality of Gemini's judgments, which will be checked on the live deployment once the key is added.
+
+## 5. Timing (scripted, not human)
 
 From the E2E judge-path test on a local production build (26 Oct 2026, one run), milliseconds from the start of the test:
 
@@ -66,7 +77,7 @@ From the E2E judge-path test on a local production build (26 Oct 2026, one run),
 
 These are machine timings. They show the app does not make a person wait, not how long a person takes.
 
-## 5. Design and accessibility review (AI-assisted)
+## 6. Design and accessibility review (AI-assisted)
 
 During the build, an AI-assisted review checked screenshots of every screen against an app-screen design rubric and Nielsen's ten heuristics, and an automated inspector measured the landing page at 1440, 768 and 390 px (0 failures after fixes). This is an AI-assisted heuristic review, not user testing. Changes made because of it:
 
@@ -77,6 +88,6 @@ During the build, an AI-assisted review checked screenshots of every screen agai
 - claims fixed before submission were invisible to Compliance, so they are now routed to Compliance and shown under "Fixed or decided in earlier versions";
 - the landing page gained real interface fragments, entrance motion with a reduced-motion fallback, and a shorter second headline.
 
-## 6. What would count as real evidence next
+## 7. What would count as real evidence next
 
 Short sessions with three to five people who review brand content (a brand manager, an agency writer, a compliance reviewer), each doing the judge path unassisted while thinking aloud, with time on task and a single ease rating per step. None of this has been done yet.
