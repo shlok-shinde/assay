@@ -10,7 +10,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "predev": "node scripts/copy-vendor.mjs",
-    "prebuild": "node scripts/copy-vendor.mjs"
+    "prebuild": "node scripts/copy-vendor.mjs",
+    "pretest": "node scripts/copy-vendor.mjs",
+    "samples": "python3 scripts/make_samples.py"
   },
   "dependencies": {
     "@google/genai": "2.31.0",

@@ -2,7 +2,7 @@
 // palette (k-means + ΔE2000), text contrast (tesseract.js word boxes + a
 // 2-cluster split per line), alt text and the hand-marked logo box.
 import type { ImageAsset, KitContent } from "@/lib/types";
-import { contrastRatio, hexToRgb, kmeans, nearestPaletteColor, rgbToHex, textColors, type RGB } from "./color";
+import { contrastRatio, deltaE, hexToRgb, kmeans, nearestPaletteColor, rgbToHex, textColors, type RGB } from "./color";
 import type { RawFinding } from "./types";
 
 export interface OcrLine {
@@ -77,9 +77,10 @@ export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, 
     }
   }
 
-  // Contrast for every OCR line.
+  // Contrast for every OCR line; failing lines that share their colours form one text block.
   const reportLines: VisualReport["lines"] = [];
   const a11y01 = rules.get("A11Y-01");
+  const failing: { line: OcrLine; fg: RGB; bg: RGB; ratio: number; large: boolean; min: number }[] = [];
   for (const line of lines ?? []) {
     if (line.text.replace(/[^\p{L}\p{N}]/gu, "").length < 3 || line.confidence < 30) continue;
     const colors = textColors(crop(img, line.box));
@@ -89,24 +90,37 @@ export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, 
     const min = large ? 3 : 4.5;
     const ratio = Math.round(colors.ratio * 10) / 10;
     reportLines.push({ ...line, fg: rgbToHex(colors.fg), bg: rgbToHex(colors.bg), ratio, large });
-    if (a11y01 && colors.ratio < min) {
-      const best = [...kit.palette].sort((p, q) => contrastRatio(hexToRgb(q.hex), colors.bg) - contrastRatio(hexToRgb(p.hex), colors.bg))[0];
-      const bestRatio = Math.round(contrastRatio(hexToRgb(best.hex), colors.bg) * 10) / 10;
-      findings.push({
-        ruleId: a11y01.id,
-        relatedRuleIds: [],
-        category: "accessibility",
-        severity: a11y01.severity,
-        origin: "rule",
-        start: -1,
-        end: -1,
-        region: line.box,
-        quote: `“${line.text}”`,
-        title: "Low text contrast",
-        reason: `Text contrast is ${ratio}:1 (${rgbToHex(colors.fg)} on ${rgbToHex(colors.bg)}), below the ${min}:1 WCAG AA minimum for ${large ? "large" : "normal"} text (${a11y01.id}).`,
-        fix: { kind: "manual", replacement: `Use ${best.name} ${best.hex} for this text (${bestRatio}:1 on this background).`, label: "Change the text colour" },
-      });
-    }
+    if (colors.ratio < min) failing.push({ line, fg: colors.fg, bg: colors.bg, ratio, large, min });
+  }
+  const blocks: (typeof failing)[] = [];
+  for (const f of failing) {
+    const prev = blocks[blocks.length - 1]?.at(-1);
+    const near = prev && deltaE(rgbToHex(prev.fg), rgbToHex(f.fg)) < 5 && deltaE(rgbToHex(prev.bg), rgbToHex(f.bg)) < 5 && f.line.box.y - (prev.line.box.y + prev.line.box.h) < prev.line.box.h;
+    if (near) blocks[blocks.length - 1].push(f);
+    else blocks.push([f]);
+  }
+  for (const block of a11y01 ? blocks : []) {
+    const first = block[0];
+    const x = Math.min(...block.map((b) => b.line.box.x));
+    const y = Math.min(...block.map((b) => b.line.box.y));
+    const box = { x, y, w: Math.max(...block.map((b) => b.line.box.x + b.line.box.w)) - x, h: Math.max(...block.map((b) => b.line.box.y + b.line.box.h)) - y };
+    const ratio = Math.min(...block.map((b) => b.ratio));
+    const best = [...kit.palette].sort((p, q) => contrastRatio(hexToRgb(q.hex), first.bg) - contrastRatio(hexToRgb(p.hex), first.bg))[0];
+    const bestRatio = Math.round(contrastRatio(hexToRgb(best.hex), first.bg) * 10) / 10;
+    findings.push({
+      ruleId: a11y01!.id,
+      relatedRuleIds: [],
+      category: "accessibility",
+      severity: a11y01!.severity,
+      origin: "rule",
+      start: -1,
+      end: -1,
+      region: box,
+      quote: `“${block.map((b) => b.line.text).join(" ")}”`,
+      title: "Low text contrast",
+      reason: `Text contrast is ${ratio}:1 (${rgbToHex(first.fg)} on ${rgbToHex(first.bg)}), below the ${first.min}:1 WCAG AA minimum for ${first.large ? "large" : "normal"} text (${a11y01!.id}).`,
+      fix: { kind: "manual", replacement: `Use ${best.name} ${best.hex} for this text (${bestRatio}:1 on this background).`, label: "Change the text colour" },
+    });
   }
 
   const a11y04 = rules.get("A11Y-04");
