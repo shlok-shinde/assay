@@ -71,6 +71,17 @@ with tempfile.TemporaryDirectory() as tmp:
     chromium(["--window-size=1080,1080", "--force-device-scale-factor=1", f"--screenshot={os.path.join(OUT, 'velvra-monsoon-creative.png')}",
               "file://" + src])
 
+# 1b. The corrected creative: on palette, readable headline, logo at full size.
+FIXED = (CREATIVE.replace("background:#FF5FA2", "background:#C98B7F")
+         .replace("color:#FFB4D2", "color:#1F1B24")
+         .replace(".logo{position:absolute;left:64px;top:940px;width:96px;height:34px;font-size:27px", ".logo{position:absolute;left:64px;top:926px;width:134px;height:44px;font-size:37px"))
+with tempfile.TemporaryDirectory() as tmp:
+    src = os.path.join(tmp, "creative-fixed.html")
+    with open(src, "w") as f:
+        f.write(FIXED)
+    chromium(["--window-size=1080,1080", "--force-device-scale-factor=1", f"--screenshot={os.path.join(OUT, 'velvra-monsoon-creative-fixed.png')}",
+              "file://" + src])
+
 # 2. The product page DOCX ---------------------------------------------------
 PRODUCT = """Daily Shield SPF 50
 

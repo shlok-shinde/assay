@@ -9,7 +9,7 @@ import { db } from "@/store/db";
 import { applyStagedFixes, blockers, isStaged, addComment, reviewerDecision, saveEditedVersion, submitForReview } from "@/store/actions";
 import { useRole } from "@/store/hooks";
 import { CHANNELS } from "@/seed/velvra";
-import { imageAsset } from "@/lib/parse";
+import { fetchAsFile, imageAsset } from "@/lib/parse";
 import { TitleRow } from "./AppShell";
 import { AnnotatedText } from "./AnnotatedText";
 import { DiffView } from "./DiffView";
@@ -285,9 +285,25 @@ export function SubmissionView({ id }: { id: string }) {
                           e.target.value = "";
                         }}
                       />
-                      <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
-                        <Upload size={14} /> Replace creative
-                      </button>
+                      <div className="flex flex-wrap gap-1">
+                        {sub.sampleId === "instagram-launch" && (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            disabled={!!busy}
+                            onClick={() =>
+                              run("Re-checking the corrected creative…", async () => {
+                                const img = await imageAsset(await fetchAsFile("/samples/velvra-monsoon-creative-fixed.png", "velvra-monsoon-creative-fixed.png"));
+                                await saveEditedVersion(id, current.text, { ...img, alt: current.image?.alt ?? "", logoBox: { x: 64, y: 926, w: 134, h: 44 } });
+                              })
+                            }
+                          >
+                            Use the corrected sample creative
+                          </button>
+                        )}
+                        <button className="btn btn-ghost btn-sm" onClick={() => fileRef.current?.click()}>
+                          <Upload size={14} /> Replace creative
+                        </button>
+                      </div>
                     </>
                   )}
                 </div>

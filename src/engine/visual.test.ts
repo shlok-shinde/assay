@@ -23,4 +23,20 @@ describe("visual checks on the sample creative", () => {
     const contrast = report.findings.find((f) => f.ruleId === "A11Y-01")!;
     expect(contrast.quote.toLowerCase()).toContain("glow");
   });
+
+  it("passes the corrected creative: on palette, readable, logo at size, alt text present", { timeout: 60_000 }, async () => {
+    const report = await analyzeImage(
+      {
+        dataUrl: await dataUrl("/samples/velvra-monsoon-creative-fixed.png"),
+        width: 1080,
+        height: 1080,
+        alt: "A cream Daily Shield SPF 50 tube on a rose-clay background under the headline Glow like never before.",
+        fileName: "creative-fixed.png",
+        logoBox: { x: 64, y: 926, w: 134, h: 44 },
+      },
+      VELVRA_KIT,
+    );
+    expect(report.findings.map((f) => f.ruleId)).toEqual([]);
+    expect(report.lines.some((l) => /glow/i.test(l.text))).toBe(true);
+  });
 });
