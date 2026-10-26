@@ -30,7 +30,7 @@ describe("visual checks on the sample creative", () => {
         dataUrl: await dataUrl("/samples/velvra-monsoon-creative-fixed.png"),
         width: 1080,
         height: 1080,
-        alt: "A cream Daily Shield SPF 50 tube on a rose-clay background under the headline Glow like never before.",
+        alt: "A photo of a cream Daily Shield SPF 50 tube beaded with raindrops on a rose-clay backdrop, under the headline Glow like never before.",
         fileName: "creative-fixed.png",
         logoBox: { x: 64, y: 926, w: 134, h: 44 },
       },

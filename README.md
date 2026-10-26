@@ -60,6 +60,7 @@ More detail, including the decisions and how they changed from the Round 1 plan,
 
 - **Runtime:** Google Gemini (free tier) through `src/server/ai`. Default models `gemini-3.8-flash` then `gemini-3.6-flash` for judgment, `gemini-3.5-flash-lite` then `gemini-3.1-flash-lite` for lighter tasks; override with `GEMINI_MODEL` and `GEMINI_MODEL_LITE`. Google's terms for unpaid services allow Google to use inputs and outputs to improve its products, and human reviewers may read them. Assay redacts emails, phone numbers, ID and card numbers and secrets in the browser and again on the server, and **Confidential mode** sends nothing.
 - **Without a key** the app runs in rule-checks-only mode and says so on every check.
+- **Sample photo:** the product photo in the sample creative was generated with Google's Gemini image model (Nano Banana). Velvra and its tube are fictional.
 - **AI assistance:** Built with AI coding assistance. Google Gemini runs inside the app.
 
 ## Running it locally

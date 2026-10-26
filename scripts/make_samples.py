@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 """Generates the demo files in public/samples from the fictional Velvra content.
 
-- velvra-monsoon-creative.png  Instagram creative (#FF5FA2 ground, a low-contrast headline, a 96 px logo)
+- velvra-monsoon-creative.png  Instagram creative (hot-pink photo, a low-contrast headline, a 96 px logo)
+- velvra-monsoon-creative-fixed.png  the same creative corrected (rose-clay photo, dark headline, 134 px logo)
 - velvra-product-page.docx     product page copy, as a minimal Word file
 - velvra-brochure.pdf          two-page brochure with a real text layer
 - velvra-brand-book-update.pdf brand-book pages for the "import" demo
 
 Run: python3 scripts/make_samples.py   (needs Chromium at $CHROMIUM or /usr/bin/chromium)
 The text matches src/seed/samples.ts.
+
+The product photo (scripts/assets/velvra-tube-photo.jpg) was generated with Google's Gemini image model
+(Nano Banana); Velvra and its tube are fictional. The rose-clay version recolours only the pink backdrop:
+  magick velvra-tube-photo.jpg -modulate 92,42,119 recol.png
+  magick velvra-tube-photo.jpg -fx "(hue>0.82 || hue<0.01) && saturation>0.25 ? 1 : 0" -blur 0x1 mask.png
+  magick velvra-tube-photo.jpg recol.png mask.png -composite -quality 90 velvra-tube-photo-rose-clay.jpg
 """
 import html
 import os
@@ -50,26 +57,26 @@ def paragraphs(text):
 
 
 # 1. The Instagram creative --------------------------------------------------
+ASSETS = os.path.join(ROOT, "scripts", "assets")
 CREATIVE = """<!doctype html><meta charset='utf-8'><style>
 html,body{margin:0;width:1080px;height:1080px;overflow:hidden}
-body{background:#FF5FA2;font-family:'DejaVu Sans',Arial,sans-serif;position:relative}
+body{background:#FF5FA2 url('file://PHOTO') center/cover no-repeat;font-family:'DejaVu Sans',Arial,sans-serif;position:relative}
 .headline{position:absolute;left:64px;top:96px;width:900px;font-size:96px;line-height:1.05;font-weight:700;color:#FFB4D2;letter-spacing:-1px}
-.tube{position:absolute;right:120px;top:420px;width:300px;height:470px;background:#EADCCB;border-radius:40px 40px 22px 22px}
-.cap{position:absolute;right:170px;top:360px;width:200px;height:80px;background:#1F1B24;border-radius:18px 18px 6px 6px}
-.label{position:absolute;right:150px;top:560px;width:240px;font-size:34px;font-weight:700;color:#1F1B24;line-height:1.2}
 .logo{position:absolute;left:64px;top:940px;width:96px;height:34px;font-size:27px;font-weight:700;color:#1F1B24;letter-spacing:0.5px}
 </style>
 <div class='headline'>Glow like<br>never before</div>
-<div class='cap'></div><div class='tube'></div>
-<div class='label'>Daily Shield<br>SPF 50</div>
 <div class='logo'>velvra</div>"""
 
 with tempfile.TemporaryDirectory() as tmp:
     src = os.path.join(tmp, "creative.html")
     with open(src, "w") as f:
-        f.write(CREATIVE)
+        f.write(CREATIVE.replace("PHOTO", os.path.join(ASSETS, "velvra-tube-photo.jpg")))
     chromium(["--window-size=1080,1080", "--force-device-scale-factor=1", f"--screenshot={os.path.join(OUT, 'velvra-monsoon-creative.png')}",
               "file://" + src])
+
+# The landing page shows a light WebP copy; the PNG stays the file that gets checked.
+subprocess.run(["magick", os.path.join(OUT, "velvra-monsoon-creative.png"), "-resize", "800x800", "-quality", "82",
+                os.path.join(OUT, "velvra-monsoon-creative.webp")], check=True)
 
 # 1b. The corrected creative: on palette, readable headline, logo at full size.
 FIXED = (CREATIVE.replace("background:#FF5FA2", "background:#C98B7F")
@@ -78,7 +85,7 @@ FIXED = (CREATIVE.replace("background:#FF5FA2", "background:#C98B7F")
 with tempfile.TemporaryDirectory() as tmp:
     src = os.path.join(tmp, "creative-fixed.html")
     with open(src, "w") as f:
-        f.write(FIXED)
+        f.write(FIXED.replace("PHOTO", os.path.join(ASSETS, "velvra-tube-photo-rose-clay.jpg")))
     chromium(["--window-size=1080,1080", "--force-device-scale-factor=1", f"--screenshot={os.path.join(OUT, 'velvra-monsoon-creative-fixed.png')}",
               "file://" + src])
 

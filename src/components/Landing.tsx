@@ -29,7 +29,7 @@ const CHECKS: [string, string, string][] = [
   ["Terminology", "TERM-05", "“Whitening” is banned and becomes “even tone”, with the brand book page cited."],
   ["Messaging", "MSG-02", "“Erase dark spots in 7 days” promises instant results the product can't make."],
   ["Claims", "CLAIM-01", "“25% off” is checked against fact F-107 (20%, valid to 20 Nov). Numbers, periods and dates are compared in code."],
-  ["Visual", "VIS-01", "A #FF5FA2 background is ΔE 21 from Rose Clay, the nearest brand colour."],
+  ["Visual", "VIS-01", "A #F86598 background is ΔE 18 from Rose Clay, the nearest brand colour."],
   ["Accessibility", "A11Y-01", "A headline at 1.7:1 contrast fails WCAG AA. Assay reads the creative with OCR in your browser."],
 ];
 
@@ -236,14 +236,14 @@ export function Landing() {
               <figure data-reveal style={{ ["--i" as string]: 4 }} className="mt-10 max-w-[400px] overflow-hidden rounded-[24px]">
                 {/* eslint-disable-next-line @next/next/no-img-element -- static sample creative */}
                 <img
-                  src="/samples/velvra-monsoon-creative.png"
+                  src="/samples/velvra-monsoon-creative.webp"
                   width={1080}
                   height={1080}
-                  alt="The sample Instagram creative: a hot-pink square with a faint pink headline, “Glow like never before”, a cream sunscreen tube and a small velvra logo."
+                  alt="The sample Instagram creative: a photo of a cream Daily Shield SPF 50 tube beaded with raindrops on a hot-pink backdrop, a faint pink headline, “Glow like never before”, and a small velvra logo."
                   className="drift block"
                 />
               </figure>
-              <p className="mt-2 max-w-[400px] text-[14px] text-muted">The sample creative. Assay finds its 1.7:1 headline, its off-palette pink, its 96 px logo and its missing alt text.</p>
+              <p className="mt-2 max-w-[400px] text-[14px] text-muted">The sample creative, made on an AI-generated product photo. Assay finds its 1.7:1 headline, its off-palette pink, its 96 px logo and its missing alt text.</p>
             </div>
             <div data-reveal style={{ ["--i" as string]: 2 }}>
               <LiveChecker />
