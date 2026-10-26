@@ -1,9 +1,5 @@
-import Link from "next/link";
+import { Landing } from "@/components/Landing";
 
 export default function Home() {
-  return (
-    <main className="p-10">
-      <Link href="/app/new?sample=instagram-launch" className="btn btn-primary">Start the demo, no sign-up</Link>
-    </main>
-  );
+  return <Landing />;
 }
