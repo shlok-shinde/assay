@@ -42,7 +42,8 @@ test.describe("judge path", () => {
     await page.getByRole("button", { name: "Apply 3 fixes" }).click();
     await expect(page.getByText(/Intent kept: key message intact and strengthened/).first()).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole("tab", { name: /Versions 2/ })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText("Dismissed by Riya (agency intern)")).toBeVisible();
+    // The dismissal shows on the open finding and, once the re-check lands, under earlier versions too.
+    await expect(page.getByText("Dismissed by Riya (agency intern)").first()).toBeVisible();
     mark("fixes");
 
     // 4. Submit: fixed claims still go to Compliance.

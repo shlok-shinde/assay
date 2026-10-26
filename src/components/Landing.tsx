@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { VELVRA_KIT } from "@/seed/velvra";
 import { ruleChecks } from "@/engine/rules";
 import { analyzeClaims } from "@/engine/claims";
@@ -12,121 +12,335 @@ import { seededHistory } from "@/seed/history";
 import { sha256Hex } from "@/engine/hash";
 import { AnnotatedText } from "./AnnotatedText";
 import { CATEGORY_LABEL, Mark, SeverityPill } from "./ui";
+import "./landing.css";
 
-const EXAMPLE = "OMG 😍 our new sunblock is clinically proven to erase dark spots in just 7 days! The best serum in India. Shop now 👉 link in bio";
+// Class names for landing.css, which is global with an lp- prefix (next.config routes *.css through the
+// Tailwind loader, which turns CSS Modules into plain CSS).
+const s: Record<string, string> = new Proxy({}, { get: (_t, key) => `lp-${String(key)}` });
 
-const STEPS: [string, string][] = [
-  ["Open the Instagram sample", "One click loads the Round 1 worked example: a caption and its creative."],
-  ["Read a cited finding", "Each one quotes the draft, names the rule or fact it breaks, and says where that lives in the brand book."],
-  ["Accept fixes and apply them", "Fixes change only their own words. The intent check says whether the key message and call to action survived."],
-  ["Submit for review", "It unlocks once nothing high-severity is left open. Claims route to Compliance."],
-  ["Approve as Compliance, then as Reviewer", "Use the role switcher at the top. Approval writes a hash-chained Hallmark you can verify."],
-  ["Open Guideline Health", "See which rules people keep dismissing, which mistakes repeat, and which facts expire soon."],
+const DEMO = "/app/new?sample=instagram-launch";
+const REPO = "https://github.com/shlok-shinde/assay";
+
+// Three captions for the live checker; the engine finds 4, 4 and 0 issues in them.
+const EXAMPLES: [string, string][] = [
+  ["Instagram launch", "OMG 😍 our new sunblock is clinically proven to erase dark spots in just 7 days! The best serum in India. Shop now 👉 link in bio"], // taste-skill-ignore: the sample draft being checked
+  ["Monsoon offer", "Monsoon glow, now 25% off with code RAIN25. Our whitening formula gives visible results, guaranteed. Click here"],
+  ["A clean caption", "Daily Shield SPF 50 is lightweight daily protection for humid days. Reapply every 2 hours. Shop via the link in bio."],
 ];
 
-const CHECKS: [string, string, string][] = [
-  ["Tone", "VOICE-02", "“OMG” and “!!!” break Velvra's never-hype voice. Judgment rules use AI; the obvious cases are caught in code."],
-  ["Terminology", "TERM-05", "“Whitening” is banned and becomes “even tone”, with the brand book page cited."],
-  ["Messaging", "MSG-02", "“Erase dark spots in 7 days” promises instant results the product can't make."],
-  ["Claims", "CLAIM-01", "“25% off” is checked against fact F-107 (20%, valid to 20 Nov). Numbers, periods and dates are compared in code."],
-  ["Visual", "VIS-01", "A #F86598 background is ΔE 18 from Rose Clay, the nearest brand colour."],
-  ["Accessibility", "A11Y-01", "A headline at 1.7:1 contrast fails WCAG AA. Assay reads the creative with OCR in your browser."],
+const VERBS: { verb: string; text: string; src: string; alt: string }[] = [
+  {
+    verb: "Check",
+    text: "Rule checks run in your browser and Gemini judges tone. Every finding quotes the draft and cites the brand book page, the rule or the fact.",
+    src: "/landing/check.webp",
+    alt: "Assay's check screen: the Instagram caption with numbered marks, the sample creative with its weak headline boxed, and the first finding citing fact F-112.",
+  },
+  {
+    verb: "Fix",
+    text: "Fixes change only their own words, use the fact's approved wording and footnote, and are checked against the creator's key message.",
+    src: "/landing/fix.webp",
+    alt: "Version 2 of the caption beside a word diff of version 1, with three fixes applied and the intent check saying the key message was kept.",
+  },
+  {
+    verb: "Approve",
+    text: "Claims go to Compliance and the draft to a Reviewer. A creator can't dismiss a high-severity finding alone.",
+    src: "/landing/approve.webp",
+    alt: "The review queue as Compliance: two claims waiting for a decision, and the draft waiting for the reviewer.",
+  },
+  {
+    verb: "Stamp",
+    text: "Approval writes a Hallmark: the content's SHA-256, the rulebook version and every decision, chained to the one before.",
+    src: "/landing/stamp.webp",
+    alt: "Hallmark #1: the content hash, this Hallmark's hash, the previous one, the approvals, and a verified result.",
+  },
 ];
+
+const KINDS: [string, string][] = [
+  ["hype in the tone", "VOICE-02"],
+  ["banned words like “whitening”", "TERM-05"],
+  ["instant-results promises", "MSG-02"],
+  ["a discount the Claim Ledger says is wrong", "F-107"],
+  ["a pink ΔE 18 off the palette", "VIS-01"],
+  ["a headline at 1.7:1 contrast", "A11Y-01"],
+];
+
+/** Below-the-fold entrances. Content is visible without script; the hidden state is set only when motion is allowed. */
+function useEntrances() {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = root.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const targets = [...el.querySelectorAll<HTMLElement>("[data-enter]")].filter((t) => t.getBoundingClientRect().top > window.innerHeight);
+    for (const t of targets) t.setAttribute("data-pending", "");
+    el.setAttribute("data-motion", "");
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries)
+          if (e.isIntersecting) {
+            e.target.classList.add(s.in);
+            io.unobserve(e.target);
+          }
+      },
+      { rootMargin: "0px 0px -10% 0px" },
+    );
+    // Anything already on screen when the page opens is shown at once.
+    for (const t of el.querySelectorAll<HTMLElement>("[data-enter]")) {
+      if (!t.hasAttribute("data-pending")) t.classList.add(s.in);
+      else io.observe(t);
+    }
+    return () => io.disconnect();
+  }, []);
+  return root;
+}
+
+function Readout({ value }: { value: string }) {
+  return (
+    <span className={s.readout}>
+      <span key={value} className={`num ${s.roll}`}>
+        {value}
+      </span>
+    </span>
+  );
+}
+
+function Hero() {
+  const [fixed, setFixed] = useState(false);
+  const touched = useRef(false);
+  // Once the load sequence has settled, the fixes apply themselves once; after that the switch is the visitor's.
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = window.setTimeout(() => {
+      if (!touched.current) setFixed(true);
+    }, 2200);
+    return () => window.clearTimeout(t);
+  }, []);
+  const toggle = () => {
+    touched.current = true;
+    setFixed((f) => !f);
+  };
+  const images = (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element -- static crop of the sample creative */}
+      <img src="/landing/strip.webp" alt="" width={780} height={312} fetchPriority="high" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- static crop of the corrected creative */}
+      <img src="/landing/strip-fixed.webp" alt="" width={780} height={312} className={s.after} />
+    </>
+  );
+  return (
+    <section className={`${s.hero} ${fixed ? s.isFixed : ""}`}>
+      <div className={`${s.wrap} w-full`}>
+        <header className={s.bar}>
+          <Link href="/" className={s.wordmark}>
+            <Mark size={30} />
+            Assay
+          </Link>
+          <nav aria-label="Site" className={s.nav}>
+            <a href="#how">How it works</a>
+            <a href="#try">Try a caption</a>
+            <Link href="/about">Trust</Link>
+            <a href={REPO}>Code</a>
+          </nav>
+          <Link href={DEMO} className={`${s.button} ${s.buttonAccent} ${s.barAction}`}>
+            Start the demo
+          </Link>
+        </header>
+      </div>
+
+      <div className={`${s.wrap} ${s.stage} w-full`}>
+        <div className={`${s.chipRow} ${s.chipRowTop}`}>
+          <div data-ui className={`${s.chip} ${s.chipA} ${s.load}`} style={{ ["--d" as string]: "560ms" }}>
+            <span className={s.chipLabel}>Palette · VIS-01</span>
+            <Readout value={fixed ? "ΔE 2" : "ΔE 18"} />
+            <span className={s.chipNote}>{fixed ? "On palette: Rose Clay" : "Off palette; the limit is 10"}</span>
+          </div>
+        </div>
+
+        <h1 className={`${s.display} ${s.title}`}>
+          <span className={s.line}>
+            <span className={s.lineInner}>
+              Brand content,
+              <span className={s.frame} aria-hidden="true">
+                {images}
+              </span>
+            </span>
+          </span>{" "}
+          <span className={s.line}>
+            <span className={s.lineInner} style={{ ["--i" as string]: 1 }}>
+              tested before it ships.
+            </span>
+          </span>
+        </h1>
+        <div className={`${s.strip} ${s.load}`} style={{ ["--d" as string]: "420ms" }} aria-hidden="true">
+          {images}
+        </div>
+
+        <div className={`${s.chipRow} ${s.chipRowBottom}`}>
+          <div data-ui className={`${s.chip} ${s.chipB} ${s.load}`} style={{ ["--d" as string]: "640ms" }}>
+            <span className={s.chipLabel}>Headline contrast · A11Y-01</span>
+            <Readout value={fixed ? "5.7:1" : "1.7:1"} />
+            <span className={s.chipNote}>{fixed ? "Passes WCAG AA" : "Fails WCAG AA; needs 3:1"}</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={fixed}
+            aria-describedby="hero-switch-desc"
+            onClick={toggle}
+            data-ui
+            className={`${s.chip} ${s.chipC} ${s.load}`}
+            style={{ ["--d" as string]: "720ms" }}
+          >
+            <span className={s.chipLabel}>Apply the fixes</span>
+            <span className={s.switch} aria-hidden="true" />
+            <span className={s.chipNote}>
+              {fixed ? "0" : "4"} visual findings on the sample creative
+            </span>
+            <span id="hero-switch-desc" className={s.srOnly}>
+              Switches the sample Velvra creative, a sunscreen tube photographed on hot pink, to the corrected version on Rose Clay.
+            </span>
+          </button>
+        </div>
+
+        <p className={`${s.lead} ${s.load}`} style={{ ["--d" as string]: "460ms" }}>
+          Assay checks captions, emails, product pages and creatives against a brand&apos;s approved rules, facts and palette. Every finding quotes its evidence, cites its
+          source and comes with a fix that keeps your message.
+        </p>
+        <div className={`${s.actions} ${s.load}`} style={{ ["--d" as string]: "540ms" }}>
+          <Link href={DEMO} className={`${s.button} ${s.buttonAccent}`}>
+            Start the demo, no sign-up
+          </Link>
+          <Link href="/app/new" className={s.textLink}>
+            Check your own draft
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function LiveChecker() {
-  const [text, setText] = useState(EXAMPLE);
+  const [text, setText] = useState(EXAMPLES[0][1]);
   const findings = useMemo<Finding[]>(() => {
     const raw = mergeFindings([...ruleChecks(text, VELVRA_KIT, "instagram"), ...analyzeClaims(text, VELVRA_KIT, new Date().toISOString().slice(0, 10)).findings]);
     return raw.map((f, i) => ({ ...f, id: `live-${i}`, checkId: "live", submissionId: "live", versionId: "live", status: "open" }));
   }, [text]);
   const numbers = useMemo(() => new Map(findings.map((f, i) => [f.id, i + 1])), [findings]);
   return (
-    <div data-ui className="rounded-[24px] border border-line bg-sheet p-5 md:p-6">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[14px] font-semibold">Instagram caption · Velvra rulebook v3.2</p>
-        <p className="num text-[13px] text-muted">
-          {findings.length} finding{findings.length === 1 ? "" : "s"}
-        </p>
+    <section id="try" aria-labelledby="try-h" className={`${s.showcase} ${s.wrap}`}>
+      <div className={s.showGrid}>
+        <div>
+          <h2 id="try-h" data-enter className={`${s.display} ${s.h2} ${s.reveal}`}>
+            Try it on a caption
+          </h2>
+          <p data-enter className={`${s.sectionLead} ${s.reveal}`} style={{ ["--i" as string]: 1 }}>
+            The rule checks run as you type, in your browser, against Velvra&apos;s published rulebook and Claim Ledger. No account, and nothing is sent anywhere.
+          </p>
+          <div data-enter className={s.reveal} style={{ ["--i" as string]: 2 }}>
+            <label htmlFor="caption" className={s.srOnly}>
+              Instagram caption to check
+            </label>
+            <textarea id="caption" data-ui className={s.caption} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} />
+            <div className={s.examples}>
+              <span>Or try</span>
+              {EXAMPLES.map(([name, caption]) => (
+                <button key={name} type="button" className={s.example} aria-pressed={text === caption} onClick={() => setText(caption)}>
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div data-enter data-ui className={`${s.answer} ${s.reveal}`} style={{ ["--i" as string]: 3 }} aria-live="polite">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[16px] font-semibold">Velvra rulebook v3.2 · Instagram</p>
+            <p className="num text-[16px] text-muted">
+              {findings.length} finding{findings.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div className="mt-4 rounded-[16px] bg-raised p-4 text-[16px]">
+            <AnnotatedText text={text} findings={findings} numbers={numbers} />
+          </div>
+          <ol className="mt-5 space-y-3">
+            {findings.slice(0, 6).map((f) => (
+              <li key={`${f.ruleId}-${f.quote}`} className={`${s.findingItem} flex gap-3 text-[16px] leading-[24px]`}>
+                <span className="marker !ml-0 mt-0.5 flex-none">{numbers.get(f.id)}</span>
+                <span className="min-w-0">
+                  <span className="font-medium">{f.title}</span> <SeverityPill severity={f.severity} />
+                  <span className="block text-muted">
+                    {CATEGORY_LABEL[f.category]} · {f.ruleId}
+                    {f.factId ? ` · ${f.factId}` : ""}
+                    {f.fix && f.fix.kind === "replace" ? ` · fix: “${f.fix.replacement || "remove"}”` : ""}
+                  </span>
+                </span>
+              </li>
+            ))}
+            {findings.length === 0 && <li className="text-[16px] text-positive">No findings: this caption follows the rulebook.</li>}
+          </ol>
+        </div>
       </div>
-      <label htmlFor="try" className="mt-3 block text-[13px] text-muted">
-        Edit the caption; the rule checks run as you type, in your browser.
-      </label>
-      <textarea id="try" className="field mt-2 min-h-[84px] text-[15px]" value={text} onChange={(e) => setText(e.target.value)} />
-      <div className="mt-4 rounded-[14px] bg-raised p-4">
-        <AnnotatedText text={text} findings={findings} numbers={numbers} />
-      </div>
-      <ol className="mt-4 space-y-2.5">
-        {findings.slice(0, 4).map((f) => (
-          <li key={f.id} className="flex gap-3 text-[14px] leading-[21px]">
-            <span className="marker !ml-0 mt-0.5 flex-none">{numbers.get(f.id)}</span>
-            <span className="min-w-0">
-              <span className="font-medium">{f.title}</span> <SeverityPill severity={f.severity} />
-              <span className="block text-muted">
-                {CATEGORY_LABEL[f.category]} · {f.ruleId}
-                {f.factId ? ` · ${f.factId}` : ""}
-                {f.fix && f.fix.kind === "replace" ? ` · fix: “${f.fix.replacement || "remove"}”` : ""}
-              </span>
-            </span>
-          </li>
-        ))}
-        {findings.length === 0 && <li className="text-[14px] text-positive">No findings: this caption follows the rulebook.</li>}
-      </ol>
-    </div>
+    </section>
   );
 }
 
-/** Entrance motion: content is visible without script; with script, parts rise in as they enter. */
-function useReveal() {
-  useEffect(() => {
-    const root = document.documentElement;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    root.classList.add("js-reveal");
-    const els = [...document.querySelectorAll<HTMLElement>("[data-reveal]")];
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries)
-          if (e.isIntersecting) {
-            e.target.classList.add("is-in");
-            io.unobserve(e.target);
-          }
-      },
-      { rootMargin: "0px 0px -8% 0px" },
-    );
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, []);
+function Verbs() {
+  return (
+    <section id="how" aria-label="How it works" className={s.verbs}>
+      {VERBS.map((v, i) => (
+        <div key={v.verb} className={`${s.wrap} ${s.panel}`}>
+          <div className={s.verbCol}>
+            <h2 data-enter className={`${s.display} ${s.verb} ${s.reveal}`}>
+              {v.verb}
+            </h2>
+            <p data-enter className={`${s.verbText} ${s.reveal}`} style={{ ["--i" as string]: 1 }}>
+              {v.text}
+            </p>
+            {i === VERBS.length - 1 && (
+              <div data-enter className={`${s.verbAction} ${s.reveal}`} style={{ ["--i" as string]: 2 }}>
+                <Link href={DEMO} className={`${s.button} ${s.buttonAccent}`}>
+                  Walk the path yourself
+                </Link>
+              </div>
+            )}
+          </div>
+          <div className={s.shotCol}>
+            <figure data-enter className={`${s.shot} ${s.shutter}`}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- static screenshot of the app */}
+              <img src={v.src} alt={v.alt} width={1600} height={1000} loading="lazy" />
+            </figure>
+          </div>
+        </div>
+      ))}
+    </section>
+  );
 }
 
 function CitedFragment() {
   return (
-    <div data-ui className="min-h-[214px] rounded-[16px] bg-sheet p-4 text-ink">
+    <div data-ui className="rounded-[20px] bg-raised p-5 text-ink">
       <div className="flex items-center gap-2">
         <span className="marker !ml-0">1</span>
-        <span className="text-[13px] font-medium">Claim</span>
+        <span className="text-[14px] font-medium">Claim</span>
         <SeverityPill severity="high" />
-        <span className="ml-auto text-[12px] text-muted">Rule check + Claim Ledger</span>
+        <span className="ml-auto text-[14px] text-muted">Rule check + Claim Ledger</span>
       </div>
-      <p className="mt-2 text-[14px] font-semibold">Claim contradicts an approved fact</p>
-      <p className="mt-1.5 rounded-[10px] bg-raised px-3 py-1.5 text-[14px]">clinically proven to erase dark spots in just 7 days</p>
-      <p className="mt-2 text-[13px] leading-5">“7 days” doesn&apos;t match F-112, which says 4 weeks. “Clinically proven” is not approved wording for an in-house study.</p>
-      <p className="mt-2 text-[13px] leading-5">
-        <span className="font-medium">CLAIM-01</span> · Velvra Brand Book v3 p.18 §6.1 · <span className="font-medium">F-112</span> · owner R&amp;D · valid to 31 Mar 2027
-      </p>
+      <p className="mt-2 text-[16px] font-semibold">Claim contradicts an approved fact</p>
+      <p className="mt-2 rounded-[10px] bg-sheet px-3 py-1.5 text-[16px]">clinically proven to erase dark spots in just 7 days</p>
+      <p className="mt-2 text-[16px] leading-[24px]">“7 days” doesn&apos;t match F-112, which says 4 weeks. “Clinically proven” is not approved wording for an in-house study.</p>
+      <p className="mt-2 text-[14px] leading-5 text-muted">CLAIM-01 · Velvra Brand Book v3 p.18 §6.1 · F-112 · owner R&amp;D · valid to 31 Mar 2027</p>
     </div>
   );
 }
 
 function FixFragment() {
   return (
-    <div data-ui className="min-h-[214px] rounded-[16px] bg-sheet p-4 text-ink">
-      <p className="text-[12px] font-medium text-muted">Suggested minimal edit</p>
-      <p className="mt-1 text-[14px] leading-[22px]">
+    <div data-ui className="rounded-[20px] bg-raised p-5 text-ink">
+      <p className="text-[14px] font-medium text-muted">Suggested minimal edit</p>
+      <p className="mt-1 text-[16px] leading-[25px]">
         our new <del className="diff-del">sunblock</del> <ins className="diff-ins">Daily Shield SPF 50</ins> is <del className="diff-del">clinically proven to erase dark spots in just 7 days</del>{" "}
         <ins className="diff-ins">shown in our 4-week study to help skin look more even</ins>
       </p>
-      <p className="mt-2 text-[13px] text-muted">Adds footnote: *In-house study, 40 participants, 2025.</p>
-      <p className="mt-2 text-[13px] text-positive">✓ Intent kept: key message intact and strengthened</p>
-      <p className="mt-1 text-[13px] text-muted">Key message: daily sun protection that evens skin tone</p>
+      <p className="mt-2 text-[14px] text-muted">Adds footnote: *In-house study, 40 participants, 2025.</p>
+      <p className="mt-2 text-[16px] font-medium text-positive">Intent kept: key message intact and strengthened</p>
     </div>
   );
 }
@@ -138,11 +352,11 @@ function HealthFragment() {
   }, []);
   const max = Math.max(1, ...rows.map((r) => r.score));
   return (
-    <div data-ui className="min-h-[214px] rounded-[16px] bg-sheet p-4 text-ink">
-      <p className="text-[12px] font-medium text-muted">Unclear score, seeded demo history</p>
-      <ul className="mt-2 space-y-2">
+    <div data-ui className="rounded-[20px] bg-raised p-5 text-ink">
+      <p className="text-[14px] font-medium text-muted">Unclear score, seeded demo history</p>
+      <ul className="mt-3 space-y-2.5">
         {rows.map((r) => (
-          <li key={r.rule.id} className="grid grid-cols-[88px_1fr_28px] items-center gap-2 text-[13px]">
+          <li key={r.rule.id} className="grid grid-cols-[92px_1fr_28px] items-center gap-2 text-[14px]">
             <span className="font-medium">{r.rule.id}</span>
             <span className="h-2 rounded-full bg-rule">
               <span className={`block h-2 rounded-full ${r.unclear ? "bg-gold-mark" : "bg-[#cfc8b6]"}`} style={{ width: `${(r.score / max) * 100}%` }} />
@@ -152,7 +366,7 @@ function HealthFragment() {
         ))}
       </ul>
       {rows[0] && (
-        <p className="mt-2 text-[13px] leading-5">
+        <p className="mt-3 text-[14px] leading-5">
           {rows[0].rule.id}: {rows[0].dismissed} dismissed and {rows[0].contested} contested in {rows[0].fires} findings.
         </p>
       )}
@@ -163,202 +377,189 @@ function HealthFragment() {
 function HallmarkFragment() {
   const [hash, setHash] = useState<string>("");
   useEffect(() => {
-    void sha256Hex(EXAMPLE).then(setHash);
+    void sha256Hex(EXAMPLES[0][1]).then(setHash);
   }, []);
   return (
-    <div data-ui className="flex min-h-[214px] items-start gap-3 rounded-[16px] bg-sheet p-4 text-ink">
-      <Mark size={34} />
+    <div data-ui className="flex items-start gap-3 rounded-[20px] bg-raised p-5 text-ink">
+      <Mark size={36} />
       <div className="min-w-0">
-        <p className="text-[14px] font-semibold">Hallmark · verified</p>
-        <p className="text-[13px] text-muted">Rulebook v3.2 · Compliance and Reviewer approvals</p>
-        <p className="num mt-1 truncate text-[13px]">sha256 {hash ? `${hash.slice(0, 24)}…` : "…"}</p>
-        <ul className="mt-3 space-y-1 text-[13px] leading-5">
+        <p className="text-[16px] font-semibold">Hallmark · verified</p>
+        <p className="text-[14px] text-muted">Rulebook v3.2 · Compliance and Reviewer approvals</p>
+        <p className="num mt-1 truncate text-[14px]">sha256 {hash ? `${hash.slice(0, 24)}…` : "…"}</p>
+        <ul className="mt-3 space-y-1 text-[14px] leading-5">
           <li>CLAIM-01 · fixed, then approved by Compliance</li>
           <li>CLAIM-03 · fixed, then approved by Compliance</li>
           <li>VOICE-02 · dismissed: “launch-day post, tone agreed”</li>
-          <li>AI: none, rule checks only · 0 redactions</li>
         </ul>
       </div>
     </div>
   );
 }
 
-export function Landing() {
-  useReveal();
+function Features() {
+  const rows: [string, string, React.ReactNode, string][] = [
+    ["Cited findings", "An AI finding must quote real text and cite a real rule, or the evidence verifier drops it and says how many it dropped.", <CitedFragment key="c" />, "420px"],
+    ["Fixes that keep the message", "Fixes replace only their own words, use the fact's approved wording, and are checked against the creator's Intent Card.", <FixFragment key="f" />, "360px"],
+    ["Guideline Health", "Dismissals and contests show which rules people find unclear, with the real examples and a drafted clarification.", <HealthFragment key="h" />, "400px"],
+    ["Hallmarks", "Each approval records the content's hash, the rulebook version, every decision and the AI used, chained to the last.", <HallmarkFragment key="m" />, "380px"],
+  ];
   return (
-    <div className="min-h-screen bg-chrome text-ink">
-      <header className="mx-auto flex h-16 max-w-[1240px] items-center gap-6 px-4 md:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Mark size={28} />
-          <span className="text-[18px] font-semibold">Assay</span>
-        </Link>
-        <nav aria-label="Site" className="ml-auto hidden items-center gap-6 text-[14px] text-muted md:flex">
-          <a href="#path" className="hover:text-ink">
-            Judge path
-          </a>
-          <a href="#checks" className="hover:text-ink">
-            What it checks
-          </a>
-          <Link href="/about" className="hover:text-ink">
-            Trust
-          </Link>
-          <a href="https://github.com/shlok-shinde/assay" className="hover:text-ink">
-            Code
-          </a>
-        </nav>
-        <Link href="/app/new?sample=instagram-launch" className="btn btn-primary ml-auto md:ml-0">
-          Start the demo
-        </Link>
-      </header>
-
-      <main>
-        <section className="mx-auto max-w-[1240px] px-4 pb-24 pt-10 md:px-8 lg:pt-14">
-          <h1 data-reveal className="font-display max-w-[1120px] text-balance text-[34px] leading-[1.04] tracking-[-0.02em] md:text-[56px] lg:text-[76px]">
-            Brand content, tested before it ships.
-          </h1>
-          <div className="mt-8 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,600px)]">
-            <div className="max-w-[560px]">
-              <p data-reveal style={{ ["--i" as string]: 1 }} className="text-[18px] leading-[29px]">
-                Assay checks captions, emails, product pages and creatives against a brand&apos;s approved rules, facts and assets. Every issue quotes its evidence and cites
-                its source, comes with a fix that keeps your message, and goes to a person for the final call.
-              </p>
-              <div data-reveal style={{ ["--i" as string]: 2 }} className="mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/app/new?sample=instagram-launch" className="btn btn-primary !h-11 !px-6 !text-[16px]">
-                  Start the demo, no sign-up
-                </Link>
-                <Link href="/app/new" className="btn btn-secondary !h-11 !px-6 !text-[16px]">
-                  Check your own draft
-                </Link>
+    <section aria-labelledby="beyond-h" className={s.features}>
+      <div className={`${s.wrap} ${s.axis}`}>
+        <h2 id="beyond-h" data-enter className={`${s.display} ${s.h2} ${s.featureHead} ${s.reveal}`}>
+          Beyond a style checker
+        </h2>
+        <div className={s.rows}>
+          {rows.map(([title, text, fragment, w]) => (
+            <div key={title} className={s.row}>
+              <div>
+                <h3 data-enter className={`${s.display} ${s.rowTitle} ${s.reveal}`}>
+                  {title}
+                </h3>
+                <p data-enter className={`${s.rowText} ${s.reveal}`} style={{ ["--i" as string]: 1 }}>
+                  {text}
+                </p>
               </div>
-              <p data-reveal style={{ ["--i" as string]: 3 }} className="mt-4 text-[14px] text-muted">
-                No account. The demo workspace for Velvra, a fictional skincare brand, lives in your browser.
-              </p>
-              <figure data-reveal style={{ ["--i" as string]: 4 }} className="mt-10 max-w-[400px] overflow-hidden rounded-[24px]">
-                {/* eslint-disable-next-line @next/next/no-img-element -- static sample creative */}
-                <img
-                  src="/samples/velvra-monsoon-creative.webp"
-                  width={1080}
-                  height={1080}
-                  alt="The sample Instagram creative: a photo of a cream Daily Shield SPF 50 tube beaded with raindrops on a hot-pink backdrop, a faint pink headline, “Glow like never before”, and a small velvra logo."
-                  className="drift block"
-                />
-              </figure>
-              <p className="mt-2 max-w-[400px] text-[14px] text-muted">The sample creative, made on an AI-generated product photo. Assay finds its 1.7:1 headline, its off-palette pink, its 96 px logo and its missing alt text.</p>
-            </div>
-            <div data-reveal style={{ ["--i" as string]: 2 }}>
-              <LiveChecker />
-            </div>
-          </div>
-        </section>
-
-        <section id="path" aria-labelledby="path-h" className="bg-sheet">
-          <div className="mx-auto grid max-w-[1240px] gap-10 px-4 py-20 md:px-8 lg:grid-cols-[400px_minmax(0,1fr)]">
-            <div>
-              <h2 id="path-h" data-reveal className="font-display text-[34px] leading-[1.1] tracking-[-0.01em] md:text-[44px]">
-                The judge path, in six steps
-              </h2>
-              <p data-reveal className="mt-4 text-[16px] leading-[26px]">
-                About five minutes from a draft to a verified Hallmark. The same checklist stays in the app&apos;s sidebar and ticks itself off as you go.
-              </p>
-              <Link href="/app/new?sample=instagram-launch" className="btn btn-primary mt-6">
-                Begin with the Instagram sample
-              </Link>
-            </div>
-            <ol className="grid gap-x-8 gap-y-6 sm:grid-cols-2">
-              {STEPS.map(([t, d], i) => (
-                <li key={t} data-reveal style={{ ["--i" as string]: i }} className="rounded-[20px] bg-raised p-5">
-                  <p className="text-[18px] font-semibold">{t}</p>
-                  <p className="mt-1.5 text-[16px] leading-[25px]">{d}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
-        <section id="checks" aria-labelledby="checks-h" className="mx-auto max-w-[1240px] px-4 py-20 md:px-8">
-          <h2 id="checks-h" data-reveal className="font-display max-w-[820px] text-[34px] leading-[1.1] tracking-[-0.01em] md:text-[44px]">
-            Six kinds of issue, each with its source
-          </h2>
-          <dl className="mt-10 grid gap-x-10 gap-y-8 md:grid-cols-2 xl:grid-cols-3">
-            {CHECKS.map(([k, id, d], i) => (
-              <div key={k} data-reveal style={{ ["--i" as string]: i % 3 }}>
-                <dt className="flex items-baseline gap-2 text-[18px] font-semibold">
-                  {k} <span className="text-[13px] font-normal text-muted">{id}</span>
-                </dt>
-                <dd className="mt-1.5 text-[16px] leading-[25px]">{d}</dd>
+              <div data-enter className={`${s.fragment} ${s.reveal}`} style={{ ["--w" as string]: w, ["--i" as string]: 2 }}>
+                {fragment}
               </div>
-            ))}
-          </dl>
-        </section>
-
-        <section aria-labelledby="diff-h" className="bg-ink text-white">
-          <div className="mx-auto grid max-w-[1240px] gap-10 px-4 py-20 md:px-8 lg:grid-cols-[400px_minmax(0,1fr)]">
-            <h2 id="diff-h" data-reveal className="font-display text-[34px] leading-[1.1] tracking-[-0.01em] md:text-[44px]">
-              Beyond a style checker
-            </h2>
-            <div className="grid gap-x-8 gap-y-10 md:grid-cols-2">
-              {(
-                [
-                  ["Cited findings", "An AI finding must quote real text and cite a real rule, or the evidence verifier drops it and says how many it dropped.", <CitedFragment key="c" />],
-                  ["Intent-preserving fixes", "Fixes replace only their own words, use the fact's approved wording, and are checked against the creator's Intent Card.", <FixFragment key="f" />],
-                  ["Guideline Health", "Dismissals and contests show which rules are unclear, with the real examples and a drafted clarification.", <HealthFragment key="h" />],
-                  ["Hallmarks", "Each approval records the content's SHA-256, the rulebook version, every decision and the AI used, chained to the last.", <HallmarkFragment key="m" />],
-                ] as const
-              ).map(([t, d, fragment], i) => (
-                <div key={t} data-reveal style={{ ["--i" as string]: i % 2 }}>
-                  <h3 className="text-[18px] font-semibold text-[#f3e6c4]">{t}</h3>
-                  <p className="mt-1.5 text-[16px] leading-[25px] text-[#efe9dc]">{d}</p>
-                  <div className="mt-4">{fragment}</div>
-                </div>
-              ))}
             </div>
-          </div>
-        </section>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-        <section aria-labelledby="trust-h" className="mx-auto grid max-w-[1240px] gap-10 px-4 py-20 md:px-8 lg:grid-cols-[400px_minmax(0,1fr)]">
-          <h2 id="trust-h" data-reveal className="font-display text-[34px] leading-[1.1] tracking-[-0.01em] md:text-[44px]">
-            Built to be trusted
-          </h2>
-          <ul data-reveal className="grid gap-6 text-[16px] leading-[26px] md:grid-cols-2">
-            <li>
-              <span className="font-semibold">It works without AI.</span> Claims, terms, disclaimers, contrast and palette are checked in code. Gemini only judges tone and messaging.
-            </li>
-            <li>
-              <span className="font-semibold">Drafts stay in your browser.</span> Files are read locally; only redacted paragraphs go to the AI route, and Confidential mode sends nothing.
-            </li>
-            <li>
-              <span className="font-semibold">People decide.</span> Nothing is applied automatically, and high-severity findings can&apos;t be dismissed by the creator alone.
-            </li>
-            <li>
-              <span className="font-semibold">Disclosed.</span> The About page lists every service, library and licence, the free-tier data terms, and how the code was written.
-            </li>
-          </ul>
-        </section>
-      </main>
+/** One kind lit at a time, every two seconds, only while the sentence is on screen and the tab is visible. */
+function Proof() {
+  const [lit, setLit] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let timer = 0;
+    let visible = false;
+    const tick = () => {
+      window.clearInterval(timer);
+      if (visible && !document.hidden) timer = window.setInterval(() => setLit((n) => (n + 1) % KINDS.length), 2000);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      tick();
+    });
+    io.observe(el);
+    document.addEventListener("visibilitychange", tick);
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", tick);
+      window.clearInterval(timer);
+    };
+  }, []);
+  return (
+    <section aria-labelledby="kinds-h" className={`${s.proof} ${s.wrap}`}>
+      <div ref={ref} data-enter className={`${s.proofText} ${s.reveal}`}>
+        <h2 id="kinds-h">Six kinds of issue, each with its source: </h2>
+        <p>
+          {KINDS.map(([what, id], i) => (
+            <span key={id}>
+              <span className={s.kind} data-lit={i === lit ? "" : undefined}>
+                {what} <span>({id})</span>
+              </span>
+              {i < KINDS.length - 2 ? ", " : i === KINDS.length - 2 ? ", and " : "."}
+            </span>
+          ))}
+        </p>
+      </div>
+    </section>
+  );
+}
 
-      <footer className="bg-sheet">
-        <div className="mx-auto max-w-[1240px] px-4 py-14 md:px-8">
-          <p className="font-display text-[64px] leading-none tracking-[-0.03em] md:text-[120px]">Assay</p>
-          <div className="mt-8 flex flex-wrap justify-between gap-6 text-[14px] text-muted">
-            <p>
-              Team 24K MAGIC · Shlok Sudhakar Shinde · SPIT, Mumbai · CodeStar 30 Round 2, problem statement by Inkloom AI.
-              <br />
-              Google Gemini runs inside the app. Velvra is fictional.
-            </p>
-            <nav aria-label="Footer" className="flex gap-5">
-              <Link href="/app" className="hover:text-ink">
-                Open the app
-              </Link>
-              <Link href="/about" className="hover:text-ink">
-                About and trust
-              </Link>
-              <a href="https://github.com/shlok-shinde/assay" className="hover:text-ink">
-                Source code
-              </a>
-            </nav>
+function About() {
+  return (
+    <section aria-labelledby="trust-h" className={s.about}>
+      <div className={`${s.wrap} ${s.aboutGrid}`}>
+        <div className={s.facts}>
+          <p>Made in Mumbai</p>
+          <p>CodeStar 30, Round 2</p>
+          <p>
+            <a href={REPO} className={`${s.textLink} underline`}>
+              Source on GitHub
+            </a>
+          </p>
+        </div>
+        <div data-enter className={`${s.bio} ${s.reveal}`}>
+          <span className={s.dropCap} aria-hidden="true">
+            <Mark size={200} />
+          </span>
+          <h2 id="trust-h">Built to be trusted. </h2>
+          <p>
+            It works without AI: claims, terms, disclaimers, contrast and palette are checked in code, and Gemini judges only tone and messaging. Drafts stay in your browser;
+            only redacted paragraphs reach the AI route, and Confidential mode sends nothing. People decide: nothing is applied automatically.
+          </p>
+          <p className={s.soft}>
+            Built by Shlok Sudhakar Shinde, team 24K MAGIC, at SPIT Mumbai.{" "}
+            <Link href="/about" className="text-ink underline">
+              The About page
+            </Link>{" "}
+            lists every service, library and licence, and the free-tier data terms.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Close() {
+  return (
+    <footer className={s.close}>
+      <div className={`${s.wrap} ${s.closeTop} w-full`}>
+        <div>
+          <p data-enter className={`${s.display} ${s.invite} ${s.reveal}`}>
+            Five minutes, draft to Hallmark
+          </p>
+          <div data-enter className={`mt-8 ${s.reveal}`} style={{ ["--i" as string]: 1 }}>
+            <Link href={DEMO} className={`${s.button} ${s.buttonAccent}`}>
+              Start the demo, no sign-up
+            </Link>
           </div>
         </div>
-      </footer>
+        <nav aria-label="Footer" className={s.closeLinks}>
+          <Link href="/app" className={s.textLink}>
+            Open the app
+          </Link>
+          <Link href="/about" className={s.textLink}>
+            About and trust
+          </Link>
+          <a href={REPO} className={s.textLink}>
+            Source code
+          </a>
+        </nav>
+      </div>
+      <div className={`${s.wrap} ${s.credits} w-full`}>
+        <p>Team 24K MAGIC · Shlok Sudhakar Shinde · SPIT, Mumbai · CodeStar 30 Round 2, problem statement by Inkloom AI.</p>
+        <p>Google Gemini runs inside the app. Velvra is fictional; its product photo was generated with Gemini.</p>
+      </div>
+      <p className={s.giant} aria-hidden="true">
+        Assay
+      </p>
+    </footer>
+  );
+}
+
+export function Landing() {
+  const root = useEntrances();
+  return (
+    <div ref={root} className={s.page}>
+      <main>
+        <Hero />
+        <LiveChecker />
+        <Verbs />
+        <Features />
+        <Proof />
+        <About />
+      </main>
+      <Close />
     </div>
   );
 }
