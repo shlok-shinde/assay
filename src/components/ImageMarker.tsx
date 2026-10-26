@@ -64,7 +64,7 @@ export function ImageMarker({
       <img src={image.dataUrl} alt={image.alt || `Creative ${image.fileName} (no alt text yet)`} className="absolute inset-0 h-full w-full" draggable={false} />
       {shown && (
         <div className="absolute rounded-[3px] border-2 border-dashed border-gold" style={pct(shown)} aria-hidden="true">
-          <span className="absolute -top-6 left-0 whitespace-nowrap rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-white">
+          <span className="absolute -top-6 left-0 whitespace-nowrap rounded-full bg-ink px-2 py-0.5 text-[11px] font-medium text-sheet">
             Logo {Math.round(shown.w)} px
           </span>
         </div>
@@ -75,7 +75,7 @@ export function ImageMarker({
           type="button"
           onClick={() => onSelect?.(r.id)}
           aria-label={`Finding ${r.n}`}
-          className={`absolute rounded-[6px] border-2 ${r.severity === "high" ? "border-negative" : r.severity === "medium" ? "border-[#b45309] border-dashed" : "border-faint border-dotted"} ${
+          className={`absolute rounded-[6px] border-2 ${r.severity === "high" ? "border-negative" : r.severity === "medium" ? "border-warn-mark border-dashed" : "border-faint border-dotted"} ${
             selected === r.id ? "ring-2 ring-gold ring-offset-1" : ""
           }`}
           style={pct(r.box)}

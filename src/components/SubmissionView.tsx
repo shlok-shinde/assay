@@ -454,7 +454,7 @@ export function SubmissionView({ id }: { id: string }) {
               <li key={v.id}>
                 <button
                   onClick={() => setDiffFrom(v.n)}
-                  className={`w-full rounded-[14px] border p-3 text-left ${(diffFrom ?? current.n) === v.n ? "border-gold bg-[#fbf6e8]" : "border-line hover:bg-raised"}`}
+                  className={`w-full rounded-[14px] border p-3 text-left ${(diffFrom ?? current.n) === v.n ? "border-gold bg-gold-wash" : "border-line hover:bg-raised"}`}
                 >
                   <p className="text-[14px] font-medium">
                     v{v.n} <span className="font-normal text-muted">· {v.note}</span>

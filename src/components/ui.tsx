@@ -37,7 +37,7 @@ export const CATEGORY_LABEL: Record<Category, string> = {
 const SUB_STATUS: Record<SubmissionStatus, { label: string; cls: string }> = {
   draft: { label: "Draft", cls: "bg-neutral-bg text-neutral-ink" },
   checked: { label: "Checked", cls: "bg-neutral-bg text-neutral-ink" },
-  in_review: { label: "In review", cls: "bg-gold-soft text-[#5c4100]" },
+  in_review: { label: "In review", cls: "bg-gold-soft text-gold-ink" },
   changes_requested: { label: "Changes requested", cls: "bg-warn-bg text-warn-ink border border-warn-line" },
   approved: { label: "Approved", cls: "bg-pos-bg text-pos-ink" },
 };
@@ -100,7 +100,7 @@ export function Notice({ tone = "warn", children }: { tone?: "warn" | "info" | "
     tone === "warn"
       ? "bg-warn-bg border-warn-line text-warn-ink"
       : tone === "error"
-        ? "bg-neg-bg border-[#f5c2bd] text-neg-ink"
+        ? "bg-neg-bg border-neg-line text-neg-ink"
         : "bg-raised border-line text-muted";
   return <div className={`rounded-[12px] border px-4 py-3 text-[13px] leading-5 ${cls}`}>{children}</div>;
 }

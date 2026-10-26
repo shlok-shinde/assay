@@ -31,14 +31,14 @@ function NavItem({ href, icon, label, count, onNavigate }: { href: string; icon:
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={`flex h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 text-sm transition-colors ${
-        active ? "bg-active text-ink font-medium" : "text-muted hover:text-ink hover:bg-[#efebe0]"
+        active ? "bg-active text-ink font-medium" : "text-muted hover:text-ink hover:bg-hover"
       }`}
     >
-      <span className="text-[#6b665a]" aria-hidden="true">
+      <span className="text-faint" aria-hidden="true">
         {icon}
       </span>
       <span className="flex-1 truncate">{label}</span>
-      {count ? <span className="num rounded-full bg-ink px-1.5 text-[11px] font-semibold leading-[18px] text-white">{count}</span> : null}
+      {count ? <span className="num rounded-full bg-ink px-1.5 text-[11px] font-semibold leading-[18px] text-sheet">{count}</span> : null}
     </Link>
   );
 }
@@ -64,7 +64,7 @@ function JudgePath({ onNavigate }: { onNavigate?: () => void }) {
           <li key={s.id}>
             <Link href={s.href} onClick={onNavigate} className={`flex items-start gap-2 text-[12.5px] leading-[18px] ${s.done ? "text-muted" : s === next ? "text-ink font-medium" : "text-muted"} hover:text-ink`}>
               <span
-                className={`mt-[1px] flex h-4 w-4 flex-none items-center justify-center rounded-full ${s.done ? "bg-positive text-white" : s === next ? "border-2 border-gold-mark" : "border border-control"}`}
+                className={`mt-[1px] flex h-4 w-4 flex-none items-center justify-center rounded-full ${s.done ? "bg-positive text-sheet" : s === next ? "border-2 border-gold-mark" : "border border-control"}`}
                 aria-hidden="true"
               >
                 {s.done && <Check size={10} strokeWidth={3} />}
@@ -93,7 +93,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
       <div className="px-1 pt-3">
         <Link href="/" className="flex items-center gap-2.5" onClick={onNavigate}>
           <Mark size={28} />
-          <span className="text-[17px] font-semibold tracking-[-0.01em]">Assay</span>
+          <span className="font-display text-[21px] font-medium tracking-[-0.02em]">Assay</span>
         </Link>
         <div className="mt-3 rounded-[12px] bg-sheet border border-line px-3 py-2">
           <p className="text-[13px] font-medium">Velvra workspace</p>
@@ -135,7 +135,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 function RoleSwitcher() {
   const role = useRole();
   return (
-    <div role="radiogroup" aria-label="Viewing as" className="flex w-max items-center gap-1 rounded-full bg-[#ece7db] p-1">
+    <div role="radiogroup" aria-label="Viewing as" className="flex w-max items-center gap-1 rounded-full bg-track p-1">
       <span className="hidden pl-2 pr-1 text-[12px] text-muted lg:inline">Viewing as</span>
       {ROLES.map((r) => (
         <button
@@ -143,7 +143,7 @@ function RoleSwitcher() {
           role="radio"
           aria-checked={role === r}
           onClick={() => setRole(r)}
-          className={`h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors ${role === r ? "bg-sheet text-ink font-medium shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-muted hover:text-ink"}`}
+          className={`h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors ${role === r ? "bg-ink text-sheet font-medium" : "text-muted hover:text-ink"}`}
         >
           {ROLE_LABEL[r]}
         </button>
@@ -172,7 +172,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-chrome lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
+    <div className="theme-night min-h-screen bg-chrome text-ink lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-screen lg:block">
         <Sidebar />
       </aside>
@@ -183,7 +183,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
           <Link href="/app" className="flex items-center gap-2 lg:hidden">
             <Mark size={22} />
-            <span className="font-semibold">Assay</span>
+            <span className="font-display text-[19px] font-medium tracking-[-0.02em]">Assay</span>
           </Link>
           <div className="hidden flex-1 justify-center lg:flex">
             <RoleSwitcher />
@@ -233,7 +233,7 @@ export function TitleRow({ title, sub, actions, crumb }: { title: ReactNode; sub
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
         {crumb && <div className="mb-1 text-[13px] text-muted">{crumb}</div>}
-        <h1 className="text-[24px] font-semibold leading-8 tracking-[-0.01em]">{title}</h1>
+        <h1 className="font-display text-[24px] font-medium leading-8 tracking-[-0.02em] md:text-[30px] md:leading-9">{title}</h1>
         {sub && <div className="mt-1 max-w-[720px] text-[14px] leading-[22px] text-muted">{sub}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

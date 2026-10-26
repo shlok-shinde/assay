@@ -147,7 +147,7 @@ function RuleRow({ h, max, expanded, onToggle }: { h: RuleHealth; max: number; e
       <td className="py-2.5 pr-2 pl-1">
         <button className="text-left" aria-expanded={expanded} onClick={(e) => (e.stopPropagation(), onToggle())}>
           <Code>{h.rule.id}</Code> <span>{h.rule.title}</span>
-          {h.unclear && <span className="pill ml-2 bg-gold-soft text-[#5c4100]">Unclear</span>}
+          {h.unclear && <span className="pill ml-2 bg-gold-soft text-gold-ink">Unclear</span>}
         </button>
       </td>
       <td className="num py-2.5 text-right">{h.fires}</td>
@@ -156,7 +156,7 @@ function RuleRow({ h, max, expanded, onToggle }: { h: RuleHealth; max: number; e
       <td className="py-2.5 pl-4 pr-1">
         <div className="flex items-center gap-2">
           <div className="h-2 flex-1 rounded-full bg-rule">
-            <div className={`h-2 rounded-full ${h.unclear ? "bg-gold-mark" : "bg-[#cfc8b6]"}`} style={{ width: `${(h.score / max) * 100}%` }} />
+            <div className={`h-2 rounded-full ${h.unclear ? "bg-gold-mark" : "bg-bar"}`} style={{ width: `${(h.score / max) * 100}%` }} />
           </div>
           <span className="num w-7 text-right text-[13px]">{h.score}</span>
         </div>

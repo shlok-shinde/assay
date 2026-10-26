@@ -144,7 +144,7 @@ export function NewDraft() {
                 onClick={() => loadSample(s)}
                 disabled={!!busy}
                 className={`flex h-full w-full flex-col items-start gap-1 rounded-[14px] border p-4 text-left transition-colors ${
-                  draft.sampleId === s.id ? "border-gold bg-[#fbf6e8]" : "border-line hover:border-control hover:bg-raised"
+                  draft.sampleId === s.id ? "border-gold bg-gold-wash" : "border-line hover:border-control hover:bg-raised"
                 }`}
               >
                 <span className="flex w-full items-center justify-between gap-2">

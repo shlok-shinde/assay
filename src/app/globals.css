@@ -29,6 +29,18 @@
   --color-warn-ink: #92400e;
   --color-neutral-bg: #efece4;
   --color-neutral-ink: #3d3a33;
+  /* Roles that used to be hard-coded, so the night theme can flip them too. */
+  --color-on-primary: #ffffff;
+  --color-primary-hover: #2c2820;
+  --color-field: #ffffff;
+  --color-track: #ece7db;
+  --color-hover: #efebe0;
+  --color-bar: #cfc8b6;
+  --color-gold-ink: #5c4100;
+  --color-gold-wash: #fbf6e8;
+  --color-gold-line: #e6d3a3;
+  --color-neg-line: #f5c2bd;
+  --color-warn-mark: #b45309;
 
   --font-sans: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
@@ -41,6 +53,63 @@
 
 :root {
   color-scheme: light;
+}
+
+/* Night: the app shell takes the landing's ground. One warm near-black everywhere, surfaces one
+   lightness step up, gold on data and on the one primary action, status as a hue on a dark tint of
+   itself (tasteskill app-screens §9.3). Screen only, so printed records stay black on white. */
+@media screen {
+  .theme-night {
+    color-scheme: dark;
+    --color-chrome: #17140f;
+    --color-sheet: #1e1a14;
+    --color-raised: #27231c;
+    --color-active: #343027;
+    --color-line: #332e25;
+    --color-rule: #2a251e;
+    --color-control: #564c3b;
+    --color-ink: #f4efe4;
+    --color-muted: #c6bdab;
+    --color-faint: #a59c8b;
+    --color-primary: #d9a520;
+    --color-on-primary: #17140f;
+    --color-primary-hover: #e8b73a;
+    --color-gold: #e2b54a;
+    --color-gold-soft: #3b3018;
+    --color-gold-mark: #d9a520;
+    --color-gold-ink: #f3d58a;
+    --color-gold-wash: #29231a;
+    --color-gold-line: #5c4b24;
+    --color-positive: #5ccf8e;
+    --color-pos-bg: #16301f;
+    --color-pos-ink: #a3ecc0;
+    --color-negative: #f2807c;
+    --color-neg-bg: #3b1d1b;
+    --color-neg-ink: #ffbdb6;
+    --color-neg-line: #6e2f2b;
+    --color-warn-bg: #2e2513;
+    --color-warn-line: #6a5320;
+    --color-warn-ink: #f3c46a;
+    --color-warn-mark: #e0a03a;
+    --color-neutral-bg: #2c271f;
+    --color-neutral-ink: #ddd4c2;
+    --color-field: #15120d;
+    --color-track: #26221b;
+    --color-hover: #2a261f;
+    --color-bar: #5a5242;
+  }
+  body:has(.theme-night) {
+    background: #17140f;
+  }
+  /* Gold is the screen's one primary action (the full-size button in the title row). Actions
+     repeated in rows and forms are small, and take the inverted neutral pill instead. */
+  .theme-night .btn-primary.btn-sm {
+    background: var(--color-ink);
+    color: var(--color-sheet);
+  }
+  .theme-night .btn-primary.btn-sm:hover:not(:disabled) {
+    background: #ffffff;
+  }
 }
 
 html,
@@ -93,10 +162,10 @@ body {
 }
 .btn-primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-on-primary);
 }
 .btn-primary:hover:not(:disabled) {
-  background: #2c2820;
+  background: var(--color-primary-hover);
 }
 .btn-secondary {
   background: var(--color-sheet);
@@ -137,7 +206,7 @@ body {
   padding: 0 14px;
   border-radius: 12px;
   border: 1px solid var(--color-line);
-  background: #fff;
+  background: var(--color-field);
   font-size: 14px;
   color: var(--color-ink);
 }
@@ -180,7 +249,7 @@ textarea.field {
 .hl-medium {
   background: var(--color-warn-bg);
   text-decoration-style: dashed;
-  text-decoration-color: #b45309;
+  text-decoration-color: var(--color-warn-mark);
 }
 .hl-low {
   background: var(--color-neutral-bg);
@@ -205,7 +274,7 @@ textarea.field {
   margin-left: 2px;
   border-radius: 999px;
   background: var(--color-ink);
-  color: #fff;
+  color: var(--color-sheet);
   font-size: 11px;
   font-weight: 600;
   line-height: 1;

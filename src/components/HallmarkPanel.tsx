@@ -25,7 +25,7 @@ export function HallmarkPanel({ hallmark: h }: { hallmark: Hallmark }) {
   };
 
   return (
-    <section aria-labelledby={`hm-${h.id}`} className="rounded-[16px] border border-[#e6d3a3] bg-[#fdf9ee] p-4">
+    <section aria-labelledby={`hm-${h.id}`} className="rounded-[16px] border border-gold-line bg-gold-wash p-4">
       <div className="flex items-start gap-3">
         <Mark size={36} />
         <div className="min-w-0 flex-1">
