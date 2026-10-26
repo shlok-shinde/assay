@@ -3,7 +3,7 @@
 **Brand content, tested before it ships.**
 
 Assay checks captions, emails, product pages, brochures and creatives against a brand's approved rules, facts and assets. Every issue quotes its evidence and cites the rule or fact behind it, comes with the smallest fix that keeps the creator's message, and goes to a person for the final call. Approved versions get a hash-chained **Hallmark**, and **Guideline Health** shows which rules people keep pushing back on.
-
+Live app: https://assay-kappa-three.vercel.app (no sign-in; press "Start the demo, no sign-up")
 CodeStar 30 · Round 2 · Team **24K MAGIC** (solo: Shlok Sudhakar Shinde, SPIT Mumbai) · Problem statement by Inkloom AI.
 
 - **Live app:** _added when the Vercel deployment is live_
