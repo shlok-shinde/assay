@@ -16,8 +16,7 @@ export function ReviewQueue() {
     const subs = new Map((await db.submissions.bulkGet([...new Set(claims.map((c) => c.submissionId))])).filter(Boolean).map((s) => [s!.id, s!]));
     const decided = await Promise.all(
       inReview.map(async (s) => {
-        const versions = await db.versions.where("submissionId").equals(s.id).sortBy("n");
-        const fs = await db.findings.where("versionId").equals(versions[versions.length - 1].id).toArray();
+        const fs = await db.findings.where("submissionId").equals(s.id).toArray();
         return { s, dismissed: fs.filter((f) => f.status === "dismissed" || f.status === "contested").length, pending: fs.filter((f) => f.status === "sent_to_compliance").length };
       }),
     );

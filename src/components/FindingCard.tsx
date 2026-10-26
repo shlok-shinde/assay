@@ -24,7 +24,9 @@ export function FindingCard({
   selected,
   onSelect,
   comments,
+  versionLabel,
 }: {
+  versionLabel?: string;
   finding: Finding;
   n: number;
   rule?: Rule;
@@ -65,7 +67,7 @@ export function FindingCard({
 
   const editable = status === "draft" || status === "checked" || status === "changes_requested";
   const open = f.status === "open" || f.status === "reopened";
-  const creatorCanAct = role === "creator" && editable && open;
+  const creatorCanAct = role === "creator" && editable && open && !versionLabel;
   const highLocked = f.severity === "high" && role === "creator";
   const origin =
     f.origin === "ai"
@@ -93,7 +95,10 @@ export function FindingCard({
         <span className="text-[13px] font-medium">{CATEGORY_LABEL[f.category]}</span>
         <SeverityPill severity={f.severity} />
         {f.suggestion && <span className="pill bg-neutral-bg text-neutral-ink">Suggestion</span>}
-        <span className="ml-auto text-[12px] text-muted">{origin}</span>
+        <span className="ml-auto text-[12px] text-muted">
+          {versionLabel ? `${versionLabel} · ` : ""}
+          {origin}
+        </span>
       </header>
       <h3 className="mt-2 text-[15px] font-semibold leading-[22px]">{f.title}</h3>
       {f.cached && <p className="mt-0.5 text-[12px] text-muted">Cached AI result, {f.cached.model}, {fmtTime(f.cached.at)}</p>}
@@ -203,7 +208,7 @@ export function FindingCard({
             Send to Compliance
           </button>
         )}
-        {role === "creator" && editable && (f.status === "accepted" || f.status === "edited" || f.status === "dismissed" || f.status === "contested" || f.status === "sent_to_compliance") && (
+        {role === "creator" && editable && !versionLabel && (f.status === "accepted" || f.status === "edited" || f.status === "dismissed" || f.status === "contested" || f.status === "sent_to_compliance") && (
           <button className="btn btn-ghost btn-sm" disabled={busy} onClick={() => act(() => resolveFinding(f.id, "open", role))}>
             Undo
           </button>

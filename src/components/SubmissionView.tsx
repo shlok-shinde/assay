@@ -33,11 +33,14 @@ export function SubmissionView({ id }: { id: string }) {
     const raw = await db.findings.where("versionId").equals(current.id).toArray();
     const order = new Map((check?.findingIds ?? []).map((fid, i) => [fid, i]));
     const findings = raw.sort((a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999));
+    const earlier = (await db.findings.where("submissionId").equals(id).toArray()).filter(
+      (f) => f.versionId !== current.id && f.status !== "superseded" && f.status !== "open" && f.status !== "reopened",
+    );
     const comments = await db.comments.where("submissionId").equals(id).sortBy("at");
     const hallmark = (await db.hallmarks.where("submissionId").equals(id).toArray()).sort((a, b) => b.seq - a.seq)[0];
     const rulebook = (await db.rulebooks.toArray()).find((r) => r.version === sub.rulebookVersion);
     const audit = (await db.audit.filter((a) => a.target === id).toArray()).sort((a, b) => b.at.localeCompare(a.at));
-    return { sub, versions, current, check, findings, comments, hallmark, rulebook, audit };
+    return { sub, versions, current, check, findings, earlier, comments, hallmark, rulebook, audit };
   }, [id]);
 
   const [tab, setTab] = useState<Tab>("findings");
@@ -50,7 +53,7 @@ export function SubmissionView({ id }: { id: string }) {
   const [diffFrom, setDiffFrom] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const numbers = useMemo(() => new Map((data?.findings ?? []).map((f, i) => [f.id, i + 1])), [data?.findings]);
+  const numbers = useMemo(() => new Map([...(data?.findings ?? []), ...(data?.earlier ?? [])].map((f, i) => [f.id, i + 1])), [data?.findings, data?.earlier]);
 
   if (data === undefined) return <div className="p-6 text-sm text-muted">Loading the draft…</div>;
   if (data === null)
@@ -62,11 +65,11 @@ export function SubmissionView({ id }: { id: string }) {
       </div>
     );
 
-  const { sub, versions, current, check, findings, comments, hallmark, rulebook, audit } = data;
+  const { sub, versions, current, check, findings, earlier, comments, hallmark, rulebook, audit } = data;
   const rules = new Map((rulebook?.snapshot.rules ?? []).map((r) => [r.id, r]));
   const facts = new Map((rulebook?.snapshot.facts ?? []).map((f) => [f.id, f]));
   const { openHigh, staged, canSubmit } = blockers(findings);
-  const pendingCompliance = findings.filter((f) => f.status === "sent_to_compliance");
+  const pendingCompliance = [...findings, ...earlier].filter((f) => f.status === "sent_to_compliance");
   const editable = sub.status === "draft" || sub.status === "checked" || sub.status === "changes_requested";
   const shown = filter === "todo" ? findings.filter((f) => TODO.has(f.status)) : findings;
   const ruleChecks = findings.filter((f) => f.origin === "rule").length;
@@ -390,6 +393,32 @@ export function SubmissionView({ id }: { id: string }) {
                   comments={comments.filter((c) => c.findingId === f.id)}
                 />
               ))}
+              {earlier.length > 0 && (
+                <div className="pt-3">
+                  <h3 className="text-[14px] font-semibold">Fixed or decided in earlier versions</h3>
+                  <p className="text-[13px] text-muted">Claims fixed before submission still go to Compliance for sign-off.</p>
+                  <div className="mt-3 space-y-3">
+                    {earlier.map((f) => (
+                      <FindingCard
+                        key={f.id}
+                        finding={f}
+                        n={numbers.get(f.id)!}
+                        rule={rules.get(f.ruleId)}
+                        fact={f.factId ? facts.get(f.factId) : undefined}
+                        relatedRules={f.relatedRuleIds.map((r) => rules.get(r)).filter((r): r is NonNullable<typeof r> => !!r)}
+                        text={versions.find((v) => v.id === f.versionId)?.text ?? ""}
+                        intent={sub.intent}
+                        role={role}
+                        status={sub.status}
+                        selected={selected === f.id}
+                        onSelect={() => setSelected(f.id)}
+                        comments={comments.filter((c) => c.findingId === f.id)}
+                        versionLabel={`v${versions.find((v) => v.id === f.versionId)?.n}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
               {staged.length > 0 && role === "creator" && editable && (
                 <p className="text-[13px] text-muted">
                   {staged.filter(isStaged).length} fix{staged.length === 1 ? "" : "es"} accepted. Apply them to create v{current.n + 1}; Assay re-checks only what changed.

@@ -350,10 +350,12 @@ export async function submitForReview(submissionId: string) {
   const findings = await db.findings.where("versionId").equals(current.id).toArray();
   if (!blockers(findings).canSubmit) throw new Error("Resolve or route every high-severity finding first.");
   await db.submissions.update(submissionId, { status: "in_review", updatedAt: nowIso() });
-  // Claim findings always go to Compliance, even when the creator accepted a fix.
-  for (const f of findings.filter((x) => x.category === "claim" && x.status === "open")) {
-    await db.findings.update(f.id, { status: "sent_to_compliance" });
-  }
+  // Claim findings always go to Compliance, including claims the creator already fixed in an earlier version.
+  const all = await db.findings.where("submissionId").equals(submissionId).toArray();
+  const claims = all.filter(
+    (x) => x.category === "claim" && ((x.versionId === current.id && x.status === "open") || (x.versionId !== current.id && (x.status === "accepted" || x.status === "edited"))),
+  );
+  for (const f of claims) await db.findings.update(f.id, { status: "sent_to_compliance" });
   await audit("creator", "submitted for review", submissionId, `v${current.n}`);
 }
 
@@ -375,7 +377,7 @@ export async function reviewerDecision(submissionId: string, approve: boolean, n
   const sub = (await db.submissions.get(submissionId))!;
   const versions = await db.versions.where("submissionId").equals(submissionId).sortBy("n");
   const current = versions[versions.length - 1];
-  const findings = await db.findings.where("versionId").equals(current.id).toArray();
+  const findings = (await db.findings.where("submissionId").equals(submissionId).toArray()).filter((f) => f.status !== "superseded");
   await db.approvals.add({
     id: uid("ap"),
     submissionId,

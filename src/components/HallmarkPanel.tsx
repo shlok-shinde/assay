@@ -58,7 +58,7 @@ export function HallmarkPanel({ hallmark: h }: { hallmark: Hallmark }) {
         </div>
         <div className="flex justify-between gap-3">
           <dt className="text-muted">Approvals</dt>
-          <dd className="text-right">{h.approvals.map((a) => a.by).join(", ") || "—"}</dd>
+          <dd className="text-right">{[...new Set(h.approvals.map((a) => a.by))].join(", ") || "—"}</dd>
         </div>
         <div className="flex justify-between gap-3">
           <dt className="text-muted">AI used</dt>
