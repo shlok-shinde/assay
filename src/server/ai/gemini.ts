@@ -1,6 +1,8 @@
 // Gemini over REST (models/{model}:generateContent) with JSON output.
 // Order of attempts: every available key on the primary model, then the next
-// model in the fallback chain, all inside one time budget.
+// model in the fallback chain, all inside one time budget. A 429 or 401/403 is
+// about the key, so the next key is tried; a 404 or 5xx is about the model
+// (retired, or overloaded for everyone), so the next model is tried.
 import type { KeyPool } from "./keys";
 
 // The chain ends on Google's "-latest" aliases, so a renamed or retired model
@@ -36,6 +38,11 @@ export interface GeminiOptions {
 
 const log = (msg: string) => console.info(`[ai] ${msg}`);
 
+/** One slow attempt must leave time for the fallbacks inside the budget. */
+const ATTEMPT_MS = 8_000;
+/** Thinking adds seconds per call; these tasks are short classification and rewriting. */
+const THINKING = { judge: "low", lite: "minimal" } as const;
+
 /** Parses Gemini's 429 body: retryDelay ("32s") and whether a per-day quota ran out. */
 export function parse429(body: unknown): { retryMs?: number; daily: boolean } {
   const details: { "@type"?: string; retryDelay?: string; violations?: { quotaId?: string; quotaMetric?: string }[] }[] =
@@ -63,6 +70,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
 
   for (const model of modelChain(call.tier, opts.env)) {
     let useSchema = !!call.schema;
+    let useThinking = true;
     const keys = pool.order();
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
@@ -75,6 +83,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
           temperature: 0.2,
           responseMimeType: "application/json",
           ...(useSchema ? { responseJsonSchema: call.schema } : {}),
+          ...(useThinking ? { thinkingConfig: { thinkingLevel: THINKING[call.tier] } } : {}),
         },
       };
       let res: Response;
@@ -83,7 +92,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
           method: "POST",
           headers: { "content-type": "application/json", "x-goog-api-key": key.value },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(Math.min(remaining, 15_000)),
+          signal: AbortSignal.timeout(Math.min(remaining, ATTEMPT_MS)),
         });
       } catch (e) {
         log(`model=${model} key=${key.label} network-or-timeout ${(e as Error).name}`);
@@ -102,7 +111,9 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
         }
       }
       const errBody = await res.json().catch(() => null);
-      log(`model=${model} key=${key.label} status=${res.status}`);
+      // Google's error message names the field it rejected; it never echoes the prompt.
+      const why = res.status === 400 ? ` ${String((errBody as { error?: { message?: string } })?.error?.message ?? "").slice(0, 160)}` : "";
+      log(`model=${model} key=${key.label} status=${res.status}${why}`);
       if (res.status === 429) {
         sawRateLimit = true;
         pool.rateLimited(key.label, parse429(errBody));
@@ -112,10 +123,12 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
         pool.invalid(key.label);
         continue;
       }
-      if (res.status === 404) break; // model not available: next model in the chain
-      if (res.status === 400 && useSchema) {
-        // Older models reject responseJsonSchema: retry this key once without it (output is still zod-validated).
-        useSchema = false;
+      if (res.status === 404 || res.status >= 500) break; // retired or overloaded: next model in the chain
+      if (res.status === 400 && (useThinking || useSchema)) {
+        // A model may reject thinkingConfig or responseJsonSchema: retry this key without one, thinking first
+        // (the output is still zod-validated either way).
+        if (useThinking) useThinking = false;
+        else useSchema = false;
         i--;
         continue;
       }

@@ -41,7 +41,7 @@ test.describe("judge path", () => {
     await tone.getByRole("button", { name: "Confirm" }).click();
     await page.getByRole("button", { name: "Apply 3 fixes" }).click();
     await expect(page.getByText(/Intent kept: key message intact and strengthened/).first()).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByRole("tab", { name: /Versions 2/ })).toBeVisible();
+    await expect(page.getByRole("tab", { name: /Versions 2/ })).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText("Dismissed by Riya (agency intern)")).toBeVisible();
     mark("fixes");
 
