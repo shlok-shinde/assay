@@ -7,3 +7,4 @@ Nothing in this repository was written before the window opened. Times below are
 |---|---|
 | 26 Oct 16:51 | Scaffolded with `create-next-app@16.4.3` (TypeScript, Tailwind v4, App Router). |
 | 26 Oct 16:53 | Added dependencies: zod, Dexie, pdfjs-dist, mammoth, tesseract.js, diff-match-patch, culori, lucide-react, @google/genai, Vitest browser mode, Playwright, axe. |
+| 26 Oct 17:08 | Domain types, the fictional Velvra Brand Kit (rulebook v3.2, Claim Ledger, terms, palette), and the TypeScript check engine: rule checks, claim matching (BM25 + code comparison of numbers, periods, wording and validity), merge and rank, evidence verifier, redaction, fixes with intent check, SHA-256 Hallmarks, Guideline Health scoring, visual checks (k-means, ΔE2000, OCR contrast). |

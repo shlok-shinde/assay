@@ -57,6 +57,9 @@ importers:
       '@tailwindcss/turbopack':
         specifier: ^4
         version: 4.3.3
+      '@tesseract.js-data/eng':
+        specifier: 1.0.0
+        version: 1.0.0
       '@types/culori':
         specifier: ^4.0.1
         version: 4.0.1
@@ -991,6 +994,9 @@ packages:
 
   '@tailwindcss/turbopack@4.3.3':
     resolution: {integrity: sha512-FgL4wRgItNdXcDjcgYUSd59gNsWqNVK4GotjZimZMmt7OOIkRNqH2QEUcRXLdBDXvwTsi5rkYxDxzfrFUkmObQ==}
+
+  '@tesseract.js-data/eng@1.0.0':
+    resolution: {integrity: sha512-mbTumm6KQPUHyzTPQaF3ObXYnx0SqqfV2nabqFVQBwD6Kl7PhGSLSzOlfFTWy0P3BjghaSKA2W9GB19Jk+ZcTg==}
 
   '@tybys/wasm-util@0.10.4':
     resolution: {integrity: sha512-W3c4gRigFS0T/Ma4qIYF3GDAc5AQdHb1yL5znJT1Zv1YaD9Kitx656wBjvr19qbiosmZT8lWDM5BEMynUqX65A==}
@@ -3672,6 +3678,8 @@ snapshots:
       '@tailwindcss/node': 4.3.3
       '@tailwindcss/oxide': 4.3.3
       tailwindcss: 4.3.3
+
+  '@tesseract.js-data/eng@1.0.0': {}
 
   '@tybys/wasm-util@0.10.4':
     dependencies:
