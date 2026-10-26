@@ -141,7 +141,7 @@ test.describe("uploads and admin", () => {
     for (let i = 1; i < n; i++) await page.getByRole("button", { name: "Reject" }).first().click();
     await expect(page.getByText("No imported rules are waiting.")).toBeVisible();
     await page.getByRole("button", { name: "Publish v3.3" }).click();
-    await expect(page.getByText("Published rulebook v3.3")).toBeVisible();
+    await expect(page.getByText(/^Published rulebook v3\.3\. New drafts/)).toBeVisible();
   });
 
   test("an AI rate limit falls back to rule checks with a banner", async ({ page }) => {
