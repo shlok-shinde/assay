@@ -110,14 +110,14 @@ export function SubmissionView({ id }: { id: string }) {
     const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
     if (sub.status === "approved") {
       const all = [...findings, ...earlier];
-      const fixed = all.filter((f) => f.status === "accepted" || f.status === "edited").length;
-      const waived = all.filter((f) => f.status === "waived").length;
-      const decided = all.length - fixed - waived;
-      return [
-        `Approved and hallmarked. ${plural(fixed, "finding")} fixed, ${decided} decided by a person`,
-        waived ? `, ${waived} approved while still open (the reviewer's reason is in the Hallmark)` : "",
-        ".",
-      ].join("");
+      const count = (...st: string[]) => all.filter((f) => st.includes(f.status)).length;
+      const parts = [
+        [count("accepted", "edited"), "fixed"],
+        [count("compliance_approved"), "cleared by Compliance"],
+        [count("dismissed", "contested"), "dismissed or contested with a reason"],
+        [count("waived"), "approved while still open (the reviewer's reason is in the Hallmark)"],
+      ].filter(([n]) => n) as [number, string][];
+      return `Approved and hallmarked. ${parts.map(([n, what], i) => `${i ? n : plural(n, "finding")} ${what}`).join(", ") || "No findings"}.`;
     }
     if (sub.status === "in_review") {
       if (pendingCompliance.length) return `In review. ${plural(pendingCompliance.length, "claim")} wait for Compliance before the reviewer can approve.`;
