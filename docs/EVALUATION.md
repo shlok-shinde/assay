@@ -62,20 +62,19 @@ There was no Gemini key on the machine during the build, so the server's AI path
 
 This proves the plumbing, not the quality of Gemini's judgments, which will be checked on the live deployment once the key is added.
 
-## 5. Timing (scripted, not human)
+## 5. Timing (machine, not human)
 
-From the E2E judge-path test on a local production build (26 Oct 2026, one run), milliseconds from the start of the test:
+On the live site with real Gemini (27 Oct 2026, after the fixes in the build log's 17:2x entry), measured in the browser from the click:
 
-| Step reached | ms |
+| Step | Time |
 |---|---:|
-| Check finished (copy and creative, including OCR) | 4,518 |
-| Findings read and asserted | 4,757 |
-| Fixes applied and re-checked | 5,680 |
-| Submitted | 5,952 |
-| Approved, Hallmark verified | 6,788 |
-| Guideline Health open | 6,989 |
+| Rule findings on screen after Run check (copy and creative, OCR included) | 2.6 s |
+| AI judgment pass finished (findings merged into the list) | +3.4 s |
+| Re-check after applying fixes: rule checks / AI pass | 0.2 s / 1.3 s |
 
-These are machine timings. They show the app does not make a person wait, not how long a person takes.
+The scripted judge path (`E2E_BASE_URL=https://assay-kappa-three.vercel.app E2E_LIVE=1`, a fresh Chromium with an empty cache, so the 7 MB OCR engine and data are downloaded) took 14.7 s, 24.7 s and 28.6 s end to end over three runs; most of the spread is Gemini. Before the fixes the first check took 23.4 s and the re-check timed out.
+
+These are machine timings. They show how long the app makes a person wait, not how long a person takes.
 
 ## 6. Design and accessibility review (AI-assisted)
 
