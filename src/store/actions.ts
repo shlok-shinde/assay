@@ -17,8 +17,9 @@ import type {
   Submission,
   Version,
 } from "@/lib/types";
-import { runCheck, type CacheStore } from "@/engine/pipeline";
-import { applyFixes, intentCheck } from "@/engine/fix";
+import { runCheck, type CacheStore, type CheckInput } from "@/engine/pipeline";
+import type { RawFinding } from "@/engine/types";
+import { applyFixes, intentCheck, intentVerdict } from "@/engine/fix";
 import { hashJson, sha256Hex } from "@/engine/hash";
 import { GENESIS, sealHallmark, verifyHallmark } from "@/engine/hallmark";
 import { pipelineAi, aiStatus, aiTask } from "@/lib/ai-client";
@@ -181,14 +182,12 @@ async function visualCheck(image: ImageAsset, kit: KitContent) {
 
 const CARRY: FindingStatus[] = ["dismissed", "contested", "sent_to_compliance", "compliance_approved"];
 
-export async function checkVersion(submissionId: string, versionId: string): Promise<string> {
+async function checkInput(submissionId: string, versionId: string): Promise<CheckInput> {
   const sub = (await db.submissions.get(submissionId))!;
   const version = (await db.versions.get(versionId))!;
   const kit = await getKit();
   const rb = (await db.rulebooks.where("kitId").equals(KIT_ID).toArray()).find((r) => r.version === sub.rulebookVersion) ?? (await latestRulebook());
-  const ai = kit.confidential ? null : await pipelineAi();
-  const startedAt = nowIso();
-  const out = await runCheck({
+  return {
     text: version.text,
     channel: sub.channel,
     audience: sub.audience,
@@ -199,26 +198,33 @@ export async function checkVersion(submissionId: string, versionId: string): Pro
     today: todayIso(),
     pages: version.pages,
     image: version.image,
-    ai,
+    ai: kit.confidential ? null : await pipelineAi(),
     cache: cacheStore,
     visual: visualCheck,
-  });
+  };
+}
 
-  // Decisions already made on the previous version carry over to the same issue.
+/** Gives a raw finding its id; a decision already made on an earlier version carries over to the same issue. */
+function stamp(f: RawFinding, previous: Finding[], ids: { checkId: string; submissionId: string; versionId: string }): Finding {
+  const prior = previous.find((p) => p.ruleId === f.ruleId && p.quote.toLowerCase() === f.quote.toLowerCase() && CARRY.includes(p.status));
+  return { ...f, id: uid("f"), ...ids, status: prior?.status ?? "open", resolution: prior?.resolution };
+}
+
+const sameIssue = (a: RawFinding, b: RawFinding) => a.ruleId === b.ruleId && a.start === b.start && a.end === b.end && a.quote.toLowerCase() === b.quote.toLowerCase();
+
+/**
+ * Stores the rule checks (and any cached AI results) at once, then runs the AI for the paragraphs that
+ * changed in the background (resumeAi), so nobody waits on a slow model to see the rule findings.
+ */
+export async function checkVersion(submissionId: string, versionId: string): Promise<string> {
+  const sub = (await db.submissions.get(submissionId))!;
+  const input = await checkInput(submissionId, versionId);
+  const startedAt = nowIso();
+  const out = await runCheck({ ...input, deferAi: true });
+
   const previous = await db.findings.where("submissionId").equals(submissionId).filter((f) => f.versionId !== versionId).toArray();
   const checkId = uid("chk");
-  const findings: Finding[] = out.findings.map((f) => {
-    const prior = previous.find((p) => p.ruleId === f.ruleId && p.quote.toLowerCase() === f.quote.toLowerCase() && CARRY.includes(p.status));
-    return {
-      ...f,
-      id: uid("f"),
-      checkId,
-      submissionId,
-      versionId,
-      status: prior?.status ?? "open",
-      resolution: prior?.resolution,
-    };
-  });
+  const findings = out.findings.map((f) => stamp(f, previous, { checkId, submissionId, versionId }));
   await db.transaction("rw", [db.checks, db.findings, db.submissions], async () => {
     // Open findings on older versions are replaced by this check.
     await db.findings
@@ -232,7 +238,7 @@ export async function checkVersion(submissionId: string, versionId: string): Pro
       id: checkId,
       submissionId,
       versionId,
-      rulebookVersion: rb.version,
+      rulebookVersion: input.rulebookVersion,
       mode: out.mode,
       banner: out.banner,
       startedAt,
@@ -246,11 +252,88 @@ export async function checkVersion(submissionId: string, versionId: string): Pro
       relocated: out.relocated,
       claims: out.claims,
       findingIds: findings.map((f) => f.id),
+      aiPending: out.aiPending || undefined,
     });
     if (sub.status === "draft" || sub.status === "changes_requested") await db.submissions.update(submissionId, { status: "checked", updatedAt: nowIso() });
   });
-  await audit("creator", "ran check", submissionId, `${findings.length} findings, ${out.mode}, ${out.ms} ms`);
+  await audit("creator", "ran check", submissionId, `${findings.length} findings, ${out.mode}, ${out.ms} ms${out.aiPending ? ", AI judgment running" : ""}`);
+  if (out.aiPending) void resumeAi(checkId);
   return checkId;
+}
+
+const inflight = new Map<string, Promise<void>>();
+
+/** Runs (or joins) the AI pass of a check whose rule checks are already stored. */
+export function resumeAi(checkId: string): Promise<void> {
+  let p = inflight.get(checkId);
+  if (!p) {
+    p = completeAi(checkId)
+      .catch(() => db.checks.update(checkId, { aiPending: false, mode: "rules-only", banner: "The AI service is unavailable right now. Showing rule checks only." }).then(() => undefined))
+      .finally(() => inflight.delete(checkId));
+    inflight.set(checkId, p);
+  }
+  return p;
+}
+
+async function completeAi(checkId: string) {
+  const check = await db.checks.get(checkId);
+  if (!check?.aiPending) return;
+  const { submissionId, versionId } = check;
+  const t0 = performance.now();
+  const out = await runCheck(await checkInput(submissionId, versionId));
+  const aiMs = Math.round(performance.now() - t0);
+
+  let added = 0;
+  await db.transaction("rw", [db.checks, db.findings, db.versions], async () => {
+    // A newer version or check replaced this one while the AI ran: its findings no longer count.
+    const versions = await db.versions.where("submissionId").equals(submissionId).sortBy("n");
+    const newest = (await db.checks.where("versionId").equals(versionId).toArray()).sort((a, b) => a.startedAt.localeCompare(b.startedAt)).pop();
+    if (versions[versions.length - 1]?.id !== versionId || newest?.id !== checkId) {
+      await db.checks.update(checkId, { aiPending: false });
+      return;
+    }
+    // Same issue: keep the stored finding (and any decision on it), refresh an open one's wording.
+    // New issue: add it. An open finding the AI pass no longer produces is replaced.
+    const stored = await db.findings.where("versionId").equals(versionId).toArray();
+    const previous = await db.findings.where("submissionId").equals(submissionId).filter((f) => f.versionId !== versionId).toArray();
+    const used = new Set<string>();
+    const order: string[] = [];
+    const fresh: Finding[] = [];
+    for (const f of out.findings) {
+      const match = stored.find((s) => !used.has(s.id) && sameIssue(s, f));
+      if (!match) {
+        const nf = stamp(f, previous, { checkId, submissionId, versionId });
+        fresh.push(nf);
+        order.push(nf.id);
+        continue;
+      }
+      used.add(match.id);
+      order.push(match.id);
+      if (match.status === "open") await db.findings.put({ ...f, id: match.id, checkId, submissionId, versionId, status: "open" });
+    }
+    for (const s of stored) {
+      if (used.has(s.id)) continue;
+      if (s.status === "open") await db.findings.delete(s.id);
+      else order.push(s.id);
+    }
+    if (fresh.length) await db.findings.bulkAdd(fresh);
+    added = fresh.length;
+    await db.checks.update(checkId, {
+      mode: out.mode,
+      banner: out.banner,
+      aiCalls: check.aiCalls + out.aiCalls,
+      aiModel: out.aiModel,
+      redactions: out.redactions,
+      segmentsReused: out.segmentsReused,
+      dropped: out.dropped,
+      relocated: out.relocated,
+      claims: out.claims,
+      findingIds: order,
+      aiPending: false,
+      aiMs,
+    });
+  });
+  await audit("creator", "AI judgment finished", submissionId, `${out.mode === "rules+ai" ? `${added} new finding${added === 1 ? "" : "s"}` : out.banner ?? out.mode}, ${aiMs} ms`);
 }
 
 // ---- Findings -----------------------------------------------------------
@@ -294,16 +377,19 @@ export async function applyStagedFixes(submissionId: string): Promise<string> {
     staged.map((f) => ({ id: f.id, start: f.start, end: f.end, fix: f.fix, editedText: f.status === "edited" ? f.resolution?.editedText : undefined })),
   );
   const heuristic = intentCheck(current.text, result.text, sub.intent);
-  let aiIntent: NonNullable<Version["intentCheck"]>["ai"];
   const kit = await getKit();
-  if (!kit.confidential && (await aiStatus())?.aiConfigured) {
-    const r = await aiTask("intentCheck", {
-      before: current.text.slice(0, 3900),
-      after: result.text.slice(0, 3900),
-      intent: { goal: sub.intent.goal, keyMessage: sub.intent.keyMessage, cta: sub.intent.cta },
-    });
-    if (r.ok) aiIntent = { ...r.data, model: r.model };
-  }
+  // The AI's reading of the intent runs alongside the re-check; the version shows the term check until it lands.
+  const aiIntent =
+    !kit.confidential && (await aiStatus())?.aiConfigured
+      ? aiTask("intentCheck", {
+          before: current.text.slice(0, 3900),
+          after: result.text.slice(0, 3900),
+          intent: { goal: sub.intent.goal, keyMessage: sub.intent.keyMessage, cta: sub.intent.cta },
+          changes: staged
+            .filter((f) => result.applied.includes(f.id))
+            .map((f) => ({ rule: `${f.ruleId}: ${f.title}`.slice(0, 200), before: f.quote.slice(0, 500), after: (f.resolution?.editedText ?? f.fix?.replacement ?? "").slice(0, 500) })),
+        })
+      : null;
   const id = uid("v");
   await db.versions.add({
     id,
@@ -316,12 +402,15 @@ export async function applyStagedFixes(submissionId: string): Promise<string> {
     createdAt: nowIso(),
     author: personFor("creator"),
     note: `Applied ${result.applied.length} fix${result.applied.length === 1 ? "" : "es"}${result.conflicts.length ? `; ${result.conflicts.length} skipped (overlapping)` : ""}`,
-    intentCheck: { kept: heuristic.kept && (aiIntent?.kept ?? true), summary: heuristic.summary, ai: aiIntent },
+    intentCheck: intentVerdict(heuristic),
     appliedFindingIds: result.applied,
   });
   for (const fid of result.conflicts) await db.findings.update(fid, { status: "open" });
   await audit("creator", "applied fixes", submissionId, `v${current.n + 1}: ${heuristic.summary}`);
-  await checkVersion(submissionId, id);
+  await Promise.all([
+    checkVersion(submissionId, id),
+    aiIntent?.then((r) => (r.ok ? db.versions.update(id, { intentCheck: intentVerdict(heuristic, { ...r.data, model: r.model }) }) : undefined)),
+  ]);
   return id;
 }
 
@@ -351,6 +440,8 @@ export async function submitForReview(submissionId: string) {
   const versions = await db.versions.where("submissionId").equals(submissionId).sortBy("n");
   const current = versions[versions.length - 1];
   const findings = await db.findings.where("versionId").equals(current.id).toArray();
+  const check = (await db.checks.where("versionId").equals(current.id).toArray()).sort((a, b) => a.startedAt.localeCompare(b.startedAt)).pop();
+  if (!check || check.aiPending) throw new Error("The check on this version is still running; submit when it finishes.");
   if (!blockers(findings).canSubmit) throw new Error("Resolve or route every high-severity finding first.");
   await db.submissions.update(submissionId, { status: "in_review", updatedAt: nowIso() });
   // Claim findings always go to Compliance, including claims the creator already fixed in an earlier version.
@@ -376,11 +467,27 @@ export async function hallmarkContent(v: Version): Promise<string> {
   return v.image ? `${v.text}\n\n[image ${v.image.fileName} sha256:${await sha256Hex(v.image.dataUrl)} alt:${JSON.stringify(v.image.alt)}]` : v.text;
 }
 
-export async function reviewerDecision(submissionId: string, approve: boolean, note: string): Promise<string | null> {
+/** Findings on the current version that nobody has fixed, decided or routed. */
+export const stillOpen = (findings: Finding[]) => findings.filter((f) => f.status === "open" || f.status === "reopened");
+
+/**
+ * Approving writes a Hallmark, so it never passes over an open finding silently: each one needs the
+ * reviewer's reason (`waiveReason`), which is stored on the finding and sealed into the Hallmark.
+ */
+export async function reviewerDecision(submissionId: string, approve: boolean, note: string, waiveReason?: string): Promise<string | null> {
   const sub = (await db.submissions.get(submissionId))!;
   const versions = await db.versions.where("submissionId").equals(submissionId).sortBy("n");
   const current = versions[versions.length - 1];
-  const findings = (await db.findings.where("submissionId").equals(submissionId).toArray()).filter((f) => f.status !== "superseded");
+  let findings = (await db.findings.where("submissionId").equals(submissionId).toArray()).filter((f) => f.status !== "superseded");
+  if (approve) {
+    if (findings.some((f) => f.status === "sent_to_compliance")) throw new Error("Compliance still has claims to decide.");
+    const open = stillOpen(findings);
+    if (open.length && !waiveReason?.trim()) {
+      throw new Error(`${open.length} finding${open.length === 1 ? " is" : "s are"} still open. Request changes, or give a reason to approve with ${open.length === 1 ? "it" : "them"} open.`);
+    }
+    for (const f of open) await resolveFinding(f.id, "waived", "reviewer", { reason: waiveReason!.trim() });
+    if (open.length) findings = (await db.findings.where("submissionId").equals(submissionId).toArray()).filter((f) => f.status !== "superseded");
+  }
   await db.approvals.add({
     id: uid("ap"),
     submissionId,
@@ -397,7 +504,6 @@ export async function reviewerDecision(submissionId: string, approve: boolean, n
     await audit("reviewer", "requested changes", submissionId, note);
     return null;
   }
-  if (findings.some((f) => f.status === "sent_to_compliance")) throw new Error("Compliance still has claims to decide.");
 
   const rb = (await db.rulebooks.toArray()).find((r) => r.version === sub.rulebookVersion) ?? (await latestRulebook());
   const checks = await db.checks.where("submissionId").equals(submissionId).toArray();

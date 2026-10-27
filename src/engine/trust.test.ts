@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { VELVRA_KIT } from "@/seed/velvra";
 import { verifyAiFindings } from "./verifier";
 import { redact, toOriginal } from "./redact";
-import { applyFixes, draftIntent, intentCheck } from "./fix";
+import { applyFixes, draftIntent, intentCheck, intentVerdict } from "./fix";
 import { contrastRatio, deltaE, hexToRgb, kmeans, nearestPaletteColor } from "./color";
 import { canonicalJson, sha256Hex } from "./hash";
 import { GENESIS, sealHallmark, verifyHallmark } from "./hallmark";
@@ -106,6 +106,19 @@ describe("fixes and intent", () => {
     const before = "Shop now 👉 link in bio. Protection for skin.";
     expect(intentCheck(before, "Shop now 👉 link in bio. Protection that evens skin tone.", intent).kept).toBe(true);
     expect(intentCheck(before, "Protection for skin.", intent).ctaKept).toBe(false);
+  });
+
+  it("gives one intent verdict: agreement decides, disagreement asks a person", () => {
+    const kept = intentCheck("Shop now 👉 link in bio. Protection for skin.", "Shop now 👉 link in bio. Protection that evens skin tone.", intent);
+    const ai = (k: boolean) => ({ kept: k, explanation: "Still about daily protection.", model: "m" });
+    expect(intentVerdict(kept).verdict).toBe("kept");
+    expect(intentVerdict(kept, ai(true))).toMatchObject({ kept: true, verdict: "kept" });
+    const split = intentVerdict(kept, ai(false));
+    expect(split).toMatchObject({ kept: false, verdict: "review" });
+    expect(split.summary).toMatch(/^Check intent: the key-message terms are intact, but the AI check reads it differently \(Still about daily protection\)$/);
+    expect(split.summary).not.toMatch(/Intent kept/);
+    const lost = intentCheck("Shop now 👉 link in bio. Protection for skin.", "Protection for skin.", intent);
+    expect(intentVerdict(lost, ai(false)).verdict).toBe("lost");
   });
 
   it("drafts an Intent Card heuristically", () => {

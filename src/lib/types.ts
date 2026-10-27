@@ -179,7 +179,7 @@ export interface Version {
   author: string;
   note: string;
   /** Set on versions created by applying fixes. */
-  intentCheck?: { kept: boolean; summary: string; ai?: { kept: boolean; explanation: string; model: string } };
+  intentCheck?: { kept: boolean; summary: string; verdict?: "kept" | "review" | "lost"; ai?: { kept: boolean; explanation: string; model: string } };
   /** Findings whose fixes made this version. */
   appliedFindingIds?: string[];
 }
@@ -193,6 +193,8 @@ export type FindingStatus =
   | "sent_to_compliance"
   | "compliance_approved"
   | "reopened"
+  /** Still open when the reviewer approved; the reason is recorded in the Hallmark. */
+  | "waived"
   | "superseded";
 
 export type ClaimStatus = "supported" | "contradicted" | "outdated" | "unsupported";
@@ -269,6 +271,10 @@ export interface Check {
   relocated: number;
   claims: CheckedClaim[];
   findingIds: string[];
+  /** Rule checks are stored; the AI judgment for changed paragraphs is still running. */
+  aiPending?: boolean;
+  /** How long the AI judgment took, once it finished. */
+  aiMs?: number;
 }
 
 export interface Comment {

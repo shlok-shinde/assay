@@ -82,7 +82,7 @@ Optional AI: set `GEMINI_API_KEYS` before `pnpm dev`. It accepts any of these:
 
 | Command | What it runs |
 |---|---|
-| `pnpm test` | 65 unit tests in **Chromium** (Vitest browser mode): claim ledger, rule checks, verifier, redaction, fixes and intent, colour maths, Hallmarks, Guideline Health, the key pool and Gemini fallback, and the visual check on the real sample creative with real OCR |
+| `pnpm test` | 74 unit tests in **Chromium** (Vitest browser mode): claim ledger, rule checks, verifier, redaction, fixes and intent, colour maths, Hallmarks, Guideline Health, the key pool and Gemini fallback, and the visual check on the real sample creative with real OCR |
 | `pnpm eval` | The golden set (64 labelled drafts) per category; fails CI on a regression |
 | `pnpm build && pnpm e2e` | 17 Playwright tests in **Chromium**: the full judge path, uploads, brand-book import and publishing, AI rate-limit fallback, the phone layout, and axe on every main screen |
 

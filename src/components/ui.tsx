@@ -56,6 +56,7 @@ export const FINDING_STATUS_LABEL: Record<FindingStatus, string> = {
   sent_to_compliance: "With Compliance",
   compliance_approved: "Approved by Compliance",
   reopened: "Reopened",
+  waived: "Approved while open",
   superseded: "Superseded",
 };
 

@@ -82,6 +82,32 @@ export function intentCheck(before: string, after: string, intent: IntentCard): 
   return { kept, lost, gained, ctaKept, summary };
 }
 
+export interface IntentVerdict {
+  kept: boolean;
+  verdict: "kept" | "review" | "lost";
+  summary: string;
+  ai?: { kept: boolean; explanation: string; model: string };
+}
+
+/**
+ * One verdict from the term check and the AI's reading. When they agree it is that answer;
+ * when they disagree it is "review", with both reasons in one sentence for the creator to judge.
+ */
+export function intentVerdict(h: IntentResult, ai?: { kept: boolean; explanation: string; model: string }): IntentVerdict {
+  const explanation = ai?.explanation.trim().replace(/\.$/, "");
+  if (!ai) return { kept: h.kept, verdict: h.kept ? "kept" : "review", summary: h.summary };
+  if (h.kept && ai.kept) return { kept: true, verdict: "kept", summary: `${h.summary}; the AI check agrees`, ai };
+  if (!h.kept && !ai.kept) return { kept: false, verdict: "lost", summary: `Intent may be lost: ${explanation}`, ai };
+  return {
+    kept: false,
+    verdict: "review",
+    summary: h.kept
+      ? `Check intent: the key-message terms are intact, but the AI check reads it differently (${explanation})`
+      : `${h.summary}, but the AI check finds the message intact (${explanation})`,
+    ai,
+  };
+}
+
 const GOALS: [RegExp, string][] = [
   [/\b(launch|new|introduc|meet|debut)/i, "Launch awareness"],
   [/\b(off|sale|offer|discount|code|deal)\b/i, "Drive offer sales"],

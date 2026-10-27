@@ -3,7 +3,7 @@
 import { Fragment } from "react";
 import type { Finding, PageSpan } from "@/lib/types";
 
-const RESOLVED = new Set(["accepted", "edited", "dismissed", "compliance_approved"]);
+const RESOLVED = new Set(["accepted", "edited", "dismissed", "compliance_approved", "waived"]);
 
 /** The draft with every text finding highlighted and numbered. Colour is never the only signal: severity also sets the underline style. */
 export function AnnotatedText({

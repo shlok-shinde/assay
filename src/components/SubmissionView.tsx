@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Upload } from "lucide-react";
 import type { Finding, ImageAsset } from "@/lib/types";
 import { db } from "@/store/db";
-import { applyStagedFixes, blockers, isStaged, addComment, reviewerDecision, saveEditedVersion, submitForReview } from "@/store/actions";
+import { applyStagedFixes, blockers, isStaged, addComment, resumeAi, reviewerDecision, saveEditedVersion, stillOpen, submitForReview } from "@/store/actions";
 import { useRole } from "@/store/hooks";
 import { CHANNELS } from "@/seed/velvra";
 import { fetchAsFile, imageAsset } from "@/lib/parse";
@@ -49,9 +49,16 @@ export function SubmissionView({ id }: { id: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [waive, setWaive] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [diffFrom, setDiffFrom] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // A check whose AI judgment was cut off (the tab reloaded mid-call) picks it up again here.
+  const pendingCheck = data?.check?.aiPending ? data.check.id : null;
+  useEffect(() => {
+    if (pendingCheck) resumeAi(pendingCheck);
+  }, [pendingCheck]);
 
   const numbers = useMemo(() => new Map([...(data?.findings ?? []), ...(data?.earlier ?? [])].map((f, i) => [f.id, i + 1])), [data?.findings, data?.earlier]);
 
@@ -68,7 +75,11 @@ export function SubmissionView({ id }: { id: string }) {
   const { sub, versions, current, check, findings, earlier, comments, hallmark, rulebook, audit } = data;
   const rules = new Map((rulebook?.snapshot.rules ?? []).map((r) => [r.id, r]));
   const facts = new Map((rulebook?.snapshot.facts ?? []).map((f) => [f.id, f]));
-  const { openHigh, staged, canSubmit } = blockers(findings);
+  const { openHigh, staged, canSubmit: noBlockers } = blockers(findings);
+  const aiRunning = !!check?.aiPending;
+  // A new version has no check row for a moment; it is not submittable until its rule checks are stored.
+  const canSubmit = noBlockers && !!check && !aiRunning;
+  const open = stillOpen(findings);
   const pendingCompliance = [...findings, ...earlier].filter((f) => f.status === "sent_to_compliance");
   const editable = sub.status === "draft" || sub.status === "checked" || sub.status === "changes_requested";
   const shown = filter === "todo" ? findings.filter((f) => TODO.has(f.status)) : findings;
@@ -96,16 +107,32 @@ export function SubmissionView({ id }: { id: string }) {
   };
 
   const finding = (() => {
-    if (sub.status === "approved") return `Approved and hallmarked. ${findings.length} findings were resolved or decided on the way.`;
-    if (sub.status === "in_review")
-      return pendingCompliance.length
-        ? `In review. ${pendingCompliance.length} claim${pendingCompliance.length === 1 ? "" : "s"} wait for Compliance before the reviewer can approve.`
+    const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+    if (sub.status === "approved") {
+      const all = [...findings, ...earlier];
+      const fixed = all.filter((f) => f.status === "accepted" || f.status === "edited").length;
+      const waived = all.filter((f) => f.status === "waived").length;
+      const decided = all.length - fixed - waived;
+      return [
+        `Approved and hallmarked. ${plural(fixed, "finding")} fixed, ${decided} decided by a person`,
+        waived ? `, ${waived} approved while still open (the reviewer's reason is in the Hallmark)` : "",
+        ".",
+      ].join("");
+    }
+    if (sub.status === "in_review") {
+      if (pendingCompliance.length) return `In review. ${plural(pendingCompliance.length, "claim")} wait for Compliance before the reviewer can approve.`;
+      return open.length
+        ? `In review. Compliance has cleared every claim; ${plural(open.length, "finding is", "findings are")} still open, so the reviewer requests changes or approves with a reason.`
         : "In review. Compliance has cleared every claim; the reviewer can approve or request changes.";
+    }
     if (!check) return "Not checked yet.";
     if (staged.length) return `${staged.length} accepted fix${staged.length === 1 ? "" : "es"} ready to apply as v${current.n + 1}.`;
     if (openHigh.length)
       return `${findings.length} findings; ${openHigh.length} high-severity still open. Submit for review unlocks once they are fixed or sent to Compliance.`;
-    return `${findings.length} findings, none of them blocking. Ready to submit for review.`;
+    if (aiRunning) return `${plural(findings.length, "finding")} from rule checks so far; AI judgment is still running. Submit unlocks when it finishes.`;
+    return open.length
+      ? `${plural(open.length, "finding")} still open, none high-severity. You can submit; the reviewer then requests changes or approves over them with a recorded reason.`
+      : `${plural(findings.length, "finding")}, every one fixed or decided. Ready to submit for review.`;
   })();
 
   const actions = (
@@ -127,11 +154,11 @@ export function SubmissionView({ id }: { id: string }) {
           </button>
           <button
             className="btn btn-primary"
-            disabled={!!busy || pendingCompliance.length > 0}
-            title={pendingCompliance.length ? "Compliance still has claims to decide" : undefined}
-            onClick={() => run("Approving and writing the Hallmark…", () => reviewerDecision(id, true, note))}
+            disabled={!!busy || pendingCompliance.length > 0 || (open.length > 0 && !waive.trim())}
+            title={pendingCompliance.length ? "Compliance still has claims to decide" : open.length && !waive.trim() ? "Give a reason for approving with findings open" : undefined}
+            onClick={() => run("Approving and writing the Hallmark…", () => reviewerDecision(id, true, note, waive))}
           >
-            Approve
+            {open.length ? `Approve with ${open.length} open` : "Approve"}
           </button>
         </>
       )}
@@ -172,6 +199,18 @@ export function SubmissionView({ id }: { id: string }) {
           <Notice tone="error">{error}</Notice>
         </div>
       )}
+      {role === "reviewer" && sub.status === "in_review" && open.length > 0 && pendingCompliance.length === 0 && (
+        <div className="mt-4 max-w-[720px] space-y-2">
+          <Notice tone="warn">
+            {open.length} finding{open.length === 1 ? " is" : "s are"} still open on v{current.n}: {open.map((f) => f.ruleId).join(", ")}. The Hallmark certifies this
+            version, so request changes, or approve with a reason that is recorded on each of them.
+          </Notice>
+          <label htmlFor="waive-reason" className="text-[13px] font-medium">
+            Reason to approve with {open.length === 1 ? "it" : "them"} open (required; sealed into the Hallmark)
+          </label>
+          <input id="waive-reason" className="field" value={waive} onChange={(e) => setWaive(e.target.value)} placeholder="Creative is already printed; the fixed version ships next week." />
+        </div>
+      )}
       {role === "reviewer" && sub.status === "in_review" && (
         <div className="mt-4 max-w-[720px]">
           <label htmlFor="decision-note" className="text-[13px] font-medium">
@@ -202,13 +241,19 @@ export function SubmissionView({ id }: { id: string }) {
         <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(380px,460px)]">
           <div className="min-w-0 space-y-5">
             {check?.banner && <Notice tone={check.mode === "confidential" ? "info" : "warn"}>{check.banner}</Notice>}
+            {aiRunning && (
+              <Notice tone="info">
+                <Spinner label={`Rule checks are in. AI judgment is reading ${check!.segmentsTotal - check!.segmentsReused} changed paragraph${check!.segmentsTotal - check!.segmentsReused === 1 ? "" : "s"}; its findings join this list when it answers.`} />
+              </Notice>
+            )}
             {check && (
               <p className="num text-[13px] leading-5 text-muted">
                 Checked against rulebook v{check.rulebookVersion} · {findings.length} finding{findings.length === 1 ? "" : "s"} ({ruleChecks} rule check
                 {ruleChecks === 1 ? "" : "s"}, {aiJudgments} AI judgment{aiJudgments === 1 ? "" : "s"}
                 {both ? `, ${both} found by both` : ""}) · {check.dropped.length} unverifiable AI finding
                 {check.dropped.length === 1 ? "" : "s"} dropped by the evidence verifier
-                {check.relocated ? ` · ${check.relocated} quote${check.relocated === 1 ? "" : "s"} relocated` : ""} · {check.ms < 1000 ? `${check.ms} ms` : `${(check.ms / 1000).toFixed(1)} s`}
+                {check.relocated ? ` · ${check.relocated} quote${check.relocated === 1 ? "" : "s"} relocated` : ""} · rule checks in {check.ms < 1000 ? `${check.ms} ms` : `${(check.ms / 1000).toFixed(1)} s`}
+                {check.aiMs !== undefined && check.mode === "rules+ai" ? ` · AI judgment in ${(check.aiMs / 1000).toFixed(1)} s` : ""}
                 {check.segmentsReused ? ` · ${check.segmentsReused} of ${check.segmentsTotal} paragraphs reused from cache` : ""}
               </p>
             )}
@@ -229,7 +274,7 @@ export function SubmissionView({ id }: { id: string }) {
                 <p className={`mt-1 text-[13px] ${current.intentCheck.kept ? "text-positive" : "text-warn-ink"}`}>
                   {current.intentCheck.kept ? "✓ " : "! "}
                   {current.intentCheck.summary}
-                  {current.intentCheck.ai && ` · AI intent check (${current.intentCheck.ai.model}): ${current.intentCheck.ai.explanation}`}
+                  {current.intentCheck.ai && <span className="text-muted"> · {current.intentCheck.ai.model}</span>}
                 </p>
               )}
               <div className="mt-4">

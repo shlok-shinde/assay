@@ -57,8 +57,15 @@ test.describe("judge path", () => {
     await page.getByRole("button", { name: "Approve claim" }).first().click();
     await expect(page.getByRole("button", { name: "Approve claim" })).toHaveCount(0);
     await role(page, "Reviewer");
-    await page.getByRole("button", { name: "Approve", exact: true }).click();
+    // The creative's four image findings are still open: approving needs a reason, sealed into the Hallmark.
+    await expect(page.getByText(/4 findings are still open on v2: .*A11Y-01/)).toBeVisible();
+    const approve = page.getByRole("button", { name: "Approve with 4 open" });
+    await expect(approve).toBeDisabled();
+    await page.getByLabel(/Reason to approve with them open/).fill("Creative already printed; corrected version ships next week");
+    await approve.click();
     await expect(page.getByRole("heading", { name: "Hallmark #1" })).toBeVisible();
+    await expect(page.getByText(/4 approved while still open/)).toBeVisible();
+    await expect(page.getByText("Approved while open").first()).toBeVisible();
     await page.getByRole("button", { name: "Verify" }).click();
     await expect(page.getByText("Verified: the content, the record and the chain all match their hashes.")).toBeVisible();
     mark("approve");

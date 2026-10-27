@@ -164,6 +164,25 @@ describe("Gemini calls", () => {
     expect(pool.status().keysAvailable).toBe(2);
   });
 
+  it("treats a timeout as the model's problem: next model, not the same model on the next key, and tries it last next time", async () => {
+    const seen: string[] = [];
+    const pool = new KeyPool([
+      { label: "a", value: "KEY_A" },
+      { label: "b", value: "KEY_B" },
+    ]);
+    const fetchImpl = (async (url: string) => {
+      const model = url.split("/models/")[1].split(":")[0];
+      seen.push(model);
+      if (model === "gemini-3.8-flash") return Promise.reject(new DOMException("t", "TimeoutError"));
+      return ok({ fine: true });
+    }) as typeof fetch;
+    expect(await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env })).toMatchObject({ ok: true, model: "gemini-3.6-flash" });
+    expect(seen).toEqual(["gemini-3.8-flash", "gemini-3.6-flash"]);
+    seen.length = 0;
+    expect(await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env })).toMatchObject({ ok: true, model: "gemini-3.6-flash" });
+    expect(seen).toEqual(["gemini-3.6-flash"]);
+  });
+
   it("gives up on a hanging model after one attempt's share of the budget", async () => {
     const pool = new KeyPool([{ label: "a", value: "1" }]);
     const fetchImpl = (async (url: string, init: RequestInit) => {

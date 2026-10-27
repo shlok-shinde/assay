@@ -1,6 +1,7 @@
 // The check pipeline: parse → rule checks → claims → AI judgment → evidence
 // verifier → merge and rank. AI results are cached per paragraph and
-// rulebook version, so a re-check only sends paragraphs that changed.
+// rulebook version, so a re-check only sends paragraphs that changed. With
+// deferAi the rule checks return at once and the AI runs as a second pass.
 import type { Channel, CheckedClaim, DroppedFinding, ImageAsset, IntentCard, KitContent, PageSpan } from "@/lib/types";
 import { analyzeClaims, claimCandidates, type ClaimCandidate } from "./claims";
 import { hashJson } from "./hash";
@@ -59,6 +60,8 @@ export interface CheckInput {
   ai: AiClient | null;
   cache: CacheStore | null;
   visual?: (image: ImageAsset, kit: KitContent) => Promise<VisualReport>;
+  /** Use cached AI results but do not call the AI: the caller runs it later and reports aiPending meanwhile. */
+  deferAi?: boolean;
 }
 
 export interface CheckOutput {
@@ -74,6 +77,8 @@ export interface CheckOutput {
   segmentsTotal: number;
   segmentsReused: number;
   visual?: VisualReport;
+  /** deferAi was set and some paragraphs still need the AI. */
+  aiPending: boolean;
   ms: number;
 }
 
@@ -103,6 +108,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutput> {
   let aiModel: string | undefined;
   let redactions = 0;
   let reused = 0;
+  let aiPending = false;
 
   if (mode === "rules+ai" && judgmentRules.length && segments.length) {
     const keys = await Promise.all(segments.map((s) => segmentKey(s.text, input, rulesHash)));
@@ -118,7 +124,8 @@ export async function runCheck(input: CheckInput): Promise<CheckOutput> {
       aiModel ??= c.model;
     });
 
-    if (fresh.length && input.ai) {
+    if (fresh.length && input.ai && input.deferAi) aiPending = true;
+    else if (fresh.length && input.ai) {
       const redacted = fresh.map(({ s }) => redact(s.text));
       redactions = redacted.reduce((n, r) => n + r.redactions.length, 0);
       const candidates: ClaimCandidate[] = fresh.flatMap(({ s }) => claimCandidates(s.text, kit));
@@ -211,6 +218,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutput> {
     segmentsTotal: segments.length,
     segmentsReused: reused,
     visual,
+    aiPending,
     ms: Math.round(performance.now() - t0),
   };
 }

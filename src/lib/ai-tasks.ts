@@ -40,7 +40,13 @@ export const judgeOutput = z.object({
 export const matchFactsInput = z.object({ claims: judgeInput.shape.claims });
 export const matchFactsOutput = z.object({ factChoices: z.array(z.object({ key: str(800), factId: str(20) })).max(20) });
 
-export const intentCheckInput = z.object({ before: str(4000), after: str(4000), intent: intentIn });
+export const intentCheckInput = z.object({
+  before: str(4000),
+  after: str(4000),
+  intent: intentIn,
+  /** The rule each applied fix answers, so a compliance edit is not read as a lost message. */
+  changes: z.array(z.object({ rule: str(200), before: str(500), after: str(500) })).max(20).optional(),
+});
 export const intentCheckOutput = z.object({ kept: z.boolean(), explanation: str(400) });
 
 export const draftIntentInput = z.object({ text: str(6000), channel });

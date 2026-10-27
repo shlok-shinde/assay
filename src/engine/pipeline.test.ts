@@ -51,6 +51,22 @@ const fakeAi = (calls: JudgeRequest[]): AiClient => ({
 });
 
 describe("check pipeline", () => {
+  it("with deferAi, returns the rule checks without calling the AI, then the AI pass adds its findings", async () => {
+    const calls: JudgeRequest[] = [];
+    const cache = memoryCache();
+    const first = await runCheck(base({ ai: fakeAi(calls), cache, deferAi: true }));
+    expect(calls).toHaveLength(0);
+    expect(first.aiPending).toBe(true);
+    expect(first.mode).toBe("rules+ai");
+    expect(first.banner).toBeUndefined();
+    const second = await runCheck(base({ ai: fakeAi(calls), cache }));
+    expect(calls).toHaveLength(1);
+    expect(second.aiPending).toBe(false);
+    expect(second.findings.length).toBeGreaterThan(first.findings.length - 1);
+    // Once cached, a deferred check has nothing left for the AI.
+    expect((await runCheck(base({ ai: fakeAi(calls), cache, deferAi: true }))).aiPending).toBe(false);
+  });
+
   it("runs rule checks only without an AI client, and says so", async () => {
     const out = await runCheck(base());
     expect(out.mode).toBe("rules-only");

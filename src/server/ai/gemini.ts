@@ -1,8 +1,9 @@
 // Gemini over REST (models/{model}:generateContent) with JSON output.
 // Order of attempts: every available key on the primary model, then the next
 // model in the fallback chain, all inside one time budget. A 429 or 401/403 is
-// about the key, so the next key is tried; a 404 or 5xx is about the model
-// (retired, or overloaded for everyone), so the next model is tried.
+// about the key, so the next key is tried; a 404, 5xx or timeout is about the
+// model (retired, overloaded or slow for everyone), so the next model is tried,
+// and a slow model is tried last on the following calls.
 import type { KeyPool } from "./keys";
 
 // The chain ends on Google's "-latest" aliases, so a renamed or retired model
@@ -76,7 +77,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
     : [{ schema: false, thinking: true }, { schema: false, thinking: false }];
   const schemaInPrompt = call.schema ? `${call.system}\n\nAnswer with one JSON object that matches this JSON Schema:\n${JSON.stringify(call.schema)}` : call.system;
 
-  for (const model of modelChain(call.tier, opts.env)) {
+  for (const model of pool.preferFast(modelChain(call.tier, opts.env))) {
     let shape = 0;
     const keys = pool.order(model);
     for (let i = 0; i < keys.length; i++) {
@@ -103,7 +104,12 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
           signal: AbortSignal.timeout(Math.min(remaining, ATTEMPT_MS)),
         });
       } catch (e) {
-        log(`model=${model} key=${key.label} network-or-timeout ${(e as Error).name}`);
+        const name = (e as Error).name;
+        log(`model=${model} key=${key.label} network-or-timeout ${name}`);
+        if (name === "TimeoutError" || name === "AbortError") {
+          pool.slow(model);
+          break;
+        }
         continue;
       }
       if (res.ok) {
@@ -133,6 +139,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
         pool.invalid(key.label);
         continue;
       }
+      if (res.status >= 500) pool.slow(model);
       if (res.status === 404 || res.status >= 500) break; // retired or overloaded: next model in the chain
       if (res.status === 400 && shape < shapes.length - 1) {
         shape++;

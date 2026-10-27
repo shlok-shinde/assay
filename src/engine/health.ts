@@ -70,7 +70,7 @@ export function ruleHealth(kit: KitContent, findings: Finding[], submissions: Su
       const contested = fs.filter((f) => f.status === "contested");
       const disagreed = fs.filter((f) => f.status === "reopened").length;
       const approvedDespite = fs.filter(
-        (f) => subs.get(f.submissionId)?.status === "approved" && ["dismissed", "contested", "open"].includes(f.status),
+        (f) => subs.get(f.submissionId)?.status === "approved" && ["dismissed", "contested", "open", "waived"].includes(f.status),
       ).length;
       const pushback = [...dismissed, ...contested];
       const audience = share(pushback.map((f) => subs.get(f.submissionId)?.audience ?? "Unknown"));

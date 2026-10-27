@@ -94,9 +94,20 @@ export async function imageAsset(file: File): Promise<ImageAsset> {
   return { dataUrl, width: img.naturalWidth, height: img.naturalHeight, alt: "", fileName: file.name };
 }
 
-export async function fetchAsFile(path: string, name: string): Promise<File> {
-  const r = await fetch(path);
-  if (!r.ok) throw new IntakeError(`Could not load ${name}.`);
-  const blob = await r.blob();
-  return new File([blob], name, { type: blob.type });
+/**
+ * Fetches a bundled sample file. A stalled connection is cut off after 15 s and retried once with a
+ * fresh request (a stall rarely survives one), so the sample either loads or says why it did not.
+ */
+export async function fetchAsFile(path: string, name: string, attemptMs = 15_000): Promise<File> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const r = await fetch(path, { signal: AbortSignal.timeout(attemptMs), cache: attempt > 1 ? "reload" : "default" });
+      if (!r.ok) throw new IntakeError(`Could not load ${name} (HTTP ${r.status}).`);
+      const blob = await r.blob();
+      return new File([blob], name, { type: blob.type });
+    } catch (e) {
+      if (e instanceof IntakeError) throw e;
+      if (attempt >= 2) throw new IntakeError(`Could not load ${name}: the network stalled twice. Check the connection and pick the sample again.`);
+    }
+  }
 }

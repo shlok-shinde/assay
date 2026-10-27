@@ -93,6 +93,8 @@ interface KeyState extends KeyEntry {
 export class KeyPool {
   private keys: KeyState[];
   private cursor = 0;
+  /** Models that recently timed out or were overloaded for every key: tried last until this time. */
+  private slowUntil = new Map<string, number>();
 
   constructor(
     entries: KeyEntry[],
@@ -134,6 +136,18 @@ export class KeyPool {
     if (!k) return;
     const t = this.now();
     k.cooldownUntil[model] = opts.daily ? nextPacificMidnight(t) : t + (opts.retryMs ?? 60_000);
+  }
+
+  /** A timeout or 5xx is about the model, not the key: try it last for a while (5 min by default). */
+  slow(model: string, ms = 300_000) {
+    this.slowUntil.set(model, this.now() + ms);
+  }
+
+  /** The chain with recently slow models moved to the end, in their original order. */
+  preferFast(models: string[]): string[] {
+    const t = this.now();
+    const slow = (m: string) => (this.slowUntil.get(m) ?? 0) > t;
+    return [...models.filter((m) => !slow(m)), ...models.filter(slow)];
   }
 
   /** 401/403: the key is wrong or revoked; stop using it for the life of this instance. */
