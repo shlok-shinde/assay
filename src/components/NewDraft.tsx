@@ -105,6 +105,12 @@ export function NewDraft() {
     else setIntent({ ...draftIntent(draft.text), confirmed: false });
   };
 
+  // A creative means the check will run OCR: start fetching it while the creator reads the form.
+  const hasImage = !!draft.image;
+  useEffect(() => {
+    if (hasImage) void import("@/engine/visual").then((m) => m.warmOcr());
+  }, [hasImage]);
+
   const hasContent = draft.text.trim().length > 0 || !!draft.image;
   const canRun = hasContent && draft.title.trim() && intent.confirmed && !busy;
 

@@ -226,6 +226,13 @@ async function getWorker() {
   return workerPromise;
 }
 
+/** Starts loading the OCR engine and its English data, so the first check does not wait for the download. */
+export function warmOcr() {
+  void getWorker().catch(() => {
+    workerPromise = null;
+  });
+}
+
 export async function ocrLines(src: Pixels): Promise<OcrLine[]> {
   const worker = await getWorker();
   const { data } = await worker.recognize(ocrCanvas(src), {}, { blocks: true });
