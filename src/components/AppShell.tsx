@@ -160,7 +160,7 @@ function AiBadge() {
   const on = !!s?.aiConfigured && !kit?.confidential;
   return (
     <Link href="/about#ai" className="hidden items-center gap-2 rounded-full px-3 py-1 text-[12.5px] text-muted hover:text-ink md:flex">
-      <span className={`h-2 w-2 rounded-full ${on ? "bg-positive" : "bg-faint"}`} aria-hidden="true" />
+      <span className={`h-2 w-2 rounded-full ${s === undefined ? "status-pulse bg-gold-mark" : on ? "bg-positive" : "bg-faint"}`} aria-hidden="true" />
       {label}
     </Link>
   );

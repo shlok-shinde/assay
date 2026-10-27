@@ -10,7 +10,7 @@ import { aiTask } from "@/lib/ai-client";
 import { getKit, upsertRule } from "@/store/actions";
 import { useAiStatus, useKit, useRole } from "@/store/hooks";
 import { TitleRow } from "./AppShell";
-import { Code, Empty, Notice } from "./ui";
+import { Code, Empty, Notice, PageLoading } from "./ui";
 import { CHANNELS } from "@/seed/velvra";
 
 const channelName = (c: string) => CHANNELS.find((x) => x.id === c)?.label ?? c;
@@ -34,7 +34,7 @@ export function HealthView() {
   const alerts = useMemo(() => (data?.rb ? factAlerts(data.rb.snapshot.facts, todayIso()) : []), [data]);
   const [open, setOpen] = useState<string | null>(null);
 
-  if (!data || !kit) return <div className="p-6 text-sm text-muted">Loading…</div>;
+  if (!data || !kit) return <PageLoading label="Reading the review history…" />;
   const unclear = health.filter((h) => h.unclear);
   const fired = health.filter((h) => h.fires > 0);
   const seededSubs = data.subs.filter((s) => s.seeded).length;

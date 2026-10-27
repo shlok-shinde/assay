@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import type { Category, FindingStatus, Role, Severity, SubmissionStatus } from "@/lib/types";
 
 /** The Assay mark: a hallmark punch, the stamp an assay office strikes into tested gold. */
@@ -10,6 +10,42 @@ export function Mark({ size = 28 }: { size?: number }) {
       <path d="M6 3h20l3 5v12c0 5-6 8.5-13 10C9 28.5 3 25 3 20V8z" fill="#b8860b" />
       <path d="M10 22 16 9l6 13M12.4 17h7.2" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
+  );
+}
+
+const SHIELD = "M6 3h20l3 5v12c0 5-6 8.5-13 10C9 28.5 3 25 3 20V8z";
+
+/**
+ * The loading mark: the hallmark punch being assayed. Gold rises inside the shield, the A is struck
+ * into it, the punch presses once, and the cycle starts again. With reduced motion it rests filled.
+ */
+export function AssayLoader({ size = 16 }: { size?: number }) {
+  const clip = `assay-${useId().replace(/:/g, "")}`;
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" className="assay-loader flex-none" aria-hidden="true">
+      <defs>
+        <clipPath id={clip}>
+          <path d={SHIELD} />
+        </clipPath>
+      </defs>
+      <path d={SHIELD} fill="none" stroke="var(--color-gold-mark)" strokeOpacity=".45" strokeWidth="2" />
+      <g clipPath={`url(#${clip})`}>
+        <g className="assay-fill">
+          <path className="assay-wave" d="M0 0Q4 -2 8 0T16 0T24 0T32 0T40 0T48 0T56 0T64 0V36H0Z" fill="var(--color-gold-mark)" />
+        </g>
+      </g>
+      <path className="assay-strike" d="M10 22 16 9l6 13M12.4 17h7.2" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" pathLength="1" />
+    </svg>
+  );
+}
+
+/** A whole screen still loading: the mark at size, with what is loading said plainly. */
+export function PageLoading({ label }: { label: string }) {
+  return (
+    <div role="status" className="flex items-center gap-3 p-6 text-[15px] text-muted">
+      <AssayLoader size={36} />
+      {label}
+    </div>
   );
 }
 
@@ -138,10 +174,7 @@ export const fmtTime = (iso: string) =>
 export function Spinner({ label }: { label: string }) {
   return (
     <span role="status" className="inline-flex items-center gap-2 text-sm text-muted">
-      <svg width="14" height="14" viewBox="0 0 16 16" className="animate-spin" aria-hidden="true">
-        <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeOpacity=".25" strokeWidth="2" />
-        <path d="M14 8a6 6 0 0 0-6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      </svg>
+      <AssayLoader size={18} />
       {label}
     </span>
   );

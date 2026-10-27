@@ -8,7 +8,7 @@ import { CHANNELS } from "@/seed/velvra";
 import { SAMPLES } from "@/seed/samples";
 import { useRole } from "@/store/hooks";
 import { TitleRow } from "./AppShell";
-import { ago, Empty, StatusPill } from "./ui";
+import { AssayLoader, ago, Empty, StatusPill } from "./ui";
 
 export function DraftsView() {
   const role = useRole();
@@ -50,7 +50,7 @@ export function DraftsView() {
             Your drafts
           </h2>
           {rows === undefined ? (
-            <p className="text-sm text-muted">Loading…</p>
+            <p role="status" className="flex items-center gap-2 text-sm text-muted"><AssayLoader size={18} /> Loading your drafts…</p>
           ) : rows.length === 0 ? (
             <div className="space-y-3">
               <Empty title="Nothing here yet">Pick a sample below, or paste your own copy on the New draft screen.</Empty>

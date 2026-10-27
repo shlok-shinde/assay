@@ -15,7 +15,7 @@ import { aiTask } from "@/lib/ai-client";
 import { docxText, fetchAsFile, pdfText } from "@/lib/parse";
 import { INPUT_CAP } from "@/lib/ai-tasks";
 import { TitleRow } from "./AppShell";
-import { CATEGORY_LABEL, Code, Empty, fmtTime, Notice, SeverityPill, Spinner, Tabs } from "./ui";
+import { CATEGORY_LABEL, Code, Empty, fmtTime, Notice, PageLoading, SeverityPill, Spinner, Tabs } from "./ui";
 
 type Tab = "rules" | "facts" | "terms" | "assets" | "import" | "versions";
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[];
@@ -31,7 +31,7 @@ export function KitView() {
   const [notes, setNotes] = useState("");
   const [published, setPublished] = useState<string | null>(null);
   const admin = role === "admin";
-  if (!kit || !latest) return <div className="p-6 text-sm text-muted">Loading the Brand Kit…</div>;
+  if (!kit || !latest) return <PageLoading label="Opening the Brand Kit…" />;
   const pending = kit.rules.filter((r) => r.pending);
   const next = (() => {
     const [a, b] = latest.version.split(".").map(Number);

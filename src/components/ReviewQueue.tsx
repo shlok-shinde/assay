@@ -6,7 +6,7 @@ import { db } from "@/store/db";
 import { useRole } from "@/store/hooks";
 import { setRole } from "@/store/actions";
 import { TitleRow } from "./AppShell";
-import { ago, Code, Empty, ROLE_LABEL, SeverityPill, StatusPill } from "./ui";
+import { ago, Code, Empty, ROLE_LABEL, SeverityPill, Spinner, StatusPill } from "./ui";
 
 export function ReviewQueue() {
   const role = useRole();
@@ -32,7 +32,7 @@ export function ReviewQueue() {
         sub={
           data
             ? `${data.claims.length} claim${data.claims.length === 1 ? "" : "s"} wait for Compliance · ${data.decided.length} draft${data.decided.length === 1 ? "" : "s"} in review. Claims are decided first, then the reviewer approves.`
-            : "Loading…"
+            : <Spinner label="Gathering what waits for review…" />
         }
         actions={
           role !== mine || (role !== "reviewer" && role !== "compliance") ? (

@@ -16,7 +16,7 @@ import { DiffView } from "./DiffView";
 import { FindingCard } from "./FindingCard";
 import { HallmarkPanel } from "./HallmarkPanel";
 import { ImageMarker } from "./ImageMarker";
-import { Empty, fmtTime, Kv, Notice, ROLE_LABEL, Spinner, StatusPill, Tabs } from "./ui";
+import { Empty, fmtTime, Kv, Notice, PageLoading, ROLE_LABEL, Spinner, StatusPill, Tabs } from "./ui";
 
 type Tab = "findings" | "versions" | "comments" | "activity";
 const TODO = new Set(["open", "reopened", "sent_to_compliance", "accepted", "edited"]);
@@ -62,7 +62,7 @@ export function SubmissionView({ id }: { id: string }) {
 
   const numbers = useMemo(() => new Map([...(data?.findings ?? []), ...(data?.earlier ?? [])].map((f, i) => [f.id, i + 1])), [data?.findings, data?.earlier]);
 
-  if (data === undefined) return <div className="p-6 text-sm text-muted">Loading the draft…</div>;
+  if (data === undefined) return <PageLoading label="Opening the draft…" />;
   if (data === null)
     return (
       <div className="p-6">
