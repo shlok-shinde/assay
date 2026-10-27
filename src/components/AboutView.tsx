@@ -132,7 +132,10 @@ export function AboutView() {
                           <Code>{l.task}</Code>
                         </td>
                         <td className="py-2">{l.model ?? "—"}</td>
-                        <td className="py-2">{l.ok ? "OK" : l.outcome.replace(/_/g, " ")}</td>
+                        <td className="py-2">
+                          {l.ok ? "OK" : l.outcome.replace(/_/g, " ")}
+                          {l.attempts && <span className="block text-[12px] text-muted">{l.attempts}</span>}
+                        </td>
                         <td className="num py-2 text-right">{(l.ms / 1000).toFixed(1)} s</td>
                         <td className="num py-2 text-right">{l.redactions}</td>
                       </tr>

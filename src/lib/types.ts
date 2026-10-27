@@ -339,6 +339,8 @@ export interface AICallLog {
   ms: number;
   redactions: number;
   outcome: string;
+  /** Each try as model, outcome and seconds, from the server. */
+  attempts?: string;
 }
 
 export interface AICacheEntry {

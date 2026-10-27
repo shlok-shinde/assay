@@ -71,9 +71,9 @@ export async function runTask(task: string, rawInput: unknown, pool: KeyPool, op
     { system: SYSTEM[task as TaskName], user: JSON.stringify(input), schema: geminiSchema(spec.output), tier: spec.tier },
     opts,
   );
-  if (!result.ok) return { ok: false, reason: result.reason, message: result.message };
+  if (!result.ok) return { ok: false, reason: result.reason, message: result.message, attempts: result.attempts };
   const out = spec.output.safeParse(result.json);
-  if (!out.success) return { ok: false, reason: "error", message: "The AI answer did not match the expected shape" };
+  if (!out.success) return { ok: false, reason: "error", message: "The AI answer did not match the expected shape", attempts: `${result.attempts} (wrong shape)` };
 
   let data: unknown = out.data;
   if (task === "judge") {
@@ -88,5 +88,5 @@ export async function runTask(task: string, rawInput: unknown, pool: KeyPool, op
       }),
     };
   }
-  return { ok: true, data, model: result.model, ms: Date.now() - t0, redactions };
+  return { ok: true, data, model: result.model, ms: Date.now() - t0, redactions, attempts: result.attempts };
 }

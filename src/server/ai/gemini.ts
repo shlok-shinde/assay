@@ -26,9 +26,10 @@ export interface GeminiCall {
   tier: "judge" | "lite";
 }
 
+/** `attempts` lists each try as model, outcome and seconds (never content or key values), for the call log. */
 export type GeminiResult =
-  | { ok: true; json: unknown; model: string; keyLabel: string }
-  | { ok: false; reason: "unconfigured" | "rate_limited" | "timeout" | "error"; message: string };
+  | { ok: true; json: unknown; model: string; keyLabel: string; attempts: string }
+  | { ok: false; reason: "unconfigured" | "rate_limited" | "timeout" | "error"; message: string; attempts?: string };
 
 export interface GeminiOptions {
   fetchImpl?: typeof fetch;
@@ -68,6 +69,9 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
   const base = opts.baseUrl ?? opts.env?.GEMINI_BASE_URL ?? process.env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta";
   const deadline = Date.now() + (opts.budgetMs ?? 20_000);
   let sawRateLimit = false;
+  const tries: string[] = [];
+  const note = (model: string, what: string, t: number) => tries.push(`${model.replace(/^gemini-/, "")} ${what} ${((Date.now() - t) / 1000).toFixed(1)}s`);
+  const attempts = () => tries.join(", ");
 
   // A model may reject thinkingConfig or responseJsonSchema with a 400. Each 400 moves this key to the
   // next request shape; without the schema field the schema goes in the prompt, and the output is
@@ -83,7 +87,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
       const remaining = deadline - Date.now();
-      if (remaining <= 0) return { ok: false, reason: "timeout", message: "AI time budget used up" };
+      if (remaining <= 0) return { ok: false, reason: "timeout", message: "AI time budget used up", attempts: attempts() };
       const { schema, thinking } = shapes[shape];
       const body = {
         systemInstruction: { parts: [{ text: schema ? call.system : schemaInPrompt }] },
@@ -96,6 +100,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
         },
       };
       let res: Response;
+      const t = Date.now();
       try {
         res = await fetchImpl(`${base}/models/${encodeURIComponent(model)}:generateContent`, {
           method: "POST",
@@ -106,6 +111,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
       } catch (e) {
         const name = (e as Error).name;
         log(`model=${model} key=${key.label} network-or-timeout ${name}`);
+        note(model, name === "TimeoutError" || name === "AbortError" ? "timeout" : "network error", t);
         if (name === "TimeoutError" || name === "AbortError") {
           pool.slow(model);
           break;
@@ -118,9 +124,11 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
         try {
           const json = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
           log(`model=${model} key=${key.label} ok`);
-          return { ok: true, json, model, keyLabel: key.label };
+          note(model, "ok", t);
+          return { ok: true, json, model, keyLabel: key.label, attempts: attempts() };
         } catch {
           log(`model=${model} key=${key.label} unparseable-output`);
+          note(model, "unparseable", t);
           continue;
         }
       }
@@ -128,6 +136,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
       // Google's error message names the field it rejected; it never echoes the prompt.
       const why = res.status === 400 ? ` ${String((errBody as { error?: { message?: string } })?.error?.message ?? "").slice(0, 160)}` : "";
       log(`model=${model} key=${key.label} status=${res.status}${why}`);
+      note(model, String(res.status), t);
       if (res.status === 429) {
         sawRateLimit = true;
         const limit = parse429(errBody);
@@ -149,8 +158,8 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
       if (res.status === 400) break;
     }
   }
-  if (Date.now() >= deadline) return { ok: false, reason: "timeout", message: "AI time budget used up" };
+  if (Date.now() >= deadline) return { ok: false, reason: "timeout", message: "AI time budget used up", attempts: attempts() };
   return sawRateLimit || modelChain(call.tier, opts.env).every((m) => pool.available(m).length === 0)
-    ? { ok: false, reason: "rate_limited", message: "Every Gemini key is rate-limited right now" }
-    : { ok: false, reason: "error", message: "Gemini did not return a usable answer" };
+    ? { ok: false, reason: "rate_limited", message: "Every Gemini key is rate-limited right now", attempts: attempts() }
+    : { ok: false, reason: "error", message: "Gemini did not return a usable answer", attempts: attempts() };
 }

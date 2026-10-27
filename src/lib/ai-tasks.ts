@@ -98,5 +98,5 @@ export function textLength(value: unknown): number {
 export const INPUT_CAP = 8000;
 
 export type AiRouteResponse<T> =
-  | { ok: true; data: T; model: string; ms: number; redactions: number }
-  | { ok: false; reason: "offline" | "rate_limited" | "timeout" | "error" | "unconfigured" | "bad_request" | "too_large" | "throttled"; message: string };
+  | { ok: true; data: T; model: string; ms: number; redactions: number; attempts?: string }
+  | { ok: false; reason: "offline" | "rate_limited" | "timeout" | "error" | "unconfigured" | "bad_request" | "too_large" | "throttled"; message: string; attempts?: string };

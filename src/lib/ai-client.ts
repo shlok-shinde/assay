@@ -40,6 +40,7 @@ export async function aiTask<T extends TaskName>(task: T, input: TaskInput<T>): 
     ms: Math.round(performance.now() - t0),
     redactions: res.ok ? res.redactions : 0,
     outcome: res.ok ? "ok" : res.reason,
+    attempts: res.attempts,
   });
   return res;
 }
