@@ -95,6 +95,8 @@ export class KeyPool {
   private cursor = 0;
   /** Models that recently timed out or were overloaded for every key: tried last until this time. */
   private slowUntil = new Map<string, number>();
+  /** The request shape (see callGemini) each model last answered, so a warm instance skips known 400s. */
+  private shapes = new Map<string, number>();
 
   constructor(
     entries: KeyEntry[],
@@ -141,6 +143,14 @@ export class KeyPool {
   /** A timeout or 5xx is about the model, not the key: try it last for a while (5 min by default). */
   slow(model: string, ms = 300_000) {
     this.slowUntil.set(model, this.now() + ms);
+  }
+
+  learnedShape(key: string): number {
+    return this.shapes.get(key) ?? 0;
+  }
+
+  learnShape(key: string, shape: number) {
+    this.shapes.set(key, shape);
   }
 
   /** The chain with recently slow models moved to the end, in their original order. */

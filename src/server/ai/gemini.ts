@@ -7,9 +7,11 @@
 import type { KeyPool } from "./keys";
 
 // The chain ends on Google's "-latest" aliases, so a renamed or retired model
-// degrades to the current Flash model instead of turning AI off.
+// degrades to the current Flash model instead of turning AI off. gemini-3.6-flash
+// leads the judge chain: on the live free tier it answers in about 2 s, while
+// gemini-3.8-flash ran past the 8 s attempt limit on every logged call.
 export const DEFAULT_MODELS = {
-  judge: ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"],
+  judge: ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-flash-latest"],
   lite: ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-lite-latest"],
 };
 
@@ -81,8 +83,9 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
     : [{ schema: false, thinking: true }, { schema: false, thinking: false }];
   const schemaInPrompt = call.schema ? `${call.system}\n\nAnswer with one JSON object that matches this JSON Schema:\n${JSON.stringify(call.schema)}` : call.system;
 
+  const shapeKey = (model: string) => `${model}|${call.schema ? "schema" : "plain"}`;
   for (const model of pool.preferFast(modelChain(call.tier, opts.env))) {
-    let shape = 0;
+    let shape = pool.learnedShape(shapeKey(model));
     const keys = pool.order(model);
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
@@ -125,6 +128,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
           const json = JSON.parse(text.replace(/^```(?:json)?\s*|\s*```$/g, ""));
           log(`model=${model} key=${key.label} ok`);
           note(model, "ok", t);
+          pool.learnShape(shapeKey(model), shape);
           return { ok: true, json, model, keyLabel: key.label, attempts: attempts() };
         } catch {
           log(`model=${model} key=${key.label} unparseable-output`);

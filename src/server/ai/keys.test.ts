@@ -88,6 +88,7 @@ describe("KeyPool", () => {
 
 describe("Gemini calls", () => {
   const env = { GEMINI_BASE_URL: "https://fake.test/v1beta" };
+  const [FIRST, SECOND] = modelChain("judge", {});
   const ok = (json: unknown) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(json) }] } }] }), { status: 200 });
   const err = (status: number, body: unknown = {}) => new Response(JSON.stringify(body), { status });
 
@@ -111,9 +112,9 @@ describe("Gemini calls", () => {
     }) as typeof fetch;
     const r = await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env });
     expect(r).toMatchObject({ ok: true, json: { hello: "world" }, keyLabel: "b" });
-    expect(seen).toEqual(["gemini-3.8-flash:KEY_A", "gemini-3.8-flash:KEY_B", "gemini-3.6-flash:KEY_B"]);
-    expect(pool.status(["gemini-3.8-flash"]).keysAvailable).toBe(1);
-    expect(pool.status(["gemini-3.6-flash"]).keysAvailable).toBe(2);
+    expect(seen).toEqual([`${FIRST}:KEY_A`, `${FIRST}:KEY_B`, `${SECOND}:KEY_B`]);
+    expect(pool.status([FIRST]).keysAvailable).toBe(1);
+    expect(pool.status([SECOND]).keysAvailable).toBe(2);
   });
 
   it("reports rate_limited when every key is cooling down", async () => {
@@ -125,7 +126,7 @@ describe("Gemini calls", () => {
 
   it("is unconfigured with no keys, and honours GEMINI_MODEL overrides", async () => {
     expect(await callGemini(new KeyPool([]), { system: "s", user: "u", tier: "judge" }, { env })).toMatchObject({ reason: "unconfigured" });
-    expect(modelChain("judge", { GEMINI_MODEL: "my-model" })).toEqual(["my-model", "gemini-3.8-flash", "gemini-3.6-flash", "gemini-flash-latest"]);
+    expect(modelChain("judge", { GEMINI_MODEL: "my-model" })).toEqual(["my-model", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-flash-latest"]);
   });
 
   it("on a 400, drops the schema field first (moving the schema into the prompt), then thinking", async () => {
@@ -143,7 +144,8 @@ describe("Gemini calls", () => {
     expect((await callGemini(pool, call, { fetchImpl: reject(true), env })).ok).toBe(true);
     expect(bodies.splice(0)).toEqual(["minimal/schema", "minimal/prompt"]);
     expect((await callGemini(pool, call, { fetchImpl: reject(false), env })).ok).toBe(true);
-    expect(bodies).toEqual(["minimal/schema", "minimal/prompt", "-/schema", "-/prompt"]);
+    // The pool remembered that this model answers with the schema in the prompt, so the second call starts there.
+    expect(bodies).toEqual(["minimal/prompt", "-/schema", "-/prompt"]);
   });
 
   it("moves to the next model when one is overloaded (5xx), without burning the other keys on it", async () => {
@@ -156,11 +158,11 @@ describe("Gemini calls", () => {
       const model = url.split("/models/")[1].split(":")[0];
       seen.push(model);
       expect(JSON.parse(String(init.body)).generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
-      return model === "gemini-3.8-flash" ? err(503) : ok({ fine: true });
+      return model === FIRST ? err(503) : ok({ fine: true });
     }) as typeof fetch;
     const r = await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env });
-    expect(r).toMatchObject({ ok: true, model: "gemini-3.6-flash" });
-    expect(seen).toEqual(["gemini-3.8-flash", "gemini-3.6-flash"]);
+    expect(r).toMatchObject({ ok: true, model: SECOND });
+    expect(seen).toEqual([FIRST, SECOND]);
     expect(pool.status().keysAvailable).toBe(2);
   });
 
@@ -173,26 +175,28 @@ describe("Gemini calls", () => {
     const fetchImpl = (async (url: string) => {
       const model = url.split("/models/")[1].split(":")[0];
       seen.push(model);
-      if (model === "gemini-3.8-flash") return Promise.reject(new DOMException("t", "TimeoutError"));
+      if (model === FIRST) return Promise.reject(new DOMException("t", "TimeoutError"));
       return ok({ fine: true });
     }) as typeof fetch;
-    expect(await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env })).toMatchObject({ ok: true, model: "gemini-3.6-flash" });
-    expect(seen).toEqual(["gemini-3.8-flash", "gemini-3.6-flash"]);
+    const first = await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env });
+    expect(first).toMatchObject({ ok: true, model: SECOND });
+    expect(first.ok && first.attempts).toMatch(/^3\.6-flash timeout \d+\.\ds, 3\.8-flash ok \d+\.\ds$/);
+    expect(seen).toEqual([FIRST, SECOND]);
     seen.length = 0;
-    expect(await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env })).toMatchObject({ ok: true, model: "gemini-3.6-flash" });
-    expect(seen).toEqual(["gemini-3.6-flash"]);
+    expect(await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env })).toMatchObject({ ok: true, model: SECOND });
+    expect(seen).toEqual([SECOND]);
   });
 
   it("gives up on a hanging model after one attempt's share of the budget", async () => {
     const pool = new KeyPool([{ label: "a", value: "1" }]);
     const fetchImpl = (async (url: string, init: RequestInit) => {
-      if (url.includes("gemini-3.8-flash"))
+      if (url.includes(FIRST))
         return new Promise<Response>((_, reject) => init.signal!.addEventListener("abort", () => reject(new DOMException("t", "TimeoutError"))));
       return ok({ fine: true });
     }) as typeof fetch;
     const t0 = Date.now();
     const r = await callGemini(pool, { system: "s", user: "u", tier: "judge" }, { fetchImpl, env });
-    expect(r).toMatchObject({ ok: true, model: "gemini-3.6-flash" });
+    expect(r).toMatchObject({ ok: true, model: SECOND });
     expect(Date.now() - t0).toBeLessThan(9_500);
   }, 15_000);
 });
