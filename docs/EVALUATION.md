@@ -1,6 +1,15 @@
 # Evaluation and testing evidence
 
-Everything here is labelled for what it is. **No real users have tested Assay yet**, and nothing below should be read as user feedback.
+Everything here is labelled for what it is. **The builder has tested Assay by hand; no one else has tested it yet**, so nothing below is independent user feedback.
+
+## 0. Manual testing by the builder
+
+The builder walked the judge path on the live site in a private window, as Creator, Compliance and Reviewer, and tried uploads of their own. That run found four problems, all fixed on 27 Oct (see the build log):
+
+- a draft could be approved and hallmarked with findings still open, and the status line called them resolved; approving over an open finding now needs a reason, stored on the finding and sealed into the Hallmark;
+- the AI check took over 20 s and timed out on the re-check; rule findings now show at once and the AI runs as a second pass;
+- the term check and the AI intent check gave opposite verdicts on the same line; they now give one verdict;
+- a sample once hung while loading; sample files now time out and retry.
 
 ## 1. Golden set (rule checks, no AI)
 
@@ -34,7 +43,7 @@ CI runs the eval and fails if any category drops below `golden/baseline.json`.
 
 **Not yet measured:** the AI judgment categories (tone and messaging by Gemini). They will be measured once a Gemini key is configured on the deployment; until then this section covers rule checks only.
 
-## 2. Unit tests: 65 in Chromium
+## 2. Unit tests: 74 in Chromium
 
 `pnpm test` runs Vitest in browser mode on Chromium. It covers phrase matching and sentence splitting, quantity parsing and duration comparison, readability, BM25 and synonyms, the claim ledger (contradicted, outdated, supported, footnotes), the rule checks and the six samples, the evidence verifier with invented quotes, wrong offsets, unknown rules and code-checked rules, redaction and offset mapping, fixes with overlaps and footnotes, the intent check, WCAG contrast, CIEDE2000 and k-means, Hallmark hashing and tamper detection, Guideline Health scoring, the key pool (every input format, de-duplication, cooldown, daily quota, disable, round-robin, warnings with no secrets), the Gemini fallback order with a fake server, and the full visual check on the sample creative with real OCR.
 
