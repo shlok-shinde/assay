@@ -12,6 +12,7 @@ import { seededHistory } from "@/seed/history";
 import { sha256Hex } from "@/engine/hash";
 import { AnnotatedText } from "./AnnotatedText";
 import { CATEGORY_LABEL, Mark, SeverityPill } from "./ui";
+import { AssayScene } from "./AssayScene";
 import "./landing.css";
 
 // Class names for landing.css, which is global with an lp- prefix (next.config routes *.css through the
@@ -23,36 +24,9 @@ const REPO = "https://github.com/shlok-shinde/assay";
 
 // Three captions for the live checker; the engine finds 4, 4 and 0 issues in them.
 const EXAMPLES: [string, string][] = [
-  ["Instagram launch", "OMG 😍 our new sunblock is clinically proven to erase dark spots in just 7 days! The best serum in India. Shop now 👉 link in bio"], // taste-skill-ignore: the sample draft being checked
+  ["Instagram launch", "OMG our new sunblock is clinically proven to erase dark spots in just 7 days! The best serum in India. Shop now via the link in bio"],
   ["Monsoon offer", "Monsoon glow, now 25% off with code RAIN25. Our whitening formula gives visible results, guaranteed. Click here"],
   ["A clean caption", "Daily Shield SPF 50 is lightweight daily protection for humid days. Reapply every 2 hours. Shop via the link in bio."],
-];
-
-const VERBS: { verb: string; text: string; src: string; alt: string }[] = [
-  {
-    verb: "Check",
-    text: "Rule checks run in your browser and Gemini judges tone. Every finding quotes the draft and cites the brand book page, the rule or the fact.",
-    src: "/landing/check.webp",
-    alt: "Assay's check screen: the Instagram caption with numbered marks, the sample creative with its weak headline boxed, and the first finding citing fact F-112.",
-  },
-  {
-    verb: "Fix",
-    text: "Fixes change only their own words, use the fact's approved wording and footnote, and are checked against the creator's key message.",
-    src: "/landing/fix.webp",
-    alt: "Version 2 of the caption beside a word diff of version 1, with three fixes applied and the intent check saying the key message was kept.",
-  },
-  {
-    verb: "Approve",
-    text: "Claims go to Compliance and the draft to a Reviewer. A creator can't dismiss a high-severity finding alone.",
-    src: "/landing/approve.webp",
-    alt: "The review queue as Compliance: two claims waiting for a decision, and the draft waiting for the reviewer.",
-  },
-  {
-    verb: "Stamp",
-    text: "Approval writes a Hallmark: the content's SHA-256, the rulebook version and every decision, chained to the one before.",
-    src: "/landing/stamp.webp",
-    alt: "Hallmark #1: the content hash, this Hallmark's hash, the previous one, the approvals, and a verified result.",
-  },
 ];
 
 const KINDS: [string, string][] = [
@@ -278,38 +252,6 @@ function LiveChecker() {
           </ol>
         </div>
       </div>
-    </section>
-  );
-}
-
-function Verbs() {
-  return (
-    <section id="how" aria-label="How it works" className={s.verbs}>
-      {VERBS.map((v, i) => (
-        <div key={v.verb} className={`${s.wrap} ${s.panel}`}>
-          <div className={s.verbCol}>
-            <h2 data-enter className={`${s.display} ${s.verb} ${s.reveal}`}>
-              {v.verb}
-            </h2>
-            <p data-enter className={`${s.verbText} ${s.reveal}`} style={{ ["--i" as string]: 1 }}>
-              {v.text}
-            </p>
-            {i === VERBS.length - 1 && (
-              <div data-enter className={`${s.verbAction} ${s.reveal}`} style={{ ["--i" as string]: 2 }}>
-                <Link href={DEMO} className={`${s.button} ${s.buttonAccent}`}>
-                  Walk the path yourself
-                </Link>
-              </div>
-            )}
-          </div>
-          <div className={s.shotCol}>
-            <figure data-enter className={`${s.shot} ${s.shutter}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- static screenshot of the app */}
-              <img src={v.src} alt={v.alt} width={1600} height={1000} loading="lazy" />
-            </figure>
-          </div>
-        </div>
-      ))}
     </section>
   );
 }
@@ -554,7 +496,7 @@ export function Landing() {
       <main>
         <Hero />
         <LiveChecker />
-        <Verbs />
+        <AssayScene />
         <Features />
         <Proof />
         <About />
