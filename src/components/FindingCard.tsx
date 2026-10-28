@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { motionAllowed, Rise } from "./motion";
 import { Check, MessageSquare } from "lucide-react";
 import type { Comment, Fact, Finding, IntentCard, Role, Rule, SubmissionStatus } from "@/lib/types";
 import { applyFixes, intentCheck } from "@/engine/fix";
@@ -44,6 +46,17 @@ export function FindingCard({
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const card = useRef<HTMLElement>(null);
+  const lastStatus = useRef(f.status);
+  // A decision lands like a stamp: the verdict strikes in and the slip settles.
+  useEffect(() => {
+    if (lastStatus.current === f.status) return;
+    lastStatus.current = f.status;
+    const verdict = card.current?.querySelector("[data-verdict]");
+    if (!verdict || !motionAllowed()) return;
+    gsap.from(verdict, { scale: 1.5, rotation: -8, opacity: 0, duration: 0.45, ease: "back.out(2.2)", clearProps: "transform,opacity" });
+    gsap.fromTo(card.current, { y: 0 }, { y: 3, duration: 0.07, yoyo: true, repeat: 1, ease: "power1.out", clearProps: "transform" });
+  }, [f.status]);
 
   const preview = useMemo(() => {
     if (!f.fix || f.fix.kind === "manual" || f.start < 0) return null;
@@ -83,41 +96,50 @@ export function FindingCard({
 
   return (
     <article
+      ref={card}
       id={`card-${f.id}`}
       aria-label={`Finding ${n}`}
       onClick={onSelect}
-      className={`rounded-[16px] border bg-sheet p-4 transition-colors ${selected ? "border-gold ring-1 ring-gold" : "border-line"} ${
-        open ? "" : "bg-raised"
-      }`}
+      data-sev={f.severity}
+      data-settled={open ? undefined : ""}
+      data-selected={selected ? "" : undefined}
+      className="slip"
     >
-      <header className="flex flex-wrap items-center gap-2">
-        <span className="marker !ml-0">{n}</span>
-        <span className="text-[13px] font-medium">{CATEGORY_LABEL[f.category]}</span>
-        <SeverityPill severity={f.severity} />
-        {f.suggestion && <span className="pill bg-neutral-bg text-neutral-ink">Suggestion</span>}
-        <span className="ml-auto text-[12px] text-muted">
-          {versionLabel ? `${versionLabel} · ` : ""}
-          {origin}
+      <header className="flex items-start gap-3">
+        <span className="slip-n num" aria-hidden="true">
+          {n}
         </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px] text-muted">
+            <span className="font-medium text-ink">{CATEGORY_LABEL[f.category]}</span>
+            <SeverityPill severity={f.severity} />
+            {f.suggestion && <span className="pill bg-neutral-bg text-neutral-ink">Suggestion</span>}
+            <span className="ml-auto">
+              {versionLabel ? `${versionLabel} · ` : ""}
+              {origin}
+            </span>
+          </div>
+          <h3 className="slip-title">{f.title}</h3>
+        </div>
       </header>
-      <h3 className="mt-2 text-[15px] font-semibold leading-[22px]">{f.title}</h3>
       {f.cached && <p className="mt-0.5 text-[12px] text-muted">Cached AI result, {f.cached.model}, {fmtTime(f.cached.at)}</p>}
 
-      <blockquote className="mt-2 rounded-[10px] bg-raised px-3 py-2 text-[14px] leading-[22px]">
+      <blockquote className="slip-quote">
         {f.quote}
         {f.page && <span className="ml-2 text-[12px] text-muted">page {f.page}</span>}
       </blockquote>
-      <p className="mt-2 text-[14px] leading-[22px]">{f.reason}</p>
+      <p className="mt-3 text-[14.5px] leading-[23px]">{f.reason}</p>
 
       <div className="mt-3 space-y-1 text-[13px] leading-5">
         {rule && (
-          <p>
-            <Code>{rule.id}</Code> <span className="text-muted">·</span> {rule.title} <span className="text-muted">· {rule.source.doc} p.{rule.source.page} {rule.source.section}</span>
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <span className="slip-tag">{rule.id}</span> <span className="text-muted">·</span>
+            {rule.title} <span className="text-muted">· {rule.source.doc} p.{rule.source.page} {rule.source.section}</span>
           </p>
         )}
         {fact && (
           <p>
-            <Code>{fact.id}</Code> <span className="text-muted">·</span> {fact.statement}{" "}
+            <span className="slip-tag">{fact.id}</span> {fact.statement}{" "}
             <span className={isExpired(fact, todayIso()) ? "text-neg-ink" : "text-muted"}>
               · owner {fact.owner}
               {fact.validTo ? ` · ${isExpired(fact, todayIso()) ? "expired" : "valid to"} ${formatDate(fact.validTo)}` : ""}
@@ -138,12 +160,23 @@ export function FindingCard({
       </div>
 
       {f.fix && (
-        <div className="mt-3 rounded-[12px] border border-line p-3">
+        <div className="slip-fix">
           <p className="text-[12px] font-medium text-muted">{f.fix.kind === "manual" ? "What to change" : f.fix.kind === "append" ? "Suggested addition" : "Suggested minimal edit"}</p>
           {f.fix.kind === "replace" && f.start >= 0 ? (
-            <p className="mt-1 text-[14px] leading-[22px]">
-              {before && <del className="diff-del">{before}</del>} <ins className="diff-ins">{(f.resolution?.editedText ?? f.fix.replacement) || "(remove)"}</ins>
-            </p>
+            <dl className="slip-swap">
+              {before && (
+                <>
+                  <dt>Was</dt>
+                  <dd>
+                    <del className="diff-del">{before}</del>
+                  </dd>
+                </>
+              )}
+              <dt>Becomes</dt>
+              <dd>
+                <ins className="diff-ins">{(f.resolution?.editedText ?? f.fix.replacement) || "(remove)"}</ins>
+              </dd>
+            </dl>
           ) : (
             <p className="mt-1 text-[14px] leading-[22px]">{f.fix.kind === "append" ? <ins className="diff-ins">{f.fix.replacement}</ins> : f.fix.replacement}</p>
           )}
@@ -158,8 +191,11 @@ export function FindingCard({
       )}
 
       {!open && f.status !== "superseded" && (
-        <p className="mt-3 text-[13px] leading-5">
-          <span className="font-medium">{FINDING_STATUS_LABEL[f.status]}</span>
+        <p className="mt-3 flex flex-wrap items-center gap-x-2 text-[13px] leading-5">
+          <span data-verdict className="slip-verdict">
+            <Check size={12} strokeWidth={3} aria-hidden="true" />
+            {FINDING_STATUS_LABEL[f.status]}
+          </span>
           {f.resolution && (
             <span className="text-muted">
               {" "}
@@ -250,6 +286,7 @@ export function FindingCard({
       )}
 
       {mode && (
+        <Rise>
         <form
           className="mt-3 space-y-2"
           onClick={(e) => e.stopPropagation()}
@@ -287,6 +324,7 @@ export function FindingCard({
             </button>
           </div>
         </form>
+        </Rise>
       )}
       {error && <p className="mt-2 text-[13px] text-neg-ink">{error}</p>}
     </article>

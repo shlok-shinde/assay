@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
-import { motionAllowed } from "./motion";
+import { motionAllowed, useGlide } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Activity, BookOpen, Check, ClipboardCheck, FilePlus2, Inbox, Menu, RotateCcw, ShieldCheck, Stamp, X } from "lucide-react";
 import type { Role } from "@/lib/types";
@@ -34,10 +34,10 @@ function NavItem({ href, icon, label, count, onNavigate }: { href: string; icon:
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={`flex h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 text-sm transition-colors ${
-        active ? "bg-active text-ink font-medium" : "text-muted hover:text-ink hover:bg-hover"
-      }`}
+        active ? "text-ink font-medium" : "text-muted hover:text-ink hover:translate-x-0.5"
+      } relative z-10 transition-[color,transform] duration-300`}
     >
-      <span className="text-faint" aria-hidden="true">
+      <span className={`transition-colors duration-300 ${active ? "text-gold-mark" : "text-faint"}`} aria-hidden="true">
         {icon}
       </span>
       <span className="flex-1 truncate">{label}</span>
@@ -103,6 +103,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
   const [resetting, setResetting] = useState(false);
   const reviewCount = role === "compliance" ? counts?.compliance : role === "reviewer" ? counts?.review : undefined;
+  const path = usePathname();
+  const nav = useRef<HTMLElement>(null);
+  const here = useRef<HTMLSpanElement>(null);
+  useGlide(nav, here, '[aria-current="page"]', [path], "both");
   return (
     <div className="flex h-full flex-col gap-5 px-3 pb-4">
       <div className="px-1 pt-3">
@@ -117,7 +121,8 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
           </p>
         </div>
       </div>
-      <nav aria-label="Main" className="space-y-0.5">
+      <nav ref={nav} aria-label="Main" className="relative space-y-0.5">
+        <span ref={here} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 rounded-[10px] bg-active opacity-0" />
         <NavItem href="/app" icon={<Inbox size={16} />} label="Drafts" count={role === "creator" ? counts?.drafts : undefined} onNavigate={onNavigate} />
         <NavItem href="/app/new" icon={<FilePlus2 size={16} />} label="New draft" onNavigate={onNavigate} />
         <NavItem href="/app/review" icon={<ClipboardCheck size={16} />} label="Review queue" count={reviewCount} onNavigate={onNavigate} />
@@ -149,8 +154,12 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
 function RoleSwitcher() {
   const role = useRole();
+  const box = useRef<HTMLDivElement>(null);
+  const pill = useRef<HTMLSpanElement>(null);
+  useGlide(box, pill, '[aria-checked="true"]', [role], "both");
   return (
-    <div role="radiogroup" aria-label="Viewing as" className="flex w-max items-center gap-1 rounded-full bg-track p-1">
+    <div ref={box} role="radiogroup" aria-label="Viewing as" className="relative flex w-max items-center gap-1 rounded-full bg-track p-1">
+      <span ref={pill} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 rounded-full bg-ink opacity-0" />
       <span className="hidden pl-2 pr-1 text-[12px] text-muted lg:inline">Viewing as</span>
       {ROLES.map((r) => (
         <button
@@ -158,7 +167,7 @@ function RoleSwitcher() {
           role="radio"
           aria-checked={role === r}
           onClick={() => setRole(r)}
-          className={`h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors ${role === r ? "bg-ink text-sheet font-medium" : "text-muted hover:text-ink"}`}
+          className={`relative h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors duration-300 active:scale-95 ${role === r ? "text-sheet font-medium" : "text-muted hover:text-ink"}`}
         >
           {ROLE_LABEL[r]}
         </button>
@@ -185,6 +194,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const ws = useWorkspace();
   // The phone menu closes through each link's onNavigate.
   const [open, setOpen] = useState(false);
+  // The phone menu opens as a circle growing from the menu button, its links following one by one.
+  const menu = useRef<HTMLDivElement>(null);
+  useGSAP(
+    () => {
+      if (!open || !menu.current || !motionAllowed()) return;
+      gsap
+        .timeline()
+        .from(menu.current, { clipPath: "circle(0% at 28px 24px)", duration: 0.55, ease: "expo.out", clearProps: "clipPath" })
+        .from(menu.current.querySelectorAll("nav a"), { x: -18, opacity: 0, duration: 0.35, stagger: 0.035, ease: "power3.out", clearProps: "transform,opacity" }, 0.12);
+    },
+    { dependencies: [open] },
+  );
 
   return (
     <div className="theme-night min-h-screen bg-chrome text-ink lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
@@ -227,7 +248,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
       {open && (
-        <div className="fixed inset-0 z-40 bg-chrome lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+        <div ref={menu} className="fixed inset-0 z-40 bg-chrome lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
           <div className="flex h-12 items-center justify-end px-4">
             <button className="btn btn-ghost btn-sm" aria-label="Close menu" onClick={() => setOpen(false)}>
               <X size={18} />

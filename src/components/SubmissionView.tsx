@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { flash, useDealIn } from "./motion";
+import { flash, SlideIn, useDealIn, useGlide } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Upload } from "lucide-react";
 import type { Finding, ImageAsset } from "@/lib/types";
@@ -63,6 +63,8 @@ export function SubmissionView({ id }: { id: string }) {
 
   // Findings deal in when a check lands; ones the AI pass adds later get a gold wash.
   const list = useRef<HTMLDivElement>(null);
+  const filterBox = useRef<HTMLDivElement>(null);
+  const filterPill = useRef<HTMLSpanElement>(null);
   useDealIn(list, ":scope > article", [data?.check?.id]);
   const seenFindings = useRef<{ check?: string; ids: Set<string> }>({ ids: new Set() });
   useEffect(() => {
@@ -72,6 +74,8 @@ export function SubmissionView({ id }: { id: string }) {
     if (before.check && before.check === data.check?.id) for (const id of ids) if (!before.ids.has(id)) flash(document.getElementById(`card-${id}`));
     seenFindings.current = { check: data.check?.id, ids };
   }, [data]);
+
+  useGlide(filterBox, filterPill, '[aria-checked="true"]', [filter, data === undefined], "both");
 
   const numbers = useMemo(() => new Map([...(data?.findings ?? []), ...(data?.earlier ?? [])].map((f, i) => [f.id, i + 1])), [data?.findings, data?.earlier]);
 
@@ -251,6 +255,7 @@ export function SubmissionView({ id }: { id: string }) {
         />
       </div>
 
+      <SlideIn k={tab}>
       {tab === "findings" && (
         <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(380px,460px)]">
           <div className="min-w-0 space-y-5">
@@ -437,14 +442,15 @@ export function SubmissionView({ id }: { id: string }) {
               <h2 id="findings-h" className="text-[16px] font-semibold">
                 Findings
               </h2>
-              <div role="radiogroup" aria-label="Show" className="flex rounded-full bg-raised p-0.5 text-[13px]">
+              <div ref={filterBox} role="radiogroup" aria-label="Show" className="relative flex rounded-full bg-raised p-0.5 text-[13px]">
+                <span ref={filterPill} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 rounded-full bg-sheet opacity-0 shadow-[0_1px_2px_rgba(0,0,0,0.25)]" />
                 {(["all", "todo"] as const).map((v) => (
                   <button
                     key={v}
                     role="radio"
                     aria-checked={filter === v}
                     onClick={() => setFilter(v)}
-                    className={`h-7 rounded-full px-3 ${filter === v ? "bg-sheet font-medium shadow-[0_1px_2px_rgba(0,0,0,0.06)]" : "text-muted"}`}
+                    className={`relative z-10 h-7 rounded-full px-3 transition-colors duration-300 ${filter === v ? "font-medium" : "text-muted hover:text-ink"}`}
                   >
                     {v === "all" ? `All ${findings.length}` : `Needs action ${findings.filter((f) => TODO.has(f.status)).length}`}
                   </button>
@@ -559,6 +565,7 @@ export function SubmissionView({ id }: { id: string }) {
           ))}
         </ol>
       )}
+      </SlideIn>
     </div>
   );
 }

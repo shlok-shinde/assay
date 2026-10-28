@@ -16,6 +16,7 @@ import { docxText, fetchAsFile, pdfText } from "@/lib/parse";
 import { INPUT_CAP } from "@/lib/ai-tasks";
 import { TitleRow } from "./AppShell";
 import { CATEGORY_LABEL, Code, Empty, fmtTime, Notice, PageLoading, SeverityPill, Spinner, Tabs } from "./ui";
+import { SlideIn } from "./motion";
 
 type Tab = "rules" | "facts" | "terms" | "assets" | "import" | "versions";
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[];
@@ -94,14 +95,14 @@ export function KitView() {
           ]}
         />
       </div>
-      <div className="mt-5">
+      <SlideIn k={tab} className="mt-5">
         {tab === "rules" && <RulesTab kit={kit} admin={admin} />}
         {tab === "facts" && <FactsTab kit={kit} admin={admin} />}
         {tab === "terms" && <TermsTab kit={kit} admin={admin} />}
         {tab === "assets" && <AssetsTab kit={kit} admin={admin} />}
         {tab === "import" && <ImportTab kit={kit} admin={admin} />}
         {tab === "versions" && <VersionsTab />}
-      </div>
+      </SlideIn>
     </div>
   );
 }

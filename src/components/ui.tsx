@@ -1,6 +1,7 @@
 "use client";
 
-import { useId, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
+import { useGlide } from "./motion";
 import type { Category, FindingStatus, Role, Severity, SubmissionStatus } from "@/lib/types";
 
 /** The Assay mark: a hallmark punch, the stamp an assay office strikes into tested gold. */
@@ -104,21 +105,23 @@ export const ROLE_LABEL: Record<Role, string> = {
 };
 
 export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs: { id: T; label: ReactNode }[]; value: T; onChange: (t: T) => void; label: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLSpanElement>(null);
+  useGlide(box, bar, '[aria-selected="true"]', [value, tabs.length]);
   return (
-    <div role="tablist" aria-label={label} className="flex gap-6 border-b border-line overflow-x-auto">
+    <div ref={box} role="tablist" aria-label={label} className="relative flex gap-7 overflow-x-auto border-b border-line">
       {tabs.map((t) => (
         <button
           key={t.id}
           role="tab"
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
-          className={`relative -mb-px h-10 shrink-0 text-sm transition-colors ${
-            value === t.id ? "text-ink font-medium border-b-2 border-gold" : "text-muted hover:text-ink border-b-2 border-transparent"
-          }`}
+          className={`tab-btn relative h-11 shrink-0 text-[14.5px] transition-colors duration-300 ${value === t.id ? "text-ink font-medium" : "text-muted hover:text-ink"}`}
         >
           {t.label}
         </button>
       ))}
+      <span ref={bar} aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full bg-gold-mark opacity-0" />
     </div>
   );
 }
