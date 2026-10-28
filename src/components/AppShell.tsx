@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
+import { motionAllowed } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Activity, BookOpen, Check, ClipboardCheck, FilePlus2, Inbox, Menu, RotateCcw, ShieldCheck, Stamp, X } from "lucide-react";
 import type { Role } from "@/lib/types";
@@ -45,11 +48,22 @@ function NavItem({ href, icon, label, count, onNavigate }: { href: string; icon:
 
 function JudgePath({ onNavigate }: { onNavigate?: () => void }) {
   const steps = useJudgePath();
+  const box = useRef<HTMLDivElement>(null);
+  const seen = useRef<Set<string> | null>(null);
+  // A step that has just been done gets its tick struck in; steps done before this page opened stay still.
+  useEffect(() => {
+    if (!steps) return;
+    const done = new Set(steps.filter((x) => x.done).map((x) => x.id));
+    if (seen.current && motionAllowed())
+      for (const id of done)
+        if (!seen.current.has(id)) gsap.from(box.current!.querySelector(`[data-tick="${id}"]`), { scale: 0, rotation: -120, duration: 0.5, ease: "back.out(2.6)" });
+    seen.current = done;
+  }, [steps]);
   if (!steps) return null;
   const done = steps.filter((s) => s.done).length;
   const next = steps.find((s) => !s.done);
   return (
-    <div className="rounded-[14px] bg-sheet border border-line p-3.5">
+    <div ref={box} className="rounded-[14px] bg-sheet border border-line p-3.5">
       <div className="flex items-baseline justify-between">
         <p className="text-[13px] font-semibold">Judge path</p>
         <p className="num text-[12px] text-muted">
@@ -57,13 +71,14 @@ function JudgePath({ onNavigate }: { onNavigate?: () => void }) {
         </p>
       </div>
       <div className="mt-2 h-1.5 rounded-full bg-rule" aria-hidden="true">
-        <div className="h-1.5 rounded-full bg-gold-mark transition-[width] duration-300" style={{ width: `${(done / steps.length) * 100}%` }} />
+        <div className="h-1.5 rounded-full bg-gold-mark transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${(done / steps.length) * 100}%` }} />
       </div>
       <ol className="mt-3 space-y-1.5">
         {steps.map((s) => (
           <li key={s.id}>
             <Link href={s.href} onClick={onNavigate} className={`flex items-start gap-2 text-[12.5px] leading-[18px] ${s.done ? "text-muted" : s === next ? "text-ink font-medium" : "text-muted"} hover:text-ink`}>
               <span
+                data-tick={s.id}
                 className={`mt-[1px] flex h-4 w-4 flex-none items-center justify-center rounded-full ${s.done ? "bg-positive text-sheet" : s === next ? "border-2 border-gold-mark" : "border border-control"}`}
                 aria-hidden="true"
               >
@@ -229,12 +244,28 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 /** The title row every app screen starts with: one h1, an optional finding, actions on the right. */
 export function TitleRow({ title, sub, actions, crumb }: { title: ReactNode; sub?: ReactNode; actions?: ReactNode; crumb?: ReactNode }) {
+  const row = useRef<HTMLDivElement>(null);
+  // Each screen opens with its title rising into place, the line under it a beat later.
+  useGSAP(
+    () => {
+      if (!motionAllowed()) return;
+      gsap
+        .timeline({ defaults: { ease: "expo.out", clearProps: "transform,opacity" } })
+        .from("h1", { y: 22, opacity: 0, duration: 0.7 })
+        .from("[data-sub]", { y: 10, opacity: 0, duration: 0.6 }, 0.08);
+    },
+    { scope: row, dependencies: [typeof title === "string" ? title : ""] },
+  );
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
+    <div ref={row} className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">
         {crumb && <div className="mb-1 text-[13px] text-muted">{crumb}</div>}
         <h1 className="font-display text-[24px] font-medium leading-8 tracking-[-0.02em] md:text-[30px] md:leading-9">{title}</h1>
-        {sub && <div className="mt-1 max-w-[720px] text-[14px] leading-[22px] text-muted">{sub}</div>}
+        {sub && (
+          <div data-sub className="mt-1 max-w-[720px] text-[14px] leading-[22px] text-muted">
+            {sub}
+          </div>
+        )}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>

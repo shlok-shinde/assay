@@ -14,6 +14,7 @@ import { useAiStatus, useKit } from "@/store/hooks";
 import { TitleRow } from "./AppShell";
 import { ImageMarker } from "./ImageMarker";
 import { Notice, Spinner } from "./ui";
+import { useDealIn } from "./motion";
 
 interface Draft {
   title: string;
@@ -43,6 +44,8 @@ export function NewDraft() {
   const [drafting, setDrafting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const autoloaded = useRef(false);
+  const samples = useRef<HTMLUListElement>(null);
+  useDealIn(samples, ":scope > li", []);
 
   const loadSample = async (s: Sample) => {
     setError(null);
@@ -142,7 +145,7 @@ export function NewDraft() {
           </h2>
           <p className="hidden text-[13px] text-muted md:block">Fictional Velvra drafts; each loads through the same upload path you would use.</p>
         </div>
-        <ul className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        <ul ref={samples} className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {SAMPLES.map((s) => (
             <li key={s.id}>
               <button

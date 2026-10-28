@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useDealIn } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, todayIso } from "@/store/db";
 import { factAlerts, MIN_FIRES, repeatPatterns, ruleHealth, UNCLEAR_AT, type RuleHealth } from "@/engine/health";
@@ -33,6 +34,9 @@ export function HealthView() {
   const patterns = useMemo(() => (data ? repeatPatterns(data.findings, data.subs) : []), [data]);
   const alerts = useMemo(() => (data?.rb ? factAlerts(data.rb.snapshot.facts, todayIso()) : []), [data]);
   const [open, setOpen] = useState<string | null>(null);
+  // The unclear scores grow from zero in rank order, so the eye reads the ranking as it forms.
+  const screen = useRef<HTMLDivElement>(null);
+  useDealIn(screen, "[data-bar]", [!!data], { y: 0, scaleX: 0, opacity: 1, transformOrigin: "left center", duration: 0.9, stagger: 0.05, ease: "expo.out" });
 
   if (!data || !kit) return <PageLoading label="Reading the review history…" />;
   const unclear = health.filter((h) => h.unclear);
@@ -44,7 +48,7 @@ export function HealthView() {
   const maxScore = Math.max(1, ...fired.map((h) => h.score));
 
   return (
-    <div className="px-4 py-5 md:px-6 md:py-6">
+    <div ref={screen} className="px-4 py-5 md:px-6 md:py-6">
       <TitleRow
         title="Guideline Health"
         sub={
@@ -156,7 +160,7 @@ function RuleRow({ h, max, expanded, onToggle }: { h: RuleHealth; max: number; e
       <td className="py-2.5 pl-4 pr-1">
         <div className="flex items-center gap-2">
           <div className="h-2 flex-1 rounded-full bg-rule">
-            <div className={`h-2 rounded-full ${h.unclear ? "bg-gold-mark" : "bg-bar"}`} style={{ width: `${(h.score / max) * 100}%` }} />
+            <div data-bar className={`h-2 rounded-full ${h.unclear ? "bg-gold-mark" : "bg-bar"}`} style={{ width: `${(h.score / max) * 100}%` }} />
           </div>
           <span className="num w-7 text-right text-[13px]">{h.score}</span>
         </div>

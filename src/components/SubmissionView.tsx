@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flash, useDealIn } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Pencil, Upload } from "lucide-react";
 import type { Finding, ImageAsset } from "@/lib/types";
@@ -60,6 +61,18 @@ export function SubmissionView({ id }: { id: string }) {
     if (pendingCheck) resumeAi(pendingCheck);
   }, [pendingCheck]);
 
+  // Findings deal in when a check lands; ones the AI pass adds later get a gold wash.
+  const list = useRef<HTMLDivElement>(null);
+  useDealIn(list, ":scope > article", [data?.check?.id]);
+  const seenFindings = useRef<{ check?: string; ids: Set<string> }>({ ids: new Set() });
+  useEffect(() => {
+    if (!data) return;
+    const ids = new Set(data.findings.map((f) => f.id));
+    const before = seenFindings.current;
+    if (before.check && before.check === data.check?.id) for (const id of ids) if (!before.ids.has(id)) flash(document.getElementById(`card-${id}`));
+    seenFindings.current = { check: data.check?.id, ids };
+  }, [data]);
+
   const numbers = useMemo(() => new Map([...(data?.findings ?? []), ...(data?.earlier ?? [])].map((f, i) => [f.id, i + 1])), [data?.findings, data?.earlier]);
 
   if (data === undefined) return <PageLoading label="Opening the draft…" />;
@@ -104,6 +117,7 @@ export function SubmissionView({ id }: { id: string }) {
     setSelected(fid);
     document.getElementById(`card-${fid}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     document.getElementById(`hl-${fid}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    flash(document.getElementById(`hl-${fid}`));
   };
 
   const finding = (() => {
@@ -437,7 +451,7 @@ export function SubmissionView({ id }: { id: string }) {
                 ))}
               </div>
             </div>
-            <div className="mt-3 space-y-3">
+            <div ref={list} className="mt-3 space-y-3">
               {shown.length === 0 && <li><Empty title={findings.length ? "Nothing needs action here." : "No findings. This draft follows the rulebook."} /></li>}
               {shown.map((f: Finding) => (
                 <FindingCard

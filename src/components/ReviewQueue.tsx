@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRef } from "react";
+import { useDealIn } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/store/db";
 import { useRole } from "@/store/hooks";
@@ -10,6 +12,7 @@ import { ago, Code, Empty, ROLE_LABEL, SeverityPill, Spinner, StatusPill } from 
 
 export function ReviewQueue() {
   const role = useRole();
+  const queue = useRef<HTMLDivElement>(null);
   const data = useLiveQuery(async () => {
     const inReview = (await db.submissions.filter((s) => !s.seeded && s.status === "in_review").toArray()).sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
     const claims = await db.findings.where("status").equals("sent_to_compliance").toArray();
@@ -25,6 +28,7 @@ export function ReviewQueue() {
 
   const mine = role === "compliance" ? "compliance" : "reviewer";
 
+  useDealIn(queue, "li, section", [!!data]);
   return (
     <div className="px-4 py-5 md:px-6 md:py-6">
       <TitleRow
@@ -47,7 +51,7 @@ export function ReviewQueue() {
           ) : null
         }
       />
-      <div className="mt-6 grid gap-6 xl:grid-cols-2">
+      <div ref={queue} className="mt-6 grid gap-6 xl:grid-cols-2">
         <section aria-labelledby="claims-h" className={`card p-5 ${role === "compliance" ? "ring-1 ring-gold border-gold" : ""}`}>
           <h2 id="claims-h" className="text-[16px] font-semibold">
             Claims for Compliance

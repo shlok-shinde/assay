@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { strike } from "./motion";
 import { Download } from "lucide-react";
 import type { Hallmark } from "@/lib/types";
 import { hallmarkMarkdown, type HallmarkVerification } from "@/engine/hallmark";
@@ -11,6 +12,12 @@ import { Code, fmtTime, Mark } from "./ui";
 export function HallmarkPanel({ hallmark: h }: { hallmark: Hallmark }) {
   const [result, setResult] = useState<HallmarkVerification | null>(null);
   const [busy, setBusy] = useState(false);
+  const panel = useRef<HTMLElement>(null);
+  const mark = useRef<HTMLSpanElement>(null);
+  // Struck once, when the Hallmark has just been written; an old one opens still.
+  useEffect(() => {
+    if (Date.now() - Date.parse(h.issuedAt) < 15_000) strike(mark.current, panel.current);
+  }, [h.issuedAt]);
 
   const download = async () => {
     const v = await db.versions.get(h.versionId);
@@ -25,9 +32,11 @@ export function HallmarkPanel({ hallmark: h }: { hallmark: Hallmark }) {
   };
 
   return (
-    <section aria-labelledby={`hm-${h.id}`} className="rounded-[16px] border border-gold-line bg-gold-wash p-4">
+    <section ref={panel} aria-labelledby={`hm-${h.id}`} className="rounded-[16px] border border-gold-line bg-gold-wash p-4">
       <div className="flex items-start gap-3">
-        <Mark size={36} />
+        <span ref={mark} className="inline-block flex-none">
+          <Mark size={36} />
+        </span>
         <div className="min-w-0 flex-1">
           <h2 id={`hm-${h.id}`} className="text-[16px] font-semibold">
             Hallmark #{h.seq}

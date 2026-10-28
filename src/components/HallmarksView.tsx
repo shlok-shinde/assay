@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useDealIn } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/store/db";
 import { verifyHallmarkById } from "@/store/actions";
@@ -12,6 +13,8 @@ export function HallmarksView() {
   const hallmarks = useLiveQuery(() => db.hallmarks.orderBy("seq").reverse().toArray(), []);
   const [results, setResults] = useState<Record<string, boolean>>({});
   const [busy, setBusy] = useState(false);
+  const chain = useRef<HTMLOListElement>(null);
+  useDealIn(chain, ":scope > li", [hallmarks?.length]);
 
   const verifyAll = async () => {
     setBusy(true);
@@ -50,7 +53,7 @@ export function HallmarksView() {
             Approve a draft as the Reviewer to write the first one. <Link href="/app" className="underline">Go to drafts</Link>
           </Empty>
         )}
-        <ol className="space-y-3">
+        <ol ref={chain} className="space-y-3">
           {hallmarks?.map((h) => (
             <li key={h.id} className="flex flex-wrap items-start gap-4 rounded-[16px] border border-line p-4">
               <Mark size={32} />
