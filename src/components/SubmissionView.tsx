@@ -46,7 +46,7 @@ export function SubmissionView({ id }: { id: string }) {
 
   const [tab, setTab] = useState<Tab>("findings");
   const [selected, setSelected] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "todo">("all");
+  const [filter, setFilter] = useState<"all" | "todo">("todo");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -100,6 +100,11 @@ export function SubmissionView({ id }: { id: string }) {
   const pendingCompliance = [...findings, ...earlier].filter((f) => f.status === "sent_to_compliance");
   const editable = sub.status === "draft" || sub.status === "checked" || sub.status === "changes_requested";
   const shown = filter === "todo" ? findings.filter((f) => TODO.has(f.status)) : findings;
+  // Earlier versions' findings: claims still with Compliance stay in view (someone must act on them);
+  // everything settled folds away, so the list is the work left, not the whole history.
+  const earlierPending = earlier.filter((f) => f.status === "sent_to_compliance");
+  const earlierSettled = earlier.filter((f) => f.status !== "sent_to_compliance");
+  const todoCount = findings.filter((f) => TODO.has(f.status)).length + earlierPending.length;
   const ruleChecks = findings.filter((f) => f.origin === "rule" && f.confidence === undefined).length;
   const aiJudgments = findings.filter((f) => f.origin === "ai").length;
   const both = findings.filter((f) => f.origin === "rule" && f.confidence !== undefined).length;
@@ -437,7 +442,7 @@ export function SubmissionView({ id }: { id: string }) {
             {hallmark && <HallmarkPanel hallmark={hallmark} />}
           </div>
 
-          <section aria-labelledby="findings-h" className="min-w-0">
+          <section aria-labelledby="findings-h" className="findings-pane min-w-0">
             <div className="flex items-center justify-between gap-2">
               <h2 id="findings-h" className="text-[16px] font-semibold">
                 Findings
@@ -452,7 +457,7 @@ export function SubmissionView({ id }: { id: string }) {
                     onClick={() => setFilter(v)}
                     className={`relative z-10 h-7 rounded-full px-3 transition-colors duration-300 ${filter === v ? "font-medium" : "text-muted hover:text-ink"}`}
                   >
-                    {v === "all" ? `All ${findings.length}` : `Needs action ${findings.filter((f) => TODO.has(f.status)).length}`}
+                    {v === "all" ? `All ${findings.length}` : `Needs action ${todoCount}`}
                   </button>
                 ))}
               </div>
@@ -476,12 +481,12 @@ export function SubmissionView({ id }: { id: string }) {
                   comments={comments.filter((c) => c.findingId === f.id)}
                 />
               ))}
-              {earlier.length > 0 && (
+              {earlierPending.length > 0 && (
                 <div className="pt-3">
-                  <h3 className="text-[14px] font-semibold">Fixed or decided in earlier versions</h3>
+                  <h3 className="text-[14px] font-semibold">Waiting for Compliance from earlier versions</h3>
                   <p className="text-[13px] text-muted">Claims fixed before submission still go to Compliance for sign-off.</p>
                   <div className="mt-3 space-y-3">
-                    {earlier.map((f) => (
+                    {earlierPending.map((f) => (
                       <FindingCard
                         key={f.id}
                         finding={f}
@@ -501,6 +506,33 @@ export function SubmissionView({ id }: { id: string }) {
                     ))}
                   </div>
                 </div>
+              )}
+              {earlierSettled.length > 0 && (
+                <details className="history pt-3">
+                  <summary className="history-summary">
+                    Fixed or decided in earlier versions <span className="num text-muted">· {earlierSettled.length}</span>
+                  </summary>
+                  <div className="mt-3 space-y-3">
+                    {earlierSettled.map((f) => (
+                      <FindingCard
+                        key={f.id}
+                        finding={f}
+                        n={numbers.get(f.id)!}
+                        rule={rules.get(f.ruleId)}
+                        fact={f.factId ? facts.get(f.factId) : undefined}
+                        relatedRules={f.relatedRuleIds.map((r) => rules.get(r)).filter((r): r is NonNullable<typeof r> => !!r)}
+                        text={versions.find((v) => v.id === f.versionId)?.text ?? ""}
+                        intent={sub.intent}
+                        role={role}
+                        status={sub.status}
+                        selected={selected === f.id}
+                        onSelect={() => setSelected(f.id)}
+                        comments={comments.filter((c) => c.findingId === f.id)}
+                        versionLabel={`v${versions.find((v) => v.id === f.versionId)?.n}`}
+                      />
+                    ))}
+                  </div>
+                </details>
               )}
               {staged.length > 0 && role === "creator" && editable && (
                 <p className="text-[13px] text-muted">

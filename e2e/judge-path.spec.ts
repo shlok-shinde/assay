@@ -42,8 +42,10 @@ test.describe("judge path", () => {
     await page.getByRole("button", { name: "Apply 3 fixes" }).click();
     await expect(page.getByText(/Intent kept: key message intact and strengthened/).first()).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole("tab", { name: /Versions 2/ })).toBeVisible({ timeout: 60_000 });
-    // The dismissal shows on the open finding and, once the re-check lands, under earlier versions too.
+    // Findings open on "Needs action"; the dismissal is decided, so it shows under All.
+    await page.getByRole("radio", { name: /^All \d+/ }).click();
     await expect(page.getByText("Dismissed by Riya (agency intern)").first()).toBeVisible();
+    await page.getByRole("radio", { name: /^Needs action/ }).click();
     mark("fixes");
 
     // 4. Submit: fixed claims still go to Compliance.
@@ -67,6 +69,7 @@ test.describe("judge path", () => {
     await approve.click();
     await expect(page.getByRole("heading", { name: "Hallmark #1" })).toBeVisible();
     await expect(page.getByText(new RegExp(`${n} approved while still open`))).toBeVisible();
+    await page.getByRole("radio", { name: /^All \d+/ }).click();
     await expect(page.getByText("Approved while open").first()).toBeVisible();
     await page.getByRole("button", { name: "Verify" }).click();
     await expect(page.getByText("Verified: the content, the record and the chain all match their hashes.")).toBeVisible();

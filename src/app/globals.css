@@ -552,3 +552,51 @@ textarea.field {
     animation: none;
   }
 }
+
+/* The findings list is its own pane on wide screens: it stays beside the draft and scrolls on its own,
+   so a long list never leaves the draft column empty. */
+@media (min-width: 1280px) {
+  .findings-pane {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-control) transparent;
+  }
+}
+.history-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--color-raised);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 150ms;
+}
+.history-summary::-webkit-details-marker {
+  display: none;
+}
+.history-summary::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  margin-right: 4px;
+}
+.history[open] > .history-summary::before {
+  transform: rotate(45deg);
+}
+.history-summary:hover {
+  background: var(--color-active);
+}
