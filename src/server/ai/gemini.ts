@@ -43,7 +43,12 @@ export interface GeminiOptions {
 const log = (msg: string) => console.info(`[ai] ${msg}`);
 
 /** One slow attempt must leave time for the fallbacks inside the budget. */
-const ATTEMPT_MS = 8_000;
+const ATTEMPT_MS = 5_000;
+/**
+ * Request shapes known before any call: gemini-3.6-flash rejects the responseJsonSchema field with a 400,
+ * so it starts with the schema in the prompt instead of spending a round trip on every fresh instance.
+ */
+const KNOWN_SHAPE: Record<string, number> = { "gemini-3.6-flash|schema": 1 };
 /** Thinking adds seconds per call; these tasks are short classification and rewriting. */
 const THINKING = { judge: "low", lite: "minimal" } as const;
 
@@ -69,7 +74,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
   if (pool.size === 0) return { ok: false, reason: "unconfigured", message: "No Gemini keys are configured" };
   const fetchImpl = opts.fetchImpl ?? fetch;
   const base = opts.baseUrl ?? opts.env?.GEMINI_BASE_URL ?? process.env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta";
-  const deadline = Date.now() + (opts.budgetMs ?? 20_000);
+  const deadline = Date.now() + (opts.budgetMs ?? 14_000);
   let sawRateLimit = false;
   const tries: string[] = [];
   const note = (model: string, what: string, t: number) => tries.push(`${model.replace(/^gemini-/, "")} ${what} ${((Date.now() - t) / 1000).toFixed(1)}s`);
@@ -85,7 +90,7 @@ export async function callGemini(pool: KeyPool, call: GeminiCall, opts: GeminiOp
 
   const shapeKey = (model: string) => `${model}|${call.schema ? "schema" : "plain"}`;
   for (const model of pool.preferFast(modelChain(call.tier, opts.env))) {
-    let shape = pool.learnedShape(shapeKey(model));
+    let shape = pool.learnedShape(shapeKey(model)) || KNOWN_SHAPE[shapeKey(model)] || 0;
     const keys = pool.order(model);
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i];
