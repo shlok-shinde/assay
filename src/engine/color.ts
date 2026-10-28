@@ -14,6 +14,12 @@ export function hexToRgb(hex: string): RGB {
 
 export const rgbToHex = ([r, g, b]: RGB) => "#" + [r, g, b].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("").toUpperCase();
 
+/** sRGB channel value (0-255) to linear light, precomputed. */
+const LIN = Float64Array.from({ length: 256 }, (_, v) => {
+  const c = v / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+});
+
 export function luminance([r, g, b]: RGB): number {
   const lin = (v: number) => {
     const c = v / 255;
@@ -54,18 +60,42 @@ export interface Cluster {
  * pixels sorted by luminance, so the same image always gives the same result.
  */
 export function kmeans(data: Uint8ClampedArray | number[], k: number, iterations = 12): Cluster[] {
-  const px: RGB[] = [];
-  for (let i = 0; i + 3 < data.length; i += 4) if (data[i + 3] > 127) px.push([data[i], data[i + 1], data[i + 2]]);
-  if (!px.length) return [];
-  const sorted = [...px].sort((a, b) => luminance(a) - luminance(b));
-  let centres: RGB[] = Array.from({ length: Math.min(k, px.length) }, (_, i) => sorted[Math.floor(((i + 0.5) * sorted.length) / k)]);
-  const assign = new Array<number>(px.length).fill(0);
+  // Flat typed arrays and one luminance per pixel: the same result as the plain version, but it runs
+  // once per OCR line on every check, so boxing pixels and recomputing luminance in the sort froze the page.
+  let n = 0;
+  for (let i = 0; i + 3 < data.length; i += 4) if (data[i + 3] > 127) n++;
+  if (!n) return [];
+  const px = new Float64Array(n * 3);
+  const lum = new Float64Array(n);
+  for (let i = 0, j = 0; i + 3 < data.length; i += 4) {
+    if (data[i + 3] <= 127) continue;
+    px[j * 3] = data[i];
+    px[j * 3 + 1] = data[i + 1];
+    px[j * 3 + 2] = data[i + 2];
+    lum[j] = 0.2126 * LIN[data[i]] + 0.7152 * LIN[data[i + 1]] + 0.0722 * LIN[data[i + 2]];
+    j++;
+  }
+  // Array.prototype.sort is stable, so ties keep pixel order, as before.
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => lum[a] - lum[b]);
+  const kk = Math.min(k, n);
+  const centres = new Float64Array(kk * 3);
+  for (let c = 0; c < kk; c++) {
+    const p = order[Math.floor(((c + 0.5) * n) / k)];
+    centres[c * 3] = px[p * 3];
+    centres[c * 3 + 1] = px[p * 3 + 1];
+    centres[c * 3 + 2] = px[p * 3 + 2];
+  }
+  const assign = new Uint8Array(n);
+  const sums = new Float64Array(kk * 4);
   for (let it = 0; it < iterations; it++) {
-    for (let i = 0; i < px.length; i++) {
+    for (let i = 0; i < n; i++) {
       let best = 0;
       let bestD = Infinity;
-      for (let c = 0; c < centres.length; c++) {
-        const d = (px[i][0] - centres[c][0]) ** 2 + (px[i][1] - centres[c][1]) ** 2 + (px[i][2] - centres[c][2]) ** 2;
+      for (let c = 0; c < kk; c++) {
+        const dr = px[i * 3] - centres[c * 3];
+        const dg = px[i * 3 + 1] - centres[c * 3 + 1];
+        const db = px[i * 3 + 2] - centres[c * 3 + 2];
+        const d = dr * dr + dg * dg + db * db;
         if (d < bestD) {
           bestD = d;
           best = c;
@@ -73,20 +103,20 @@ export function kmeans(data: Uint8ClampedArray | number[], k: number, iterations
       }
       assign[i] = best;
     }
-    const sums = centres.map(() => [0, 0, 0, 0]);
-    for (let i = 0; i < px.length; i++) {
-      const s = sums[assign[i]];
-      s[0] += px[i][0];
-      s[1] += px[i][1];
-      s[2] += px[i][2];
-      s[3]++;
+    sums.fill(0);
+    for (let i = 0; i < n; i++) {
+      const s = assign[i] * 4;
+      sums[s] += px[i * 3];
+      sums[s + 1] += px[i * 3 + 1];
+      sums[s + 2] += px[i * 3 + 2];
+      sums[s + 3]++;
     }
-    centres = centres.map((c, i) => (sums[i][3] ? [sums[i][0] / sums[i][3], sums[i][1] / sums[i][3], sums[i][2] / sums[i][3]] : c));
+    for (let c = 0; c < kk; c++)
+      if (sums[c * 4 + 3]) for (let ch = 0; ch < 3; ch++) centres[c * 3 + ch] = sums[c * 4 + ch] / sums[c * 4 + 3];
   }
-  const counts = centres.map(() => 0);
-  for (const a of assign) counts[a]++;
-  return centres
-    .map((rgb, i) => ({ rgb: rgb.map(Math.round) as RGB, share: counts[i] / px.length }))
+  const counts = new Array<number>(kk).fill(0);
+  for (let i = 0; i < n; i++) counts[assign[i]]++;
+  return Array.from({ length: kk }, (_, c) => ({ rgb: [Math.round(centres[c * 3]), Math.round(centres[c * 3 + 1]), Math.round(centres[c * 3 + 2])] as RGB, share: counts[c] / n }))
     .filter((c) => c.share > 0)
     .sort((a, b) => b.share - a.share);
 }

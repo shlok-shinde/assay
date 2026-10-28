@@ -46,6 +46,29 @@ export function AssayScene() {
         const q = gsap.utils.selector(root);
         // Stacks the step texts in one place; without this they read as a list.
         root.current!.dataset.scene = "live";
+
+        // The held scene must fit the window, or its bottom is cut off while pinned: scale it down when the
+        // window is short. Measured before every ScrollTrigger refresh.
+        const grid = q(".lp-sceneGrid")[0] as HTMLElement;
+        const fit = () => {
+          grid.style.transform = "";
+          const s = Math.min(1, (window.innerHeight - 48) / grid.getBoundingClientRect().height);
+          grid.style.transform = s < 1 ? `scale(${s.toFixed(3)})` : "";
+        };
+        fit();
+        ScrollTrigger.addEventListener("refreshInit", fit);
+        // The pin's start depends on everything above it. Web fonts and the hero settle after the first
+        // measurement, which left the pin starting too early; re-measure whenever anything above resizes.
+        const above: Element[] = [];
+        for (let el = root.current!.previousElementSibling; el; el = el.previousElementSibling) above.push(el);
+        let raf = 0;
+        const remeasure = () => {
+          cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+        };
+        const ro = new ResizeObserver(remeasure);
+        above.forEach((el) => ro.observe(el));
+        void document.fonts?.ready.then(remeasure);
         const count = { n: 0 };
         const countEl = q(".lp-sceneCount")[0];
         const setCount = () => (countEl.textContent = `${Math.round(count.n)} finding${Math.round(count.n) === 1 ? "" : "s"}`);
@@ -122,6 +145,10 @@ export function AssayScene() {
           .to({}, { duration: 0.25 });
         return () => {
           delete root.current?.dataset.scene;
+          ScrollTrigger.removeEventListener("refreshInit", fit);
+          ro.disconnect();
+          cancelAnimationFrame(raf);
+          grid.style.transform = "";
         };
       });
     },

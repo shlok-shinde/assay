@@ -1,173 +1,10 @@
-// Visual checks for PNG and JPG creatives, run entirely in the browser:
-// palette (k-means + ΔE2000), text contrast (tesseract.js word boxes + a
-// 2-cluster split per line), alt text and the hand-marked logo box.
+// Visual checks for PNG and JPG creatives, run entirely in the browser: decoding and OCR here, the
+// palette and contrast analysis (visual-core) in a Web Worker so it never blocks the page.
 import type { ImageAsset, KitContent } from "@/lib/types";
-import { contrastRatio, deltaE, hexToRgb, kmeans, nearestPaletteColor, rgbToHex, textColors, type RGB } from "./color";
-import type { RawFinding } from "./types";
+import { visualFindings, type OcrLine, type Pixels, type VisualReport } from "./visual-core";
 
-export interface OcrLine {
-  text: string;
-  confidence: number;
-  box: { x: number; y: number; w: number; h: number };
-}
-
-export interface VisualReport {
-  findings: RawFinding[];
-  dominant: { hex: string; share: number; nearest: string; deltaE: number }[];
-  lines: (OcrLine & { fg: string; bg: string; ratio: number; large: boolean })[];
-  ocr: "done" | "skipped" | "failed";
-}
-
-type Pixels = { data: Uint8ClampedArray; width: number; height: number };
-
-function crop(img: Pixels, box: OcrLine["box"]): Uint8ClampedArray {
-  const out: number[] = [];
-  const x0 = Math.max(0, Math.floor(box.x));
-  const y0 = Math.max(0, Math.floor(box.y));
-  const x1 = Math.min(img.width, Math.ceil(box.x + box.w));
-  const y1 = Math.min(img.height, Math.ceil(box.y + box.h));
-  const step = Math.max(1, Math.floor(Math.sqrt(((x1 - x0) * (y1 - y0)) / 6000)));
-  for (let y = y0; y < y1; y += step)
-    for (let x = x0; x < x1; x += step) {
-      const i = (y * img.width + x) * 4;
-      out.push(img.data[i], img.data[i + 1], img.data[i + 2], img.data[i + 3]);
-    }
-  return new Uint8ClampedArray(out);
-}
-
-/** Pure part of the visual check, given decoded pixels and OCR lines. Unit-tested. */
-export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, lines: OcrLine[] | null): VisualReport {
-  const rules = new Map(kit.rules.filter((r) => r.active && !r.pending).map((r) => [r.id, r]));
-  const findings: RawFinding[] = [];
-  const whole = { x: 0, y: 0, w: img.width, h: img.height };
-
-  // Palette: dominant colours more than ΔE 10 from every brand colour.
-  const step = Math.max(1, Math.floor(Math.sqrt((img.width * img.height) / 20000)));
-  const sample: number[] = [];
-  for (let y = 0; y < img.height; y += step)
-    for (let x = 0; x < img.width; x += step) {
-      const i = (y * img.width + x) * 4;
-      sample.push(img.data[i], img.data[i + 1], img.data[i + 2], img.data[i + 3]);
-    }
-  const clusters = kmeans(sample, 5);
-  const dominant = clusters
-    .filter((c) => c.share >= 0.15)
-    .map((c) => {
-      const hex = rgbToHex(c.rgb);
-      const n = nearestPaletteColor(hex, kit.palette);
-      return { hex, share: c.share, nearest: `${n.color.name} ${n.color.hex}`, deltaE: Math.round(n.deltaE) };
-    });
-  const vis01 = rules.get("VIS-01");
-  if (vis01) {
-    for (const d of dominant.filter((d) => d.deltaE > 10)) {
-      findings.push({
-        ruleId: vis01.id,
-        relatedRuleIds: [],
-        category: "visual",
-        severity: vis01.severity,
-        origin: "rule",
-        start: -1,
-        end: -1,
-        region: whole,
-        quote: `Colour ${d.hex} (${Math.round(d.share * 100)}% of the image)`,
-        title: "Colour is off palette",
-        reason: `${d.hex} is ΔE ${d.deltaE} from the nearest brand colour, ${d.nearest}. The limit is 10 (${vis01.id}).`,
-        fix: { kind: "manual", replacement: `Use ${d.nearest} instead of ${d.hex}.`, label: "Swap to the palette colour" },
-      });
-    }
-  }
-
-  // Contrast for every OCR line; failing lines that share their colours form one text block.
-  const reportLines: VisualReport["lines"] = [];
-  const a11y01 = rules.get("A11Y-01");
-  const failing: { line: OcrLine; fg: RGB; bg: RGB; ratio: number; large: boolean; min: number }[] = [];
-  for (const line of lines ?? []) {
-    if (line.text.replace(/[^\p{L}\p{N}]/gu, "").length < 3 || line.confidence < 30) continue;
-    const colors = textColors(crop(img, line.box));
-    if (!colors) continue;
-    // Roughly 24 px text or larger counts as large text under WCAG.
-    const large = line.box.h >= 32;
-    const min = large ? 3 : 4.5;
-    const ratio = Math.round(colors.ratio * 10) / 10;
-    reportLines.push({ ...line, fg: rgbToHex(colors.fg), bg: rgbToHex(colors.bg), ratio, large });
-    if (colors.ratio < min) failing.push({ line, fg: colors.fg, bg: colors.bg, ratio, large, min });
-  }
-  const blocks: (typeof failing)[] = [];
-  for (const f of failing) {
-    const prev = blocks[blocks.length - 1]?.at(-1);
-    const near = prev && deltaE(rgbToHex(prev.fg), rgbToHex(f.fg)) < 5 && deltaE(rgbToHex(prev.bg), rgbToHex(f.bg)) < 5 && f.line.box.y - (prev.line.box.y + prev.line.box.h) < prev.line.box.h;
-    if (near) blocks[blocks.length - 1].push(f);
-    else blocks.push([f]);
-  }
-  for (const block of a11y01 ? blocks : []) {
-    const first = block[0];
-    const x = Math.min(...block.map((b) => b.line.box.x));
-    const y = Math.min(...block.map((b) => b.line.box.y));
-    const box = { x, y, w: Math.max(...block.map((b) => b.line.box.x + b.line.box.w)) - x, h: Math.max(...block.map((b) => b.line.box.y + b.line.box.h)) - y };
-    const ratio = Math.min(...block.map((b) => b.ratio));
-    const best = [...kit.palette].sort((p, q) => contrastRatio(hexToRgb(q.hex), first.bg) - contrastRatio(hexToRgb(p.hex), first.bg))[0];
-    const bestRatio = Math.round(contrastRatio(hexToRgb(best.hex), first.bg) * 10) / 10;
-    findings.push({
-      ruleId: a11y01!.id,
-      relatedRuleIds: [],
-      category: "accessibility",
-      severity: a11y01!.severity,
-      origin: "rule",
-      start: -1,
-      end: -1,
-      region: box,
-      quote: `“${block.map((b) => b.line.text).join(" ")}”`,
-      title: "Low text contrast",
-      reason: `Text contrast is ${ratio}:1 (${rgbToHex(first.fg)} on ${rgbToHex(first.bg)}), below the ${first.min}:1 WCAG AA minimum for ${first.large ? "large" : "normal"} text (${a11y01!.id}).`,
-      fix: { kind: "manual", replacement: `Use ${best.name} ${best.hex} for this text (${bestRatio}:1 on this background).`, label: "Change the text colour" },
-    });
-  }
-
-  const a11y04 = rules.get("A11Y-04");
-  if (a11y04 && !asset.alt.trim()) {
-    findings.push({
-      ruleId: a11y04.id,
-      relatedRuleIds: [],
-      category: "accessibility",
-      severity: a11y04.severity,
-      origin: "rule",
-      start: -1,
-      end: -1,
-      region: whole,
-      quote: asset.fileName,
-      title: "Image alt text is missing",
-      reason: `The creative has no alt text, so screen-reader users miss it (${a11y04.id}).`,
-      fix: { kind: "manual", replacement: "Describe the image in one sentence, including any text in it.", label: "Write alt text" },
-    });
-  }
-
-  const vis03 = rules.get("VIS-03");
-  if (vis03 && asset.logoBox) {
-    const b = asset.logoBox;
-    const clear = kit.logo.clearSpaceRatio * b.h;
-    const tight = b.x < clear || b.y < clear || img.width - (b.x + b.w) < clear || img.height - (b.y + b.h) < clear;
-    if (b.w < kit.logo.minWidthPx || tight) {
-      findings.push({
-        ruleId: vis03.id,
-        relatedRuleIds: [],
-        category: "visual",
-        severity: vis03.severity,
-        origin: "rule",
-        start: -1,
-        end: -1,
-        region: b,
-        quote: `Logo box ${Math.round(b.w)}×${Math.round(b.h)} px`,
-        title: b.w < kit.logo.minWidthPx ? "Logo is too small" : "Logo needs more clear space",
-        reason:
-          (b.w < kit.logo.minWidthPx ? `The logo is ${Math.round(b.w)} px wide, below the ${kit.logo.minWidthPx} px minimum (${vis03.id}).` : "") +
-          (tight ? ` Clear space is under half the logo height on at least one side.` : "") +
-          " Measured from the logo box marked by hand; automatic logo detection is planned for Round 3.",
-        fix: { kind: "manual", replacement: `Scale the logo to at least ${kit.logo.minWidthPx} px wide.`, label: "Resize the logo" },
-      });
-    }
-  }
-  return { findings, dominant, lines: reportLines, ocr: lines ? "done" : "skipped" };
-}
+export { visualFindings, type OcrLine, type VisualReport } from "./visual-core";
+export type { RGB } from "./color";
 
 // ---- Browser-only helpers ------------------------------------------------
 
@@ -233,17 +70,40 @@ export function warmOcr() {
   });
 }
 
+/**
+ * Lines from Tesseract's TSV output: one row per word, grouped by block, paragraph and line. The TSV
+ * is a single string, so it crosses back from the OCR worker almost for free; asking for `blocks`
+ * instead copies every word and glyph with its alternatives, which froze the page for most of a second.
+ */
+export function linesFromTsv(tsv: string): OcrLine[] {
+  const groups = new Map<string, { words: string[]; conf: number[]; x0: number; y0: number; x1: number; y1: number }>();
+  for (const row of tsv.split("\n")) {
+    const c = row.split("\t");
+    if (c.length < 12 || c[0] !== "5") continue; // level 5 is a word
+    const text = c[11].trim();
+    if (!text) continue;
+    const [left, top, width, height, conf] = [+c[6], +c[7], +c[8], +c[9], +c[10]];
+    const key = `${c[2]}.${c[3]}.${c[4]}`;
+    const g = groups.get(key) ?? { words: [], conf: [], x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity };
+    g.words.push(text);
+    g.conf.push(conf);
+    g.x0 = Math.min(g.x0, left);
+    g.y0 = Math.min(g.y0, top);
+    g.x1 = Math.max(g.x1, left + width);
+    g.y1 = Math.max(g.y1, top + height);
+    groups.set(key, g);
+  }
+  return [...groups.values()].map((g) => ({
+    text: g.words.join(" "),
+    confidence: g.conf.reduce((a, b) => a + b, 0) / g.conf.length,
+    box: { x: g.x0, y: g.y0, w: g.x1 - g.x0, h: g.y1 - g.y0 },
+  }));
+}
+
 export async function ocrLines(src: Pixels): Promise<OcrLine[]> {
   const worker = await getWorker();
-  const { data } = await worker.recognize(ocrCanvas(src), {}, { blocks: true });
-  const lines: OcrLine[] = [];
-  for (const block of data.blocks ?? [])
-    for (const para of block.paragraphs)
-      for (const line of para.lines) {
-        const { x0, y0, x1, y1 } = line.bbox;
-        lines.push({ text: line.text.trim(), confidence: line.confidence, box: { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } });
-      }
-  return lines;
+  const { data } = await worker.recognize(ocrCanvas(src), {}, { text: false, blocks: false, tsv: true });
+  return linesFromTsv(data.tsv ?? "");
 }
 
 export async function analyzeImage(asset: ImageAsset, kit: KitContent): Promise<VisualReport> {
@@ -255,8 +115,44 @@ export async function analyzeImage(asset: ImageAsset, kit: KitContent): Promise<
   } catch {
     failed = true;
   }
-  const report = visualFindings(px, asset, kit, lines);
+  const report = await findingsOffThread(px, asset, kit, lines);
   return failed ? { ...report, ocr: "failed" } : report;
 }
 
-export type { RGB };
+let analyst: Worker | null | undefined;
+let jobs = 0;
+
+/** visualFindings in a Web Worker; on the main thread only if a worker cannot start. */
+async function findingsOffThread(px: Pixels, asset: ImageAsset, kit: KitContent, lines: OcrLine[] | null): Promise<VisualReport> {
+  if (analyst === undefined) {
+    try {
+      analyst = new Worker(new URL("./visual.worker.ts", import.meta.url), { type: "module" });
+    } catch {
+      analyst = null;
+    }
+  }
+  if (!analyst) return visualFindings(px, asset, kit, lines);
+  const worker = analyst;
+  const id = ++jobs;
+  const { dataUrl: _skip, ...meta } = asset;
+  const data = px.data.slice(); // the worker takes this copy; the decoded image stays usable here
+  return new Promise<VisualReport>((resolve) => {
+    let settled = false;
+    const finish = (report?: VisualReport) => {
+      if (settled) return;
+      settled = true;
+      worker.removeEventListener("message", done);
+      window.clearTimeout(timer);
+      resolve(report ?? visualFindings(px, asset, kit, lines));
+    };
+    const done = (e: MessageEvent<{ id: number; report?: VisualReport; error?: string }>) => {
+      if (e.data.id === id) finish(e.data.report);
+    };
+    // A check never waits on a worker that went quiet: after 8 s the page does the work itself.
+    const timer = window.setTimeout(() => finish(), 8_000);
+    worker.addEventListener("message", done);
+    worker.addEventListener("error", () => finish(), { once: true });
+    worker.postMessage({ id, data, width: px.width, height: px.height, asset: meta, kit, lines }, [data.buffer]);
+  });
+}
+

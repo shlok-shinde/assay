@@ -47,10 +47,12 @@ export interface JudgeStep {
 /** The six-step judge path, derived from what has actually happened in this workspace. */
 export function useJudgePath(): JudgeStep[] | undefined {
   return useLiveQuery(async () => {
+    // Only small rows are read here: this runs on every write while any app screen is open, and a
+    // version row carries its creative (about a megabyte), so counting versions froze the page.
     const [subs, checks, versions, audit, hallmarks, visited] = await Promise.all([
       db.submissions.filter((s) => !s.seeded).toArray(),
       db.checks.count(),
-      db.versions.filter((v) => v.source.kind === "fix").count(),
+      db.audit.filter((a) => a.action === "applied fixes").count(),
       db.audit.filter((a) => a.action === "submitted for review").count(),
       db.hallmarks.count(),
       db.meta.get("visitedHealth"),

@@ -531,3 +531,24 @@ textarea.field {
     transform: none;
   }
 }
+
+/* Entrances (useDealIn): written as classes, so a list of cards never makes the browser measure each one. */
+.enter-rise {
+  animation: enter-rise 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.enter-grow {
+  transform-origin: left center;
+  animation: enter-grow 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes enter-rise {
+  from { opacity: 0; transform: translateY(16px); }
+}
+@keyframes enter-grow {
+  from { transform: scaleX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enter-rise,
+  .enter-grow {
+    animation: none;
+  }
+}

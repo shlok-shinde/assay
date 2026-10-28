@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
-import { motionAllowed, useGlide } from "./motion";
+import { motionAllowed, useDealIn, useGlide } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Activity, BookOpen, Check, ClipboardCheck, FilePlus2, Inbox, Menu, RotateCcw, ShieldCheck, Stamp, X } from "lucide-react";
 import type { Role } from "@/lib/types";
@@ -267,16 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 export function TitleRow({ title, sub, actions, crumb }: { title: ReactNode; sub?: ReactNode; actions?: ReactNode; crumb?: ReactNode }) {
   const row = useRef<HTMLDivElement>(null);
   // Each screen opens with its title rising into place, the line under it a beat later.
-  useGSAP(
-    () => {
-      if (!motionAllowed()) return;
-      gsap
-        .timeline({ defaults: { ease: "expo.out", clearProps: "transform,opacity" } })
-        .from("h1", { y: 22, opacity: 0, duration: 0.7 })
-        .from("[data-sub]", { y: 10, opacity: 0, duration: 0.6 }, 0.08);
-    },
-    { scope: row, dependencies: [typeof title === "string" ? title : ""] },
-  );
+  useDealIn(row, "h1, [data-sub]", [typeof title === "string" ? title : ""], "rise", 80);
   return (
     <div ref={row} className="flex flex-wrap items-start justify-between gap-4">
       <div className="min-w-0">

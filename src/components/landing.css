@@ -880,6 +880,7 @@
   }
   .lp-sceneGrid {
     width: 100%;
+    transform-origin: center center;
     grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
     gap: 64px;
     align-items: center;

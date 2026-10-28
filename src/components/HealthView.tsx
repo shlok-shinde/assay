@@ -36,7 +36,7 @@ export function HealthView() {
   const [open, setOpen] = useState<string | null>(null);
   // The unclear scores grow from zero in rank order, so the eye reads the ranking as it forms.
   const screen = useRef<HTMLDivElement>(null);
-  useDealIn(screen, "[data-bar]", [!!data], { y: 0, scaleX: 0, opacity: 1, transformOrigin: "left center", duration: 0.9, stagger: 0.05, ease: "expo.out" });
+  useDealIn(screen, "[data-bar]", [!!data], "grow", 50);
 
   if (!data || !kit) return <PageLoading label="Reading the review history…" />;
   const unclear = health.filter((h) => h.unclear);

@@ -11,15 +11,23 @@ gsap.registerPlugin(useGSAP);
 export const MOTION = "(prefers-reduced-motion: no-preference)";
 export const motionAllowed = () => typeof window !== "undefined" && window.matchMedia(MOTION).matches;
 
-/** Children matching `selector` inside `scope` rise in, one after another, whenever `deps` change. */
-export function useDealIn(scope: RefObject<HTMLElement | null>, selector: string, deps: unknown[], vars: gsap.TweenVars = {}) {
-  useGSAP(
-    () => {
-      if (!motionAllowed() || !scope.current?.querySelector(selector)) return;
-      gsap.from(selector, { y: 16, opacity: 0, duration: 0.45, ease: "power3.out", stagger: 0.055, clearProps: "transform,opacity", ...vars });
-    },
-    { scope, dependencies: deps },
-  );
+/**
+ * Children matching `selector` inside `scope` enter one after another whenever `deps` change. A CSS
+ * animation, not a tween: it only writes a class and a delay, so a long list never forces the browser
+ * to recalculate layout element by element (GSAP's from() reads each element's style first).
+ */
+export function useDealIn(scope: RefObject<HTMLElement | null>, selector: string, deps: unknown[], kind: "rise" | "grow" = "rise", stagger = 55) {
+  useLayoutEffect(() => {
+    if (!motionAllowed() || !scope.current) return;
+    const els = [...scope.current.querySelectorAll<HTMLElement>(selector)];
+    els.forEach((el, i) => {
+      el.classList.remove("enter-rise", "enter-grow");
+      el.style.animationDelay = `${i * stagger}ms`;
+      el.classList.add(`enter-${kind}`);
+      el.addEventListener("animationend", () => el.classList.remove(`enter-${kind}`), { once: true });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the caller says when the content changed
+  }, deps);
 }
 
 /** A short gold wash over an element: what the eye should go to now. */

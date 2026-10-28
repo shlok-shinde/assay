@@ -9,21 +9,45 @@ export interface Span {
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-/** Case-insensitive whole-word matches for every phrase, longest phrase first, no overlaps. */
+const WORD_CHAR = /[\p{L}\p{N}]/u;
+const isWordChar = (c: string | undefined) => !!c && WORD_CHAR.test(c);
+
+/** Every whole-word, case-insensitive occurrence of one phrase, as [start, end) pairs. */
+function occurrences(text: string, lower: string, phrase: string): [number, number][] {
+  const out: [number, number][] = [];
+  if (lower.length !== text.length) {
+    // Lower-casing changed the length (a few characters expand), so offsets would drift: use the regex.
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(phrase)}(?![\\p{L}\\p{N}])`, "giu");
+    for (const m of text.matchAll(re)) out.push([m.index, m.index + m[0].length]);
+    return out;
+  }
+  const needle = phrase.toLowerCase();
+  for (let i = lower.indexOf(needle); i !== -1; ) {
+    const end = i + needle.length;
+    if (!isWordChar(text[i - 1]) && !isWordChar(text[end])) {
+      out.push([i, end]);
+      i = lower.indexOf(needle, end);
+    } else i = lower.indexOf(needle, i + 1);
+  }
+  return out;
+}
+
+/**
+ * Case-insensitive whole-word matches for every phrase, longest phrase first, no overlaps. A plain
+ * search, not one Unicode regex per phrase: compiling hundreds of those on every check froze the page.
+ */
 export function findPhrases(text: string, phrases: string[]): (Span & { phrase: string })[] {
   const sorted = [...new Set(phrases.map((p) => p.trim()).filter(Boolean))].sort((a, b) => b.length - a.length);
+  const lower = text.toLowerCase();
   const taken: boolean[] = new Array(text.length).fill(false);
   const out: (Span & { phrase: string })[] = [];
   for (const phrase of sorted) {
-    const re = new RegExp(`(?<![\\p{L}\\p{N}])${escapeRe(phrase)}(?![\\p{L}\\p{N}])`, "giu");
-    for (const m of text.matchAll(re)) {
-      const start = m.index;
-      const end = start + m[0].length;
+    for (const [start, end] of occurrences(text, lower, phrase)) {
       let free = true;
       for (let i = start; i < end; i++) if (taken[i]) free = false;
       if (!free) continue;
       for (let i = start; i < end; i++) taken[i] = true;
-      out.push({ start, end, text: m[0], phrase: phrase.toLowerCase() });
+      out.push({ start, end, text: text.slice(start, end), phrase: phrase.toLowerCase() });
     }
   }
   return out.sort((a, b) => a.start - b.start);
