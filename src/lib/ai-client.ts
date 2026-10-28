@@ -26,10 +26,12 @@ export async function aiTask<T extends TaskName>(task: T, input: TaskInput<T>): 
   const t0 = performance.now();
   let res: AiRouteResponse<TaskOutput<T>>;
   try {
-    const r = await fetch("/api/ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ task, input }) });
+    // The route gives up after 20 s; this caps the browser's wait too, so nothing that waits on the AI
+    // (Submit waits for the AI pass) can hang on a stalled connection.
+    const r = await fetch("/api/ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ task, input }), signal: AbortSignal.timeout(25_000) });
     res = (await r.json()) as AiRouteResponse<TaskOutput<T>>;
-  } catch {
-    res = { ok: false, reason: "offline", message: "Could not reach the AI route" };
+  } catch (e) {
+    res = (e as Error).name === "TimeoutError" ? { ok: false, reason: "timeout", message: "The AI route took too long" } : { ok: false, reason: "offline", message: "Could not reach the AI route" };
   }
   await db.aiLog.add({
     id: uid("ai"),
