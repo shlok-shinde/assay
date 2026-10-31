@@ -100,8 +100,8 @@ test.describe("judge path", () => {
     await page.getByRole("button", { name: "Run check" }).click();
     await expect(page.getByText(/rule checks only/i).first()).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole("tab", { name: /Findings 0/ })).toBeVisible();
-    page.once("dialog", (d) => d.accept());
     await page.getByRole("button", { name: "Reset demo" }).click();
+    await page.getByRole("dialog", { name: "Reset the demo?" }).getByRole("button", { name: "Delete and reset" }).click();
     await expect(page.getByText("No drafts yet.")).toBeVisible();
   });
 });
@@ -195,6 +195,8 @@ test.describe("accessibility (axe)", () => {
     await expect(page.locator("#copy")).toHaveValue(/RAIN25/);
     await page.getByRole("button", { name: "Run check" }).click();
     await expect(page.getByText("CLAIM-01").first()).toBeVisible({ timeout: 60_000 });
+    // Cards deal in with a fade. Contrast is a fact about the finished page, not a frame of the fade.
+    await page.evaluate(() => Promise.all(document.getAnimations().filter((a) => a.effect?.getTiming().iterations !== Infinity).map((a) => a.finished.catch(() => undefined))));
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
     const bad = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     expect(bad.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")}`)).toEqual([]);

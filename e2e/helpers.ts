@@ -22,6 +22,16 @@ export async function stubAi(page: Page, mode: "ok" | "rate_limited" | "off" = "
       }
       return route.fulfill({ json: { ok: true, data: { findings, factChoices: [] }, model: "stub-model", ms: 5, redactions: 0 } });
     }
+    if (body.task === "intentCheckBatch") {
+      const fixes = (body.input as unknown as { fixes: { id: string }[] }).fixes;
+      return route.fulfill({ json: { ok: true, data: { results: fixes.map((f) => ({ id: f.id, kept: true, explanation: "Still about daily protection." })) }, model: "stub-lite", ms: 5, redactions: 0 } });
+    }
+    if (body.task === "clarifyRule") {
+      const rule = (body.input as unknown as { rule: { text: string } }).rule;
+      return route.fulfill({
+        json: { ok: true, data: { text: `${rule.text} In plain terms: say what passes, and name the one case that does not.`, dos: ["A calm launch line that names the product."], donts: ["A launch line made of capitals and exclamation marks."], rationale: "Most pushback was about where the line sits, so the wording now says." }, model: "stub-model", ms: 5, redactions: 0 },
+      });
+    }
     if (body.task === "intentCheck") return route.fulfill({ json: { ok: true, data: { kept: true, explanation: "Still about daily protection." }, model: "stub-lite", ms: 5, redactions: 0 } });
     return route.fulfill({ json: { ok: false, reason: "error", message: "not stubbed" } });
   });
