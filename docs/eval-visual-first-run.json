@@ -1,0 +1,66 @@
+{
+  "ranAt": "2026-10-31T04:35:03.623Z",
+  "creatives": 20,
+  "truth": "What a generator written by the builder with AI assistance drew, in five type styles on flat, gradient and speckled grounds. No person labelled these, and none is a photograph, so a good score here says little about busy photographic creatives.",
+  "rules": [
+    {
+      "name": "VIS-01",
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "name": "VIS-03",
+      "tp": 8,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "name": "A11Y-01",
+      "tp": 7,
+      "fp": 2,
+      "fn": 0,
+      "precision": 0.778,
+      "recall": 1
+    },
+    {
+      "name": "A11Y-04",
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    }
+  ],
+  "categories": [
+    {
+      "name": "visual",
+      "tp": 18,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "name": "accessibility",
+      "tp": 17,
+      "fp": 2,
+      "fn": 0,
+      "precision": 0.895,
+      "recall": 1
+    }
+  ],
+  "logosFound": {
+    "found": 16,
+    "of": 16,
+    "note": "Found by reading the wordmark; nothing was marked by hand. A logo that is a picture isn't covered."
+  },
+  "disagreements": [
+    "FP creative-8: A11Y-01",
+    "FP creative-18: A11Y-01"
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "ranAt": "2026-10-30T19:18:02.948Z",
+  "factsAsOf": "2026-10-26",
+  "labels": "builder, with AI assistance",
+  "drafts": 104,
+  "rows": [
+    {
+      "category": "accessibility",
+      "tp": 13,
+      "fp": 0,
+      "fn": 1,
+      "precision": 1,
+      "recall": 0.929
+    },
+    {
+      "category": "claim",
+      "tp": 35,
+      "fp": 1,
+      "fn": 1,
+      "precision": 0.972,
+      "recall": 0.972
+    },
+    {
+      "category": "legal",
+      "tp": 10,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "category": "message",
+      "tp": 9,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "category": "term",
+      "tp": 19,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    },
+    {
+      "category": "tone",
+      "tp": 17,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1,
+      "recall": 1
+    }
+  ],
+  "overall": {
+    "precision": 0.99,
+    "recall": 0.981
+  },
+  "heldout": {
+    "rows": [
+      {
+        "category": "accessibility",
+        "tp": 6,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1,
+        "recall": 0.857
+      },
+      {
+        "category": "claim",
+        "tp": 21,
+        "fp": 0,
+        "fn": 1,
+        "precision": 1,
+        "recall": 0.955
+      },
+      {
+        "category": "legal",
+        "tp": 7,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      {
+        "category": "message",
+        "tp": 5,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      {
+        "category": "term",
+        "tp": 9,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      {
+        "category": "tone",
+        "tp": 9,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1
+      }
+    ],
+    "overall": {
+      "precision": 1,
+      "recall": 0.966
+    }
+  },
+  "misses": [
+    "FP claim-16: CLAIM-03 (“best way” is advice, not a product superlative)",
+    "FN a11y-06: A11Y-03",
+    "FN near-02: CLAIM-01"
+  ]
+}

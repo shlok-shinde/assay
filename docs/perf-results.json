@@ -1,0 +1,18 @@
+{
+  "ranAt": "2026-10-31T10:07:33.748Z",
+  "throttle": 4,
+  "base": "http://localhost:3303",
+  "steps": {
+    "landing": 1179,
+    "drafts": 1218,
+    "new draft": 1076,
+    "load sample": 215,
+    "check": 2261,
+    "open citation": 1031
+  },
+  "landingFps": 60,
+  "scrollFps": 59,
+  "worstBlockMs": 165,
+  "blocksOver300ms": [],
+  "blocksTotal": 16
+}
