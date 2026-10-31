@@ -10,6 +10,8 @@ Everything here says who or what did the testing. Automated runs are machines. A
 
 **The builder's own testing.** The builder walked the judge path on the live site in a private window as Creator, Compliance and Reviewer, and tried uploads of their own.
 
+On 1 Nov 2026 the builder also tried team workspaces on the live site, and reports that the email arrived, that they joined through it, and that a second email address joined the same workspace. That is the builder using two addresses, not a second person's test unless this file says otherwise.
+
 **A correction.** The evaluation write-up of 27 Oct said this hand run "found four problems". That overstated it. Those problems were first found in an AI-assisted run of the same path; the builder reports seeing them too when testing by hand. The four, all fixed on 27 Oct:
 
 - a draft could be approved and hallmarked with findings still open, and the status line called them resolved;
