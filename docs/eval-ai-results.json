@@ -1,91 +1,20 @@
 {
-  "ranAt": "2026-10-30T19:19:04.023Z",
+  "ranAt": "2026-10-31T19:06:25.190Z",
   "factsAsOf": "2026-10-26",
   "labels": "builder, with AI assistance",
   "note": "AI-only is scored on rules the AI is asked to judge. Combined is scored only on drafts the AI answered.",
   "all": {
     "drafts": 104,
-    "answered": 0,
+    "answered": 71,
     "unanswered": [
-      "clean-01",
-      "clean-02",
-      "clean-03",
       "clean-04",
-      "clean-05",
-      "clean-06",
-      "clean-07",
-      "clean-08",
-      "clean-09",
-      "clean-10",
-      "tone-01",
-      "tone-02",
-      "tone-03",
-      "tone-04",
-      "tone-05",
       "tone-06",
-      "tone-07",
-      "tone-08",
-      "tone-09",
       "tone-10",
-      "term-01",
-      "term-02",
-      "term-03",
-      "term-04",
-      "term-05",
-      "term-06",
-      "term-07",
-      "term-08",
-      "term-09",
-      "term-10",
-      "msg-01",
-      "msg-02",
-      "msg-03",
-      "msg-04",
-      "msg-05",
-      "claim-01",
-      "claim-02",
-      "claim-03",
-      "claim-04",
-      "claim-05",
-      "claim-06",
-      "claim-07",
-      "claim-08",
-      "claim-09",
-      "claim-10",
-      "claim-11",
       "claim-12",
-      "claim-13",
-      "claim-14",
-      "claim-15",
-      "claim-16",
-      "claim-17",
-      "claim-18",
       "legal-01",
-      "legal-02",
-      "legal-03",
-      "legal-04",
-      "a11y-01",
-      "a11y-02",
-      "a11y-03",
-      "a11y-04",
       "a11y-05",
-      "a11y-06",
-      "a11y-07",
-      "voice-01",
       "voice-02",
-      "voice-03",
-      "voice-04",
-      "voice-05",
-      "voice-06",
-      "voice-07",
-      "voice-08",
       "launch-01",
-      "launch-02",
-      "launch-03",
-      "launch-04",
-      "launch-05",
-      "launch-06",
-      "launch-07",
       "launch-08",
       "legal-05",
       "legal-06",
@@ -112,7 +41,9 @@
       "near-05",
       "near-06"
     ],
-    "models": [],
+    "models": [
+      "gemini-3.6-flash"
+    ],
     "rulesOnly": {
       "rows": [
         {
@@ -142,9 +73,9 @@
         {
           "category": "message",
           "tp": 9,
-          "fp": 0,
+          "fp": 1,
           "fn": 0,
-          "precision": 1,
+          "precision": 0.9,
           "recall": 1
         },
         {
@@ -158,83 +89,115 @@
         {
           "category": "tone",
           "tp": 17,
-          "fp": 0,
+          "fp": 2,
           "fn": 0,
-          "precision": 1,
+          "precision": 0.895,
           "recall": 1
         }
       ],
       "overall": {
         "tp": 103,
-        "fp": 1,
+        "fp": 4,
         "fn": 2,
-        "precision": 0.99,
+        "precision": 0.963,
         "recall": 0.981
       }
     },
     "aiOnly": {
-      "rows": [],
+      "rows": [
+        {
+          "category": "message",
+          "tp": 3,
+          "fp": 0,
+          "fn": 6,
+          "precision": 1,
+          "recall": 0.333
+        },
+        {
+          "category": "tone",
+          "tp": 9,
+          "fp": 1,
+          "fn": 5,
+          "precision": 0.9,
+          "recall": 0.643
+        }
+      ],
       "overall": {
-        "tp": 0,
-        "fp": 0,
-        "fn": 0,
-        "precision": null,
-        "recall": null
+        "tp": 12,
+        "fp": 1,
+        "fn": 11,
+        "precision": 0.923,
+        "recall": 0.522
       }
     },
     "combined": {
-      "rows": [],
+      "rows": [
+        {
+          "category": "accessibility",
+          "tp": 4,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1,
+          "recall": 0.8
+        },
+        {
+          "category": "claim",
+          "tp": 15,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.938,
+          "recall": 1
+        },
+        {
+          "category": "legal",
+          "tp": 1,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1
+        },
+        {
+          "category": "message",
+          "tp": 5,
+          "fp": 1,
+          "fn": 4,
+          "precision": 0.833,
+          "recall": 0.556
+        },
+        {
+          "category": "term",
+          "tp": 10,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1
+        },
+        {
+          "category": "tone",
+          "tp": 11,
+          "fp": 3,
+          "fn": 3,
+          "precision": 0.786,
+          "recall": 0.786
+        }
+      ],
       "overall": {
-        "tp": 0,
-        "fp": 0,
-        "fn": 0,
-        "precision": null,
-        "recall": null
+        "tp": 46,
+        "fp": 5,
+        "fn": 8,
+        "precision": 0.902,
+        "recall": 0.852
       }
     }
   },
   "heldout": {
     "drafts": 52,
-    "answered": 0,
+    "answered": 34,
     "unanswered": [
-      "clean-01",
-      "clean-03",
-      "clean-05",
-      "clean-07",
-      "clean-09",
-      "clean-10",
-      "tone-02",
-      "tone-04",
       "tone-06",
-      "tone-08",
-      "term-02",
-      "term-04",
-      "term-06",
-      "term-08",
-      "msg-01",
-      "msg-03",
-      "msg-05",
-      "claim-02",
-      "claim-04",
-      "claim-06",
-      "claim-08",
-      "claim-11",
-      "claim-13",
-      "claim-15",
-      "claim-17",
       "legal-01",
-      "legal-03",
-      "a11y-02",
-      "a11y-04",
-      "a11y-06",
       "voice-02",
-      "voice-04",
-      "voice-06",
-      "voice-08",
       "launch-01",
-      "launch-03",
-      "launch-05",
-      "launch-07",
       "legal-05",
       "legal-07",
       "legal-09",
@@ -250,7 +213,9 @@
       "near-04",
       "near-06"
     ],
-    "models": [],
+    "models": [
+      "gemini-3.6-flash"
+    ],
     "rulesOnly": {
       "rows": [
         {
@@ -296,6 +261,33 @@
         {
           "category": "tone",
           "tp": 9,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.9,
+          "recall": 1
+        }
+      ],
+      "overall": {
+        "tp": 57,
+        "fp": 1,
+        "fn": 2,
+        "precision": 0.983,
+        "recall": 0.966
+      }
+    },
+    "aiOnly": {
+      "rows": [
+        {
+          "category": "message",
+          "tp": 2,
+          "fp": 0,
+          "fn": 2,
+          "precision": 1,
+          "recall": 0.5
+        },
+        {
+          "category": "tone",
+          "tp": 5,
           "fp": 0,
           "fn": 0,
           "precision": 1,
@@ -303,31 +295,62 @@
         }
       ],
       "overall": {
-        "tp": 57,
+        "tp": 7,
         "fp": 0,
         "fn": 2,
         "precision": 1,
-        "recall": 0.966
-      }
-    },
-    "aiOnly": {
-      "rows": [],
-      "overall": {
-        "tp": 0,
-        "fp": 0,
-        "fn": 0,
-        "precision": null,
-        "recall": null
+        "recall": 0.778
       }
     },
     "combined": {
-      "rows": [],
+      "rows": [
+        {
+          "category": "accessibility",
+          "tp": 2,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1,
+          "recall": 0.667
+        },
+        {
+          "category": "claim",
+          "tp": 8,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1
+        },
+        {
+          "category": "message",
+          "tp": 2,
+          "fp": 0,
+          "fn": 2,
+          "precision": 1,
+          "recall": 0.5
+        },
+        {
+          "category": "term",
+          "tp": 4,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1
+        },
+        {
+          "category": "tone",
+          "tp": 5,
+          "fp": 1,
+          "fn": 0,
+          "precision": 0.833,
+          "recall": 1
+        }
+      ],
       "overall": {
-        "tp": 0,
-        "fp": 0,
-        "fn": 0,
-        "precision": null,
-        "recall": null
+        "tp": 21,
+        "fp": 1,
+        "fn": 3,
+        "precision": 0.955,
+        "recall": 0.875
       }
     }
   }

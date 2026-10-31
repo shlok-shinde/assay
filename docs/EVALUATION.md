@@ -42,7 +42,35 @@ The first run on this set (2026-10-30) stays on record in `docs/eval-first-run-1
 
 ## AI judgment, against the builder's labels
 
-Not measured yet: no AI answers are on record, so there are no AI-judgment scores.
+Recorded on 2026-10-31 through the deployed route. Coverage: the AI answered 71 of 104 drafts. Models: gemini-3.6-flash. `pnpm eval:ai` replays the recording without calling anything.
+
+AI only, on the rules the AI is asked to judge:
+
+| Category | True pos. | False pos. | False neg. | Precision | Recall |
+|---|---:|---:|---:|---:|---:|
+| Message | 3 | 0 | 6 | 1.000 | 0.333 |
+| Tone | 9 | 1 | 5 | 0.900 | 0.643 |
+| **Overall** | **12** | **1** | **11** | **0.923** | **0.522** |
+
+Rule checks and AI together, on the drafts the AI answered:
+
+| Category | True pos. | False pos. | False neg. | Precision | Recall |
+|---|---:|---:|---:|---:|---:|
+| Accessibility | 4 | 0 | 1 | 1.000 | 0.800 |
+| Claim | 15 | 1 | 0 | 0.938 | 1.000 |
+| Legal | 1 | 0 | 0 | 1.000 | 1.000 |
+| Message | 5 | 1 | 4 | 0.833 | 0.556 |
+| Term | 10 | 0 | 0 | 1.000 | 1.000 |
+| Tone | 11 | 3 | 3 | 0.786 | 0.786 |
+| **Overall** | **46** | **5** | **8** | **0.902** | **0.852** |
+
+On the kept-back half (34 of 52 answered), AI only:
+
+| Category | True pos. | False pos. | False neg. | Precision | Recall |
+|---|---:|---:|---:|---:|---:|
+| Message | 2 | 0 | 2 | 1.000 | 0.500 |
+| Tone | 5 | 0 | 0 | 1.000 | 1.000 |
+| **Overall** | **7** | **0** | **2** | **1.000** | **0.778** |
 
 ## Visual checks, against what was drawn
 

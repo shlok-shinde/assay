@@ -1,0 +1,781 @@
+{
+ "b2546f07ed7f611e6904291d0ad6e0c98f312db6787c60c872267cf3ed1288ea": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:06:27.358Z"
+ },
+ "bf1f8e1c9944c39555e24ecb8ff0ed0b713d849a9a14fc664a1ca13a824d1973": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:06:30.590Z"
+ },
+ "66556a00c833c28b800693aecbe988ee405c62f4c6e3446ba211c3fe17132746": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:06:34.381Z"
+ },
+ "41a17246ebead2213408e29ad6d200c07ea21adc9715ba9b8c090cebd56c155b": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:06:34.381Z"
+ },
+ "c2d05d8747989f2b98434d3447777d811a772222f8fd0e9bdbc427dd5962b8c7": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:06:34.382Z"
+ },
+ "dcfc2c38603c983e7543ef2e10003304a2780e9b0ce7e8eb90624e6bae0f4b2c": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:11:39.530Z"
+ },
+ "6c07096c03586d885a3b0593ccd11a1a3b02535e5378d974e4380787b2bce4cf": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:11:43.011Z"
+ },
+ "b9859382125269f0a702f4778b65e50c8187912f6a8c2944bc81764988662eb3": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:11:43.012Z"
+ },
+ "b796d7ad0ac40138ab9bff217a6560c3db450656db10c7a71f2505e643f067f4": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:11:47.003Z"
+ },
+ "7bc82f0aeb60cdf8787ee2bf54e4798974539e5c2ced0feb0797f987de562bef": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:11:51.717Z"
+ },
+ "12713fae14e1def19ea58036adb375d11dd96ecd100aeeb084938d12366ece00": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:11:55.915Z"
+ },
+ "498adde90f44f3a601bc0143bfb8a3ddb593631dfce42c6d599ec84e925e5558": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:11:59.603Z"
+ },
+ "d42db97153ded071d4c4d67d2ccebae802474111c7535d8af582e9e7ff2417f1": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "OMG this sunscreen is everything.",
+     "start": 0,
+     "end": 33,
+     "reason": "Avoid slang superlatives and hyped language like 'OMG' and 'is everything'. Speak in a calm, expert tone instead.",
+     "fix": "Daily Shield SPF 50 is designed for everyday wear.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:03.392Z"
+ },
+ "91d6b40fcde0bb4edfc2186127502e9548835ebee52b38ae0a6121bbe129f068": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "Honestly obsessed",
+     "start": 0,
+     "end": 17,
+     "reason": "The brand rule explicitly forbids hype and slang phrases like being 'obsessed' with products.",
+     "fix": "Consistently using",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:07.176Z"
+ },
+ "b9c6dc417d8db421b45c820788ef30df74bfddf7e14eed67db850462b039974a": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "Your skin will thank you!!!",
+     "start": 0,
+     "end": 27,
+     "reason": "Avoid runs of exclamation marks and exaggerated hype, as Velvra maintains a calm, non-shouting tone.",
+     "fix": "Your skin will thank you.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:11.371Z"
+ },
+ "0f9cd5329d9eb7e677b0c4e0b6117a45959e98f6a4fa64f0a1b688b6ac04f600": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "game changer",
+     "start": 17,
+     "end": 29,
+     "reason": "The phrase 'game changer' uses hyping language, which violates the rule against using slang superlatives or hype.",
+     "fix": "major step forward",
+     "confidence": 0.9
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:15.366Z"
+ },
+ "2d0a94ae41064a97f1e863f43fd8b897555e91ff64b94396df13e631580d2630": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-03",
+     "quote": "Hide those embarrassing dark patches",
+     "start": 0,
+     "end": 36,
+     "reason": "The rule prohibits using fear-based beauty language or making people feel bad about their skin, specifically discouraging phrases like 'embarrassing flaws'.",
+     "fix": "Care for skin with dark patches",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:19.548Z"
+ },
+ "07a04bdd875e84b39ab81ffb366ae216f3b8b72c2ae492112b82d72c477debfd": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:35.235Z"
+ },
+ "c3a084ef48c1579bca3713e98edc6ac44d650f4bb4d1d5a457dc6eab711b8abd": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "lowkey insane how light this SPF feels, no cap",
+     "start": 0,
+     "end": 46,
+     "reason": "The rule strictly forbids hype, including slang superlatives like 'lowkey insane' and 'no cap'.",
+     "fix": "Daily Shield feels noticeably light on skin.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:38.713Z"
+ },
+ "59a2a3592862ec7acf4b4982bb949c05de4ae10735d97e43cbbfc56396cfe931": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:41.580Z"
+ },
+ "91fe9fca023b1a2d4e9408e3fbe28edad8f058cc60507a22de676f21429f2756": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:12:57.354Z"
+ },
+ "074d43622497ae36284a6f47d95867f40c2661d4dcb6b4043eebff2e3e224cbb": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:02.571Z"
+ },
+ "c1a46c35cec466ed3eac712c2b67368179addcdb8cb39ce2a63af12b97a3db00": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:05.239Z"
+ },
+ "f2b6027743008bcddf847b961ea02b186946068a9680c8d1b764523b60b85ed0": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:09.334Z"
+ },
+ "0191e86b7b351eb19ddc699274615a653e4ca6aee97c8863aab12061746b521b": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:13.326Z"
+ },
+ "56d60594bf99b1e467472daa8b1dd608ee01eeab7b7682dbc416dc935c84c57a": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:18.444Z"
+ },
+ "3dacdc9bc7e988753f417186fb3ef9eb911a4269726bda08332584cf16878cba": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:22.027Z"
+ },
+ "3a1aad037ec41da5d12a082fa38fc74057e5c7098e26eb988c35e4b89433e470": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:27.254Z"
+ },
+ "6c43c92aeeab9af6e3a46bd36f5dac0b1779361e353bfad9f09c11c05a3782f3": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:31.350Z"
+ },
+ "ff0c9f3d241754149338b53f0a29cbdcda12fb1d6cdf155211d7d7c60c425cb9": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:33.193Z"
+ },
+ "67eb8dd9d732314d5d8f0fe54346723fcc04cb78936ffdc8beabf4a298d421b2": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "Dark spots vanish overnight",
+     "start": 0,
+     "end": 26,
+     "reason": "The brand strictly prohibits promising instant or overnight results for skin changes.",
+     "fix": "Daily Shield SPF 50 helps reduce the appearance of dark spots over time",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:37.121Z"
+ },
+ "8552bb0e15e859f54d1876c848f16351e516f4595beee62bcd1c0efe2c843488": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "See instant results from the first use.",
+     "start": 0,
+     "end": 40,
+     "reason": "Promising instant results violates the rule against promising instant or overnight skin changes.",
+     "fix": "With daily use, skin can look more even over time.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:41.179Z"
+ },
+ "12261f378eb78899574923ad3183527a91432a0be0d7514ef47ef98a260b1ec3": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "Erase uneven tone",
+     "start": 0,
+     "end": 18,
+     "reason": "The phrase promises instant or complete elimination ('erase') of skin issues, violating the rule against instant-results promises.",
+     "fix": "Help even out tone",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:45.276Z"
+ },
+ "ff10acb53cdcf3b6b48068ac72679378b68cbbd6c293afc3612a3c96d99e0e0e": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:49.576Z"
+ },
+ "0c4772af2b0844b4c0a9522085e77f8798108fd5b5d03afed9b82b54b9bd196b": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:53.263Z"
+ },
+ "5761b3483e5bf9814a5f059cb2e5eb59fc5f00230fed9e31ebfc1754ab9db5f2": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "Clinically proven to erase dark spots in just 7 days.",
+     "start": 0,
+     "end": 51,
+     "reason": "Promises fast, dramatic results ('erase dark spots in just 7 days'), which violates MSG-02 prohibiting instant or rapid vanishing results promises.",
+     "fix": "Helps visibly reduce the appearance of dark spots over a few weeks.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:13:58.485Z"
+ },
+ "c6889f5d9e147170dad015ebc3db85c55b33381f7d646b38ba02219076e4ef5d": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:14:01.121Z"
+ },
+ "3427efe31b3b539fa88456cb63d031cba57ee5ce9f7c5249223e25ec41d367ef": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:11.292Z"
+ },
+ "c811bb1aba86e95d5b2bd23fcb08a0175eaa47cb3f4044e4f9fbff309a9e4517": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:13.239Z"
+ },
+ "540ea7734ce1f66dbc1b6890f60c3bb0064c9e210c4baab854b2189991ba1a29": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:17.337Z"
+ },
+ "b6254ef3f77ef159cf483a095af742ead565aab322900d7af405117dfb7dc9be": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:21.941Z"
+ },
+ "f070eed43ce597caf03df3597887dcc8ea3391fa7a63dcf4e6c2b24e3e29edc6": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "The best sunscreen in India.",
+     "start": 0,
+     "end": 28,
+     "reason": "The claim uses hype/superlative language ('The best sunscreen in India') which violates the rule against hyping products.",
+     "fix": "A dermatologist-backed sunscreen made for everyday sun protection in India.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:25.566Z"
+ },
+ "630be2a568e1cfd845627ad7941ff3b4c7d5b0b347301c8b9fd1c337acedee92": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:29.211Z"
+ },
+ "f7d5c58fec9a787a8cf18f43f658c6d522412bc04e4aad7bebb0579b9acda877": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:33.088Z"
+ },
+ "5c0aaabb3f916bc22bdec20d04d698dec3a77db23dd33ffb02c2e42e23ed6b8b": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "Permanent protection",
+     "start": 0,
+     "end": 20,
+     "reason": "Promising permanent protection implies impossible or immediate complete results, violating the rule against instant or vanishing result promises.",
+     "fix": "Daily protection",
+     "confidence": 0.85
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:37.815Z"
+ },
+ "c4af6dbd72d0e0b680fdd477947de921f7e326e6175f56878c1371a1c010ced8": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:40.682Z"
+ },
+ "50de21008562a89a206703b8922edfe81ff1a85016c2711778a5dabeaa820c8d": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:55.631Z"
+ },
+ "a788877de1ae03f4e9738322e4608649ccb1eb36579047b24d4828d0fc4561a0": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:15:59.829Z"
+ },
+ "1dc6e861d6f989cd9bfa3b1973f106124faed7b6dbbca9697e2ce433ddd970fa": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "Better than any sunscreen you have tried.",
+     "start": 0,
+     "end": 40,
+     "reason": "The claim uses exaggerated hype superlative language ('Better than any sunscreen you have tried'), which violates the rule against using hype.",
+     "fix": "A lightweight SPF 50 designed for daily wear.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:16:04.331Z"
+ },
+ "531d5aba3e92a3618b2aaaaa2041f2f62afd846f4cd2c203c51c25e21b09fe82": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:16:07.914Z"
+ },
+ "06c5a80005e15a97e02fcafaa990fdc3910b61711d4745cbd06adb9295c53280": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:16:12.117Z"
+ },
+ "4517c87784ec24ac0ce7a43384bab3c4addc6f9d7207b5fb18bef92dd00fea10": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:16:20.104Z"
+ },
+ "93eccb08582cc3ceb52897cc43f2188460957ee39d41a50cc8dd3a0610559569": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:21:22.309Z"
+ },
+ "cba70671cc2f02318417c9dc4a1ab22723a6f141dd87e890a931104b88c64a76": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:21:27.529Z"
+ },
+ "2045b59b47dd8a084af4967a8a31ab6f9cc6a22a7d2fc56cdbc2f0c01bbc521d": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:21:29.779Z"
+ },
+ "a1a05f89abdb7ffebeb68157143ceb24e84f53bcbddabf6cd976df21f115f7a3": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:21:33.875Z"
+ },
+ "51f2572f9a0077234dbd336a5585edd78503e2d12482022d328fed09cece9167": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:21:37.565Z"
+ },
+ "8490da7db599bb4f7ff9a2695b5f9813edeeb27b4bdbe717bb82170e24cd876b": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:21:41.556Z"
+ },
+ "e3c5698448b272628aa289d5c3e8c70e7259bdefc9775d76a99b490dd0ecffc7": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:21:45.757Z"
+ },
+ "8af0195fb95fe260ce9b430ad8dd9eae0ff7bd8f7e9b920625f532ce8c9526bd": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:05.006Z"
+ },
+ "02a108f7442a305f48931b8c0a8641b07ec4f199c3561c1017097e529ff7af4c": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:08.180Z"
+ },
+ "ee4b4b83025bc8c67b580b76aec97feea58289540af9361b2c0739e282e5d4af": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-01",
+     "quote": "Stop asking questions.",
+     "start": 16,
+     "end": 38,
+     "reason": "The phrase 'Stop asking questions.' is aggressive and dismissive rather than calm, warm, and explanatory as required by the dermatologist friend tone.",
+     "fix": "designed for simple, stress-free daily use.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:14.123Z"
+ },
+ "bcf62f0079ee4d319a6744fb86193b0b99529df71838275647576cbc9ed05093": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-03",
+     "quote": "Do it or regret it.",
+     "start": 48,
+     "end": 67,
+     "reason": "The phrase uses fear-based language and high-pressure tactics rather than focusing on skin care.",
+     "fix": "Make it a seamless part of your daily routine.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:29.793Z"
+ },
+ "e80e570e1d18257c1770de0bbe89fede3b7a2ac13f13ee20ae2e1ac3d7cafd31": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-01",
+     "quote": "Sunscreen. You know why. Go.",
+     "start": 0,
+     "end": 27,
+     "reason": "The tone is blunt and demanding rather than calm, specific, warm, and explanatory as required by the dermatologist friend brand voice.",
+     "fix": "Sunscreen is essential for keeping your skin protected every day.",
+     "confidence": 0.85
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:32.148Z"
+ },
+ "5fe889034f857f3e08825e5550f84efcf0d37b614f812fd44f69e34bd691b888": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:35.937Z"
+ },
+ "432fa13949b1005782b19e28291d31166ee557f7317303e7914e0b10e7382763": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-01",
+     "quote": "Still not wearing sunscreen? Seriously?",
+     "start": 0,
+     "end": 36,
+     "reason": "The opening tone is shaming/judgmental rather than calm, warm, and expert (VOICE-01, VOICE-03).",
+     "fix": "Daily Shield SPF 50 is designed for everyday wear.",
+     "confidence": 0.85
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:40.441Z"
+ },
+ "0a0e233ec9b5dd463e7b4f8a5b8b4fec3fc78517521fb639d05626911ef927c1": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:43.464Z"
+ },
+ "06c4bc7897f0302c07accd912f29c12d3e4e5df9e56ae644ff2147d1e75cc09b": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:22:47.612Z"
+ },
+ "09d57d580349b8bf54c500a17538d91aa9147935bb5cf7c489e30b0fe967d3b8": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:23:03.991Z"
+ },
+ "9ecb3179156deeca2c3af4d3baa8079f336b32620a376c011b3e0eb84296910c": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:23:08.092Z"
+ },
+ "7c65bf599b8efccb1b2bc220db74836ae20ae4cce0abedc380e364bf29a5c787": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:23:12.393Z"
+ },
+ "00ea3069cdd5a24fe30d1d75e9d11edefb7d18611a82b6cdd7f015f495a3cd6c": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:23:16.080Z"
+ },
+ "c762bdedc7a24308bd6633eb4a4e3b48e2f9af19e2244e36c20fb8a3e3fc96f8": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:23:19.971Z"
+ },
+ "ea30748f396dc5a921687e3e02861dbecf2801095137e420881c69634bca813f": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-10-31T19:23:23.762Z"
+ }
+}
