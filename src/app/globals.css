@@ -2,7 +2,7 @@
 
 /* Assay tokens. Style: framed sheet (tasteskill app sheet, seed 1397914635).
    The chrome is one warm, gold-tinted frame; the work sits on a white sheet.
-   Gold is the one data hue (marks, the tab underline, the Hallmark); status uses pale pairs. */
+   Gold is the one data hue (marks, data, the citation box, the Hallmark); status uses pale pairs. Controls are never gold. */
 @theme {
   --color-chrome: #f2f1ed;
   --color-sheet: #ffffff;
@@ -56,7 +56,7 @@
 }
 
 /* Night: the app shell takes the landing's ground. One warm near-black everywhere, surfaces one
-   lightness step up, gold on data and on the one primary action, status as a hue on a dark tint of
+   lightness step up, gold on data and marks only, the primary control a cream pill, status as a hue on a dark tint of
    itself (tasteskill app-screens §9.3). Screen only, so printed records stay black on white. */
 @media screen {
   .theme-night {
@@ -71,9 +71,11 @@
     --color-ink: #f4efe4;
     --color-muted: #c6bdab;
     --color-faint: #a59c8b;
-    --color-primary: #d9a520;
+    /* The primary control is made primary by inversion: a cream pill with the ground's colour on it.
+       Gold never fills a button, tab or nav item. */
+    --color-primary: #f4efe4;
     --color-on-primary: #17140f;
-    --color-primary-hover: #e8b73a;
+    --color-primary-hover: #ffffff;
     --color-gold: #e2b54a;
     --color-gold-soft: #3b3018;
     --color-gold-mark: #d9a520;
@@ -101,15 +103,6 @@
   body:has(.theme-night) {
     background: #17140f;
   }
-  /* Gold is the screen's one primary action (the full-size button in the title row). Actions
-     repeated in rows and forms are small, and take the inverted neutral pill instead. */
-  .theme-night .btn-primary.btn-sm {
-    background: var(--color-ink);
-    color: var(--color-sheet);
-  }
-  .theme-night .btn-primary.btn-sm:hover:not(:disabled) {
-    background: #ffffff;
-  }
 }
 
 html,
@@ -125,7 +118,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-ink);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -141,8 +134,8 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 34px;
-  padding: 0 14px;
+  height: 36px;
+  padding: 0 16px;
   border-radius: 999px;
   font-size: 14px;
   font-weight: 500;
@@ -182,9 +175,29 @@ body {
   background: var(--color-raised);
 }
 .btn-sm {
-  height: 28px;
-  padding: 0 11px;
+  height: 30px;
+  padding: 0 12px;
   font-size: 13px;
+}
+.btn-lg {
+  height: 40px;
+  padding: 0 20px;
+}
+/* Primary by inversion: the ink fill with the sheet colour on it, in both schemes. Dialogs and
+   screens that must not spend the gold on a button use this. */
+.btn-inverse {
+  background: var(--color-ink);
+  color: var(--color-sheet);
+}
+.btn-inverse:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-ink) 86%, var(--color-sheet));
+}
+.btn-danger {
+  background: var(--color-negative);
+  color: var(--color-sheet);
+}
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-negative) 86%, var(--color-sheet));
 }
 
 .pill {
@@ -219,15 +232,106 @@ textarea.field {
   color: var(--color-faint);
 }
 .field:focus {
-  outline: 2px solid var(--color-gold);
+  outline: 2px solid var(--color-ink);
   outline-offset: 0;
   border-color: transparent;
 }
+.field[aria-invalid="true"] {
+  border-color: var(--color-negative);
+}
 
+/* Tables: rules and alignment only. A grey sentence-case header over a rule, a lighter rule between
+   rows, no zebra and no header fill. Cells marked .num are right-aligned figures. */
+.tbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  line-height: 20px;
+}
+.tbl th {
+  height: 36px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-line);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+.tbl td {
+  padding: 11px 12px;
+  border-bottom: 1px solid var(--color-rule);
+  vertical-align: top;
+}
+.tbl tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tbl th:first-child,
+.tbl td:first-child {
+  padding-left: 0;
+}
+.tbl th:last-child,
+.tbl td:last-child {
+  padding-right: 0;
+}
+.tbl .num {
+  text-align: right;
+}
+/* A table whose rows are a list to choose from: the chosen row is a rounded step up, never a rule or an outline. */
+.tbl-pick tbody tr {
+  cursor: pointer;
+}
+.tbl-pick tbody tr td {
+  border-bottom-color: transparent;
+  transition: background-color 150ms;
+}
+.tbl-pick tbody tr td:first-child {
+  padding-left: 16px;
+  border-radius: 18px 0 0 18px;
+}
+.tbl-pick tbody tr td:last-child {
+  padding-right: 16px;
+  border-radius: 0 18px 18px 0;
+}
+.tbl-pick tbody tr:hover td {
+  background: color-mix(in srgb, var(--color-active) 55%, transparent);
+}
+.tbl-pick tbody tr[data-selected] td {
+  background: var(--color-active);
+}
+.tbl-pick th:first-child {
+  padding-left: 16px;
+}
+.tbl-pick th:last-child {
+  padding-right: 16px;
+}
+.tbl-sticky {
+  overflow: auto;
+}
+.tbl-sticky th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--tbl-bg, var(--color-sheet));
+}
+
+/* A panel is a lightness step above the page, round, with no border and no shadow. A well sits one step
+   back inside it. */
 .card {
+  background: var(--color-raised);
+  border-radius: 28px;
+}
+.well {
   background: var(--color-sheet);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
+  border-radius: 20px;
+}
+.card .well {
+  background: var(--color-field);
+}
+.card .card {
+  background: var(--color-sheet);
+  border-radius: 22px;
 }
 
 /* Evidence highlights: colour is never the only signal. High is a solid underline,
@@ -506,6 +610,11 @@ textarea.field {
   color: var(--color-pos-ink);
   font-weight: 600;
 }
+/* Contested, not cleared: the verdict is pending, so it takes the warning pair and not the green one. */
+.slip-verdict[data-pending] {
+  background: var(--color-warn-bg);
+  color: var(--color-warn-ink);
+}
 
 /* Small things answer the hand: buttons lift a pixel on hover and give on press. */
 .btn {
@@ -599,4 +708,302 @@ textarea.field {
 }
 .history-summary:hover {
   background: var(--color-active);
+}
+
+/* ---------- Primitives (src/components/primitives.tsx) ---------- */
+
+/* A modal dialog sits in the top layer: the scrim is the separation, the page behind stops scrolling. */
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.62);
+  animation: scrim-in 220ms ease-out both;
+}
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+@keyframes scrim-in {
+  from { opacity: 0; }
+}
+
+/* Things that float over the page in the light scheme need a hint of lift; in the night scheme the
+   lightness step alone is enough. */
+.float {
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.14);
+}
+.theme-night .float {
+  box-shadow: none;
+}
+
+/* A glossary term: a dotted underline on the word, a small panel in the top layer for the definition.
+   The panel is placed by Term itself (fixed coordinates), so no overflow ancestor can clip it. */
+.term {
+  cursor: help;
+  border-radius: 4px;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--color-gold-mark);
+  text-underline-offset: 4px;
+  transition: text-decoration-color 150ms;
+}
+.term:hover,
+.term[aria-expanded="true"] {
+  text-decoration-color: var(--color-ink);
+}
+.term-panel {
+  inset: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: var(--color-raised);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 21px;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+}
+.term-panel:popover-open {
+  animation: term-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes term-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+/* ---------- The brand book drawer and viewer ---------- */
+
+/* A panel from the right edge on the native dialog: the scrim comes from .dialog, the panel is a
+   lightness step above the page, rounded on its inside edge, and the whole screen on a phone. */
+.drawer {
+  margin: 0 0 0 auto;
+  padding: 0;
+  width: min(100vw, 740px);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  border: 0;
+  border-radius: 28px 0 0 28px;
+  background: var(--color-raised);
+  overflow: hidden;
+}
+@media (max-width: 640px) {
+  .drawer {
+    width: 100vw;
+    border-radius: 0;
+  }
+}
+
+/* A citation in a finding card: the words stay where they were, and now they open the page. */
+.cite {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 8px;
+  padding: 1px 6px 1px 4px;
+  margin: -1px 0;
+  color: var(--color-muted);
+  text-decoration-line: underline;
+  text-decoration-color: var(--color-control);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-align: left;
+  transition:
+    color 150ms,
+    background-color 150ms,
+    text-decoration-color 150ms;
+}
+.cite:hover {
+  color: var(--color-ink);
+  background: var(--color-raised);
+  text-decoration-color: var(--color-ink);
+}
+
+/* The page's text layer, as pdf.js lays it out: transparent words placed over the canvas, so the
+   paragraph can be found and the text selected. Sizes come from --total-scale-factor on the page. */
+.pdf-text {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: clip;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: initial;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  transform-origin: 0 0;
+  z-index: 2;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+.pdf-text :is(span, br) {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+  user-select: text;
+}
+.pdf-text > :not(.markedContent),
+.pdf-text .markedContent span:not(.markedContent) {
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+.pdf-text .markedContent {
+  display: contents;
+}
+.pdf-text ::selection {
+  background: color-mix(in srgb, var(--color-gold-mark) 38%, transparent);
+  color: transparent;
+}
+
+/* The cited paragraph, boxed: a rounded gold outline with a flat tint, over the canvas and under the text. */
+.book-mark {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 12px;
+  border: 2px solid var(--color-gold-mark);
+  background: color-mix(in srgb, var(--color-gold-mark) 15%, transparent);
+}
+
+/* The skip link: out of sight until it takes focus, then a pill at the top left over everything. */
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: 12px;
+  z-index: 100;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: var(--color-sheet);
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  transform: translateY(-220%);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.skip-link:focus-visible {
+  transform: none;
+}
+
+
+/* ---------- The report page and the printed report ----------
+   On screen the record is a sheet of light paper inside the app. Printed, the app falls away (the shell carries
+   print:hidden) and the sheet is black on white, flat, with no motion. Text only: no fills, no shadows. */
+.report-sheet {
+  margin: 0 auto;
+  max-width: 860px;
+  border-radius: 24px;
+  background: #ffffff;
+  color: #111111;
+  padding: 44px 48px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color-scheme: light;
+}
+.report-sheet h1 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1.2;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.report-sheet h2 {
+  margin-top: 28px;
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 600;
+  break-after: avoid;
+}
+.report-sheet p,
+.report-sheet ul {
+  margin-top: 10px;
+}
+.report-sheet ul {
+  list-style: disc;
+  padding-left: 20px;
+}
+.report-sheet li {
+  margin-top: 2px;
+}
+.report-table {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+.report-sheet table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.report-sheet th {
+  border-bottom: 1.5px solid #111111;
+  padding: 6px 10px 6px 0;
+  text-align: left;
+  font-weight: 600;
+  vertical-align: bottom;
+}
+.report-sheet td {
+  border-bottom: 1px solid #d8d4c8;
+  padding: 7px 10px 7px 0;
+  vertical-align: top;
+}
+.report-sheet tr {
+  break-inside: avoid;
+}
+.report-sheet pre {
+  margin-top: 10px;
+  border-radius: 14px;
+  background: #f4f1ea;
+  padding: 14px 16px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.report-code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 640px) {
+  .report-sheet {
+    border-radius: 18px;
+    padding: 24px 18px;
+  }
+}
+@media print {
+  @page {
+    margin: 16mm;
+  }
+  .report-sheet {
+    max-width: none;
+    border-radius: 0;
+    padding: 0;
+    font-size: 11pt;
+    background: #ffffff;
+    color: #000000;
+  }
+  .report-sheet th {
+    border-bottom-color: #000000;
+  }
+  .report-sheet pre {
+    background: #ffffff;
+    border: 1px solid #999999;
+  }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

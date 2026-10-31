@@ -1,0 +1,72 @@
+[
+  {
+    "file": "public/landing/world/touchstone-crop.webp",
+    "media": "image",
+    "ref": "commons:27514969",
+    "title": "2 Touchstones",
+    "creator": "Mauro Cateb",
+    "creatorUrl": null,
+    "date": "2012-09-10",
+    "license": "CC BY-SA 3.0",
+    "licenseCode": "by-sa",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "creditRequired": true,
+    "page": "https://commons.wikimedia.org/wiki/File:2_Touchstones.JPG",
+    "via": "Wikimedia Commons",
+    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/2_Touchstones.JPG/1920px-2_Touchstones.JPG",
+    "width": 1920,
+    "height": 1292,
+    "bytes": 249071,
+    "credit": "\"2 Touchstones\" by Mauro Cateb, CC BY-SA 3.0, via Wikimedia Commons",
+    "notes": [
+      "Share-alike: an altered version (recoloured, combined with other pictures) must be shared under the same licence."
+    ],
+    "saved": "2026-10-31T06:00:37.139Z"
+  },
+  {
+    "file": "public/landing/world/assay-office-1917.webp",
+    "media": "image",
+    "ref": "commons:149060158",
+    "title": "1917-04-21 IB\u00c9RICA 01",
+    "creator": "Unknown author Unknown author",
+    "creatorUrl": null,
+    "date": "1917-04-21",
+    "license": "public domain",
+    "licenseCode": "pd",
+    "licenseUrl": "https://creativecommons.org/publicdomain/mark/1.0/",
+    "creditRequired": false,
+    "page": "https://commons.wikimedia.org/wiki/File:1917-04-21_IB%C3%89RICA_01.jpg",
+    "via": "Wikimedia Commons",
+    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1b/1917-04-21_IB%C3%89RICA_01.jpg/1920px-1917-04-21_IB%C3%89RICA_01.jpg",
+    "width": 1920,
+    "height": 1940,
+    "bytes": 894159,
+    "credit": "\"1917-04-21 IB\u00c9RICA 01\", public domain, via Wikimedia Commons",
+    "notes": [],
+    "saved": "2026-10-31T06:00:39.301Z"
+  },
+  {
+    "file": "public/landing/world/hallmark-strike.webp",
+    "media": "image",
+    "ref": "commons:158520369",
+    "title": "Making a silver chain, 18 (25)",
+    "creator": "W.carter",
+    "creatorUrl": null,
+    "date": "2008-02-26",
+    "license": "CC BY-SA 4.0",
+    "licenseCode": "by-sa",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "creditRequired": true,
+    "page": "https://commons.wikimedia.org/wiki/File:Making_a_silver_chain,_18_(25).jpg",
+    "via": "Wikimedia Commons",
+    "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b3/Making_a_silver_chain%2C_18_%2825%29.jpg/1920px-Making_a_silver_chain%2C_18_%2825%29.jpg",
+    "width": 1920,
+    "height": 1442,
+    "bytes": 513424,
+    "credit": "\"Making a silver chain, 18 (25)\" by W.carter, CC BY-SA 4.0, via Wikimedia Commons",
+    "notes": [
+      "Share-alike: an altered version (recoloured, combined with other pictures) must be shared under the same licence."
+    ],
+    "saved": "2026-10-31T06:00:39.995Z"
+  }
+]

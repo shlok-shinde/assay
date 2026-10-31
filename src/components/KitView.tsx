@@ -1,37 +1,47 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Plus, Trash2, Upload } from "lucide-react";
-import type { BrandKit, Category, Channel, Fact, Rule, Severity } from "@/lib/types";
-import { db, todayIso } from "@/store/db";
-import { deleteRule, publishRulebook, unpublishedChanges, updateKit, upsertRule } from "@/store/actions";
-import { useAiStatus, useKit, useRole } from "@/store/hooks";
+import { Plus, RotateCcw, Trash2, Upload } from "lucide-react";
+import type { BrandKit, Category, Channel, Rule, RuleMode, RulebookVersion, Severity } from "@/lib/types";
+import { db } from "@/store/db";
+import { deleteRule, importBrandBook, publishRulebook, rollbackRulebook, unpublishedChanges, updateKit, upsertRule, type BookImportResult } from "@/store/actions";
+import { useKit, useRole } from "@/store/hooks";
 import { CHANNELS } from "@/seed/velvra";
-import { formatDate, isExpired } from "@/engine/claims";
-import { candidateToRule, heuristicCandidates, type Candidate } from "@/lib/import";
-import { aiTask } from "@/lib/ai-client";
-import { docxText, fetchAsFile, pdfText } from "@/lib/parse";
-import { INPUT_CAP } from "@/lib/ai-tasks";
+import { fetchAsFile } from "@/lib/parse";
 import { TitleRow } from "./AppShell";
-import { CATEGORY_LABEL, Code, Empty, fmtTime, Notice, PageLoading, SeverityPill, Spinner, Tabs } from "./ui";
-import { SlideIn } from "./motion";
+import { CATEGORY_LABEL, Code, Empty, fmtTime, Notice, PageLoading, SeverityPill, Spinner, TabPanel, Tabs, useTabParam } from "./ui";
+import { FactsTab, PaletteSection, TermsTab } from "./KitEditors";
+import { nextRuleId } from "./kit-helpers";
+import { useBrand } from "./BrandSwitcher";
+import { Field, Select, Table, Term, useAction, useConfirm } from "./primitives";
+import { DiffView } from "./DiffView";
+import { AcceptanceNote, useAcceptance } from "./RuleSignals";
+import { CitationButton, ruleTarget } from "./Citation";
 
 type Tab = "rules" | "facts" | "terms" | "assets" | "import" | "versions";
+const TABS: readonly Tab[] = ["rules", "facts", "terms", "assets", "import", "versions"];
 const CATEGORIES = Object.keys(CATEGORY_LABEL) as Category[];
 const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
 
 export function KitView() {
   const role = useRole();
   const kit = useKit();
-  const params = useSearchParams();
-  const [tab, setTab] = useState<Tab>((params.get("tab") as Tab) || "rules");
+  const [tab, setTab] = useTabParam<Tab>(TABS, "rules");
   const latest = useLiveQuery(() => db.rulebooks.orderBy("publishedAt").last(), []);
   const dirty = useLiveQuery(() => unpublishedChanges(), [kit?.updatedAt, latest?.id]);
   const [notes, setNotes] = useState("");
   const [published, setPublished] = useState<string | null>(null);
   const admin = role === "admin";
+  // The store's own sentence ("Nothing has changed since version 3.2.") shows beside the button, not only in a toast.
+  const publish = useAction(
+    async () => {
+      const v = await publishRulebook(notes.trim() || "Updated rules");
+      setPublished(v);
+      setNotes("");
+    },
+    { toastError: false },
+  );
   if (!kit || !latest) return <PageLoading label="Opening the Brand Kit…" />;
   const pending = kit.rules.filter((r) => r.pending);
   const next = (() => {
@@ -45,7 +55,7 @@ export function KitView() {
         title="Brand Kit"
         sub={
           <>
-            {kit.brandBook}. Checks use the published rulebook v{latest.version}; edits here stay in a draft until you publish.
+            {kit.brandBook}. Checks use the published rulebook v{latest.version}; edits here stay in a draft until you publish. Facts here form the <Term id="claim-ledger">Claim Ledger</Term>.
             {dirty ? <span className="text-ink"> The draft has unpublished changes.</span> : " The draft matches the published rulebook."}
           </>
         }
@@ -55,15 +65,14 @@ export function KitView() {
               <label htmlFor="pub-notes" className="sr-only">
                 What changed
               </label>
-              <input id="pub-notes" className="field !h-[34px] w-56" placeholder="What changed in this version" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={!dirty} />
+              <input id="pub-notes" className="field !h-[34px] w-56" placeholder="What changed in this version" value={notes} onChange={(e) => (setNotes(e.target.value), publish.clearError())} />
               <button
-                className="btn btn-primary"
-                disabled={!dirty || pending.length > 0}
+                className="btn btn-inverse"
+                disabled={publish.busy || pending.length > 0}
                 title={pending.length ? "Approve or reject imported rules first" : undefined}
-                onClick={async () => {
-                  const v = await publishRulebook(notes || "Updated rules");
-                  setPublished(v);
-                  setNotes("");
+                onClick={() => {
+                  setPublished(null);
+                  void publish.run();
                 }}
               >
                 Publish v{next}
@@ -73,6 +82,13 @@ export function KitView() {
         }
       />
       {!admin && <p className="mt-3 text-[13px] text-muted">Read-only. Switch to Brand Admin in the top bar to edit rules, facts and assets.</p>}
+      {publish.error && (
+        <div className="mt-3 max-w-[760px]">
+          <Notice tone="error" role="alert">
+            {publish.error}
+          </Notice>
+        </div>
+      )}
       {published && (
         <div className="mt-3">
           <Notice tone="info">
@@ -82,6 +98,7 @@ export function KitView() {
       )}
       <div className="mt-5">
         <Tabs
+          idBase="kit"
           label="Brand Kit sections"
           value={tab}
           onChange={setTab}
@@ -95,14 +112,14 @@ export function KitView() {
           ]}
         />
       </div>
-      <SlideIn k={tab} className="mt-5">
+      <TabPanel idBase="kit" id={tab} className="mt-5">
         {tab === "rules" && <RulesTab kit={kit} admin={admin} />}
         {tab === "facts" && <FactsTab kit={kit} admin={admin} />}
         {tab === "terms" && <TermsTab kit={kit} admin={admin} />}
         {tab === "assets" && <AssetsTab kit={kit} admin={admin} />}
         {tab === "import" && <ImportTab kit={kit} admin={admin} />}
-        {tab === "versions" && <VersionsTab />}
-      </SlideIn>
+        {tab === "versions" && <VersionsTab admin={admin} />}
+      </TabPanel>
     </div>
   );
 }
@@ -111,64 +128,70 @@ function RulesTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
   const rules = kit.rules.filter((r) => !r.pending);
   const [sel, setSel] = useState<string | null>(rules[0]?.id ?? null);
   const rule = kit.rules.find((r) => r.id === sel);
+  const add = useAction(
+    async () => {
+      const id = nextRuleId(kit.rules, "CUSTOM");
+      await upsertRule({
+        id,
+        title: "New rule",
+        text: "Describe what is allowed and what is not.",
+        category: "tone",
+        severity: "low",
+        modes: ["judgment"],
+        channels: [],
+        dos: [],
+        donts: [],
+        patterns: [],
+        replacements: {},
+        source: { doc: kit.brandBook, page: 1, section: "added in Assay" },
+        active: true,
+      });
+      setSel(id);
+    },
+    { errorPrefix: "Could not add the rule" },
+  );
+  const live = rules.filter((r) => r.active).length;
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_440px]">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-[14px]">
-          <thead>
-            <tr className="text-left text-[12px] text-muted">
-              <th className="pb-2 font-normal">Rule</th>
-              <th className="pb-2 font-normal">Category</th>
-              <th className="pb-2 font-normal">Severity</th>
-              <th className="pb-2 font-normal">Checked by</th>
-              <th className="pb-2 text-right font-normal">Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rules.map((r) => (
-              <tr key={r.id} onClick={() => setSel(r.id)} className={`cursor-pointer border-t border-rule ${sel === r.id ? "bg-raised" : "hover:bg-raised"} ${r.active ? "" : "text-muted"}`}>
-                <td className="py-2.5 pr-2 pl-1">
-                  <button className="text-left" onClick={() => setSel(r.id)}>
-                    <Code>{r.id}</Code> {r.title}
-                    {!r.active && <span className="pill ml-2 bg-neutral-bg text-neutral-ink">Off</span>}
-                  </button>
-                </td>
-                <td className="py-2.5 pr-2">{CATEGORY_LABEL[r.category]}</td>
-                <td className="py-2.5 pr-2">
-                  <SeverityPill severity={r.severity} />
-                </td>
-                <td className="py-2.5 pr-2 text-[13px] text-muted">{r.modes.map((m) => (m === "judgment" ? "AI judgment" : m === "manual" ? "manual" : "code")).filter((v, i, a) => a.indexOf(v) === i).join(" + ")}</td>
-                <td className="num py-2.5 pr-1 text-right text-[13px] text-muted">
-                  p.{r.source.page} {r.source.section}
-                </td>
+      <div className="min-w-0">
+        <p className="mb-3 text-[14px] leading-[22px] text-muted">
+          <span className="num text-ink">{rules.length}</span> rules, <span className="num text-ink">{live}</span> active. Choose one to read how it is checked and to edit it.
+        </p>
+        <div className="card p-3">
+          <Table label="Brand rules" minWidth={560} className="tbl-pick">
+            <thead>
+              <tr>
+                <th>Rule</th>
+                <th>Category</th>
+                <th>Severity</th>
+                <th>Checked by</th>
+                <th className="num">Source</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rules.map((r) => (
+                <tr key={r.id} data-selected={sel === r.id ? "" : undefined} onClick={() => setSel(r.id)} className={`align-middle ${r.active ? "" : "text-muted"}`}>
+                  <td className="pr-2">
+                    <button className="text-left" aria-current={sel === r.id ? "true" : undefined} onClick={(e) => (e.stopPropagation(), setSel(r.id))}>
+                      <Code>{r.id}</Code> {r.title}
+                      {!r.active && <span className="pill ml-2 bg-neutral-bg text-neutral-ink">Off</span>}
+                    </button>
+                  </td>
+                  <td className="pr-2">{CATEGORY_LABEL[r.category]}</td>
+                  <td className="pr-2">
+                    <SeverityPill severity={r.severity} />
+                  </td>
+                  <td className="pr-2 text-[13px] text-muted">{r.modes.map((m) => (m === "judgment" ? "AI judgment" : m === "manual" ? "manual" : "code")).filter((v, i, a) => a.indexOf(v) === i).join(" + ")}</td>
+                  <td className="num whitespace-nowrap text-[13px] text-muted">
+                    p.{r.source.page} {r.source.section}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </div>
         {admin && (
-          <button
-            className="btn btn-secondary btn-sm mt-3"
-            onClick={async () => {
-              const n = kit.rules.filter((r) => r.id.startsWith("CUSTOM-")).length + 1;
-              const id = `CUSTOM-${String(n).padStart(2, "0")}`;
-              await upsertRule({
-                id,
-                title: "New rule",
-                text: "Describe what is allowed and what is not.",
-                category: "tone",
-                severity: "low",
-                modes: ["judgment"],
-                channels: [],
-                dos: [],
-                donts: [],
-                patterns: [],
-                replacements: {},
-                source: { doc: kit.brandBook, page: 1, section: "added in Assay" },
-                active: true,
-              });
-              setSel(id);
-            }}
-          >
+          <button className="btn btn-secondary btn-sm mt-3" disabled={add.busy} onClick={() => add.run()}>
             <Plus size={14} /> Add rule
           </button>
         )}
@@ -178,77 +201,111 @@ function RulesTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
   );
 }
 
+const MODE_TEXT: Record<RuleMode, string> = {
+  judgment: "AI judgment",
+  lexical: "phrases checked in code",
+  structural: "structure checked in code",
+  claim: "claims compared with the Claim Ledger",
+  visual: "the creative checked in code",
+  manual: "reviewers apply it by eye",
+};
+
 function RuleEditor({ rule, admin }: { rule: Rule; admin: boolean }) {
+  const confirm = useConfirm();
+  const acceptance = useAcceptance();
   const [r, setR] = useState(rule);
-  const [saved, setSaved] = useState(false);
-  const set = (patch: Partial<Rule>) => {
-    setR((x) => ({ ...x, ...patch }));
-    setSaved(false);
+  const [patterns, setPatterns] = useState(rule.patterns.join("\n"));
+  const [error, setError] = useState<string | undefined>();
+  const set = (patch: Partial<Rule>) => setR((x) => ({ ...x, ...patch }));
+  const lexical = r.modes.includes("lexical");
+  // Only these two are switched here; any other way the rule is checked is kept as it is.
+  const other = r.modes.filter((m) => m !== "lexical" && m !== "judgment");
+  const toggle = (mode: "lexical" | "judgment", on: boolean) => {
+    const rest = r.modes.filter((m) => m !== mode);
+    const modes: RuleMode[] = on ? [...rest, mode] : rest;
+    set({ modes: modes.length ? modes : ["manual"] });
+    setError(undefined);
   };
+  const save = useAction(
+    async () => {
+      const list = [...new Set(patterns.split("\n").map((x) => x.trim()).filter(Boolean))];
+      if (lexical && !list.length) {
+        setError("Add at least one phrase, or untick “Phrases checked in code”.");
+        return false;
+      }
+      setError(undefined);
+      const keep = list.map((p) => p.toLowerCase());
+      const replacements = Object.fromEntries(Object.entries(r.replacements).filter(([k]) => keep.includes(k.toLowerCase())));
+      await upsertRule({ ...r, patterns: lexical ? list : [], replacements: lexical ? replacements : {}, fixTemplate: r.fixTemplate?.trim() || undefined });
+      return true;
+    },
+    { errorPrefix: "Could not save the rule", success: (ok) => (ok ? `Saved ${r.id} to the draft.` : undefined) },
+  );
+  const remove = useAction(
+    async () => {
+      if (!(await confirm({ title: `Delete ${r.id}?`, body: "It is removed from the draft rulebook. Published versions keep it.", confirmLabel: "Delete rule", danger: true }))) return false;
+      await deleteRule(r.id);
+      return true;
+    },
+    { errorPrefix: "Could not delete the rule", success: (done) => (done ? `Deleted ${r.id} from the draft.` : undefined) },
+  );
+  const dis = !admin;
   return (
     <form
-      className="space-y-4 rounded-[16px] bg-raised p-4"
-      onSubmit={async (e) => {
+      aria-label={`Rule ${r.id}`}
+      noValidate
+      className="min-w-0 space-y-4 rounded-[28px] bg-raised p-5 md:p-6 xl:sticky xl:top-3 xl:self-start"
+      onSubmit={(e) => {
         e.preventDefault();
-        await upsertRule(r);
-        setSaved(true);
+        void save.run();
       }}
     >
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[16px] font-semibold">
-          <Code>{r.id}</Code> {admin ? "Edit rule" : "Rule"}
-        </h2>
+      <div>
+        <p className="flex flex-wrap items-center gap-2 text-[13px] text-muted">
+          <Code>{rule.id}</Code>
+          <SeverityPill severity={rule.severity} />
+          <span>{CATEGORY_LABEL[rule.category]}</span>
+        </p>
+        <h2 className="mt-2 font-display text-[22px] font-medium leading-7 tracking-[-0.02em]">{rule.title}</h2>
+        <p className="mt-2 text-[14.5px] leading-6">{rule.text}</p>
+        <p className="mt-3 text-[13px] leading-5 text-muted">
+          Checked by {rule.modes.map((m) => MODE_TEXT[m]).join("; ")}.
+        </p>
+      </div>
+      <div className="flex items-center justify-between gap-2 pt-2">
+        <h3 className="text-[15px] font-semibold">{admin ? "Edit rule" : "Rule settings"}</h3>
         <label className="flex items-center gap-2 text-[13px]">
-          <input type="checkbox" className="h-4 w-4 accent-[#17140f]" checked={r.active} disabled={!admin} onChange={(e) => set({ active: e.target.checked })} /> Active
+          <input type="checkbox" className="h-4 w-4 accent-[#f4efe4]" checked={r.active} disabled={dis} onChange={(e) => set({ active: e.target.checked })} /> Active
         </label>
       </div>
-      <div>
-        <label htmlFor="r-title" className="text-[13px] font-medium">
-          Title
-        </label>
-        <input id="r-title" className="field mt-1.5" value={r.title} disabled={!admin} onChange={(e) => set({ title: e.target.value })} />
-      </div>
-      <div>
-        <label htmlFor="r-text" className="text-[13px] font-medium">
-          Rule text
-        </label>
-        <textarea id="r-text" className="field mt-1.5" rows={3} value={r.text} disabled={!admin} onChange={(e) => set({ text: e.target.value })} />
-      </div>
+      <AcceptanceNote ruleId={r.id} a={acceptance?.get(r.id)} className="rounded-[20px] bg-field px-4 py-3.5" />
+      <Field id="r-title" label="Title" value={r.title} disabled={dis} onChange={(e) => set({ title: e.target.value })} />
+      <Field id="r-text" label="Rule text" multiline rows={3} value={r.text} disabled={dis} onChange={(e) => set({ text: e.target.value })} />
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label htmlFor="r-cat" className="text-[13px] font-medium">
-            Category
-          </label>
-          <select id="r-cat" className="field mt-1.5" value={r.category} disabled={!admin} onChange={(e) => set({ category: e.target.value as Category })}>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABEL[c]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="r-sev" className="text-[13px] font-medium">
-            Severity
-          </label>
-          <select id="r-sev" className="field mt-1.5" value={r.severity} disabled={!admin} onChange={(e) => set({ severity: e.target.value as Severity })}>
-            {(["high", "medium", "low"] as const).map((s) => (
-              <option key={s} value={s}>
-                {s[0].toUpperCase() + s.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select id="r-cat" label="Category" value={r.category} disabled={dis} onChange={(e) => set({ category: e.target.value as Category })}>
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {CATEGORY_LABEL[c]}
+            </option>
+          ))}
+        </Select>
+        <Select id="r-sev" label="Severity" value={r.severity} disabled={dis} onChange={(e) => set({ severity: e.target.value as Severity })}>
+          {(["high", "medium", "low"] as const).map((sv) => (
+            <option key={sv} value={sv}>
+              {sv[0].toUpperCase() + sv.slice(1)}
+            </option>
+          ))}
+        </Select>
       </div>
       <fieldset>
-        <legend className="text-[13px] font-medium">Channels (none ticked means every channel)</legend>
-        <div className="mt-1.5 flex flex-wrap gap-3">
+        <legend className="text-[14px] font-medium">Channels (none ticked means every channel)</legend>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
           {CHANNELS.map((c) => (
             <label key={c.id} className="flex items-center gap-1.5 text-[13px]">
               <input
                 type="checkbox"
-                className="h-4 w-4 accent-[#17140f]"
-                disabled={!admin}
+                className="h-4 w-4 accent-[#f4efe4]"
+                disabled={dis}
                 checked={r.channels.includes(c.id)}
                 onChange={(e) => set({ channels: e.target.checked ? [...r.channels, c.id] : r.channels.filter((x: Channel) => x !== c.id) })}
               />
@@ -257,245 +314,76 @@ function RuleEditor({ rule, admin }: { rule: Rule; admin: boolean }) {
           ))}
         </div>
       </fieldset>
-      {r.modes.includes("lexical") && (
-        <div>
-          <label htmlFor="r-pat" className="text-[13px] font-medium">
-            Phrases checked in code (one per line)
+      <fieldset>
+        <legend className="text-[14px] font-medium">How it is checked</legend>
+        <div className="mt-2 space-y-2">
+          <label className="flex items-center gap-2 text-[13.5px]">
+            <input type="checkbox" className="h-4 w-4 accent-[#f4efe4]" disabled={dis} checked={r.modes.includes("judgment")} onChange={(e) => toggle("judgment", e.target.checked)} /> AI judgment
           </label>
-          <textarea id="r-pat" className="field mt-1.5" rows={3} value={r.patterns.join("\n")} disabled={!admin} onChange={(e) => set({ patterns: lines(e.target.value) })} />
+          <label className="flex items-center gap-2 text-[13.5px]">
+            <input type="checkbox" className="h-4 w-4 accent-[#f4efe4]" disabled={dis} checked={lexical} onChange={(e) => toggle("lexical", e.target.checked)} /> Phrases checked in code
+          </label>
         </div>
+        {other.length > 0 && <p className="mt-2 text-[12.5px] text-muted">Also: {other.map((m) => MODE_TEXT[m]).join("; ")}.</p>}
+        {r.modes.length === 1 && r.modes[0] === "manual" && <p className="mt-2 text-[12.5px] text-muted">Nothing checks this rule by itself: {MODE_TEXT.manual}.</p>}
+      </fieldset>
+      {lexical && (
+        <>
+          <Field
+            id="r-pat"
+            label="Phrases checked in code (one per line)"
+            multiline
+            rows={4}
+            value={patterns}
+            disabled={dis}
+            onChange={(e) => (setPatterns(e.target.value), setError(undefined))}
+            error={error}
+            hint="A finding fires when a draft contains one of these as whole words, in any capitals, on the channels ticked above."
+          />
+          <Field id="r-fix" label="What to suggest instead (optional)" value={r.fixTemplate ?? ""} disabled={dis} onChange={(e) => set({ fixTemplate: e.target.value })} hint="Shown with each finding as a rewrite for the writer to make by hand." />
+        </>
       )}
       <div className="grid gap-3 md:grid-cols-2">
-        <div>
-          <label htmlFor="r-dos" className="text-[13px] font-medium">
-            Do examples
-          </label>
-          <textarea id="r-dos" className="field mt-1.5" rows={3} value={r.dos.join("\n")} disabled={!admin} onChange={(e) => set({ dos: lines(e.target.value) })} />
-        </div>
-        <div>
-          <label htmlFor="r-donts" className="text-[13px] font-medium">
-            Don&apos;t examples
-          </label>
-          <textarea id="r-donts" className="field mt-1.5" rows={3} value={r.donts.join("\n")} disabled={!admin} onChange={(e) => set({ donts: lines(e.target.value) })} />
-        </div>
+        <Field id="r-dos" label="Do examples" multiline rows={3} value={r.dos.join("\n")} disabled={dis} onChange={(e) => set({ dos: lines(e.target.value) })} />
+        <Field id="r-donts" label="Don't examples" multiline rows={3} value={r.donts.join("\n")} disabled={dis} onChange={(e) => set({ donts: lines(e.target.value) })} />
       </div>
       <p className="text-[12px] text-muted">
         Source: {r.source.doc}, page {r.source.page}, {r.source.section}
       </p>
+      {r.source.bookId && r.source.page > 0 && (
+        <p className="text-[13px]">
+          <CitationButton target={ruleTarget(r)}>Open page {r.source.page} of {r.source.doc}</CitationButton>
+        </p>
+      )}
       {admin && (
         <div className="flex items-center gap-2">
-          <button className="btn btn-primary btn-sm" type="submit">
+          <button className="btn btn-inverse btn-sm" type="submit" disabled={save.busy}>
             Save to draft
           </button>
           <button
             type="button"
             className="btn btn-ghost btn-sm text-neg-ink"
-            onClick={async () => {
-              if (confirm(`Delete ${r.id} from the draft? Published versions keep it.`)) await deleteRule(r.id);
-            }}
+            disabled={remove.busy}
+            onClick={() => remove.run()}
           >
             <Trash2 size={14} /> Delete
           </button>
-          {saved && <span className="text-[13px] text-positive">Saved to the draft</span>}
         </div>
       )}
     </form>
-  );
-}
-
-function FactsTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
-  const [sel, setSel] = useState<string | null>(kit.facts[0]?.id ?? null);
-  const fact = kit.facts.find((f) => f.id === sel);
-  const today = todayIso();
-  return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[560px] text-[14px]">
-          <thead>
-            <tr className="text-left text-[12px] text-muted">
-              <th className="pb-2 font-normal">Fact</th>
-              <th className="pb-2 font-normal">Owner</th>
-              <th className="pb-2 text-right font-normal">Valid to</th>
-            </tr>
-          </thead>
-          <tbody>
-            {kit.facts.map((f) => (
-              <tr key={f.id} onClick={() => setSel(f.id)} className={`cursor-pointer border-t border-rule align-top ${sel === f.id ? "bg-raised" : "hover:bg-raised"}`}>
-                <td className="py-2.5 pr-2 pl-1">
-                  <button className="text-left" onClick={() => setSel(f.id)}>
-                    <Code>{f.id}</Code> {f.statement}
-                  </button>
-                </td>
-                <td className="py-2.5 pr-2 text-muted">{f.owner}</td>
-                <td className="num py-2.5 pr-1 text-right">
-                  {f.validTo ? (
-                    <span className={isExpired(f, today) ? "pill bg-neg-bg text-neg-ink" : ""}>{isExpired(f, today) ? `Expired ${formatDate(f.validTo)}` : formatDate(f.validTo)}</span>
-                  ) : (
-                    <span className="text-muted">—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {admin && (
-          <button
-            className="btn btn-secondary btn-sm mt-3"
-            onClick={async () => {
-              const id = `F-${200 + kit.facts.length}`;
-              const f: Fact = { id, statement: "New fact", approvedWording: "New fact", inlineWording: "new fact", kind: "spec", quantities: [], keywords: [], triggers: [], owner: "Product", source: "" };
-              await updateKit({ facts: [...kit.facts, f] }, `fact ${id}`);
-              setSel(id);
-            }}
-          >
-            <Plus size={14} /> Add fact
-          </button>
-        )}
-      </div>
-      {fact && <FactEditor key={`${fact.id}-${kit.updatedAt}`} fact={fact} kit={kit} admin={admin} />}
-    </div>
-  );
-}
-
-function FactEditor({ fact, kit, admin }: { fact: Fact; kit: BrandKit; admin: boolean }) {
-  const [f, setF] = useState(fact);
-  const [saved, setSaved] = useState(false);
-  const set = (patch: Partial<Fact>) => {
-    setF((x) => ({ ...x, ...patch }));
-    setSaved(false);
-  };
-  const field = (id: keyof Fact, label: string, rows = 1) => (
-    <div>
-      <label htmlFor={`f-${id}`} className="text-[13px] font-medium">
-        {label}
-      </label>
-      {rows > 1 ? (
-        <textarea id={`f-${id}`} className="field mt-1.5" rows={rows} value={String(f[id] ?? "")} disabled={!admin} onChange={(e) => set({ [id]: e.target.value } as Partial<Fact>)} />
-      ) : (
-        <input id={`f-${id}`} className="field mt-1.5" value={String(f[id] ?? "")} disabled={!admin} onChange={(e) => set({ [id]: e.target.value } as Partial<Fact>)} />
-      )}
-    </div>
-  );
-  return (
-    <form
-      className="space-y-4 rounded-[16px] bg-raised p-4"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        await updateKit({ facts: kit.facts.map((x) => (x.id === f.id ? f : x)) }, `fact ${f.id}`);
-        setSaved(true);
-      }}
-    >
-      <h2 className="text-[16px] font-semibold">
-        <Code>{f.id}</Code> {admin ? "Edit fact" : "Fact"}
-      </h2>
-      {field("statement", "Statement", 2)}
-      {field("approvedWording", "Approved wording", 2)}
-      {field("footnote", "Footnote")}
-      <div className="grid grid-cols-2 gap-3">
-        {field("owner", "Owner")}
-        <div>
-          <label htmlFor="f-validTo" className="text-[13px] font-medium">
-            Valid to
-          </label>
-          <input id="f-validTo" type="date" className="field mt-1.5" value={f.validTo ?? ""} disabled={!admin} onChange={(e) => set({ validTo: e.target.value || undefined })} />
-        </div>
-      </div>
-      <div>
-        <label htmlFor="f-trig" className="text-[13px] font-medium">
-          Phrases that make this claim (one per line)
-        </label>
-        <textarea id="f-trig" className="field mt-1.5" rows={3} value={f.triggers.join("\n")} disabled={!admin} onChange={(e) => set({ triggers: lines(e.target.value) })} />
-      </div>
-      <p className="text-[12px] text-muted">
-        Figures compared in code: {f.quantities.length ? f.quantities.map((q) => `${q.value} ${q.unit}`).join(", ") : "none"} · source {f.source || "—"}
-      </p>
-      {admin && (
-        <div className="flex items-center gap-2">
-          <button className="btn btn-primary btn-sm" type="submit">
-            Save to draft
-          </button>
-          {saved && <span className="text-[13px] text-positive">Saved to the draft</span>}
-        </div>
-      )}
-    </form>
-  );
-}
-
-function TermsTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
-  return (
-    <div className="max-w-[860px] space-y-3">
-      {kit.terms.map((t) => (
-        <form
-          key={`${t.id}-${kit.updatedAt}`}
-          className="grid items-end gap-3 rounded-[14px] border border-line p-4 md:grid-cols-[1fr_1fr_auto]"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            const fd = new FormData(e.currentTarget);
-            const banned = String(fd.get("banned")).split(",").map((s) => s.trim()).filter(Boolean);
-            const preferred = String(fd.get("preferred")).trim();
-            await updateKit({ terms: kit.terms.map((x) => (x.id === t.id ? { ...x, banned, preferred } : x)) }, `term ${t.ruleId}`);
-          }}
-        >
-          <div>
-            <label htmlFor={`b-${t.id}`} className="text-[13px] font-medium">
-              <Code>{t.ruleId}</Code> Not this (comma-separated)
-            </label>
-            <input id={`b-${t.id}`} name="banned" className="field mt-1.5" defaultValue={t.banned.join(", ")} disabled={!admin} />
-          </div>
-          <div>
-            <label htmlFor={`p-${t.id}`} className="text-[13px] font-medium">
-              Say this
-            </label>
-            <input id={`p-${t.id}`} name="preferred" className="field mt-1.5" defaultValue={t.preferred} disabled={!admin} />
-          </div>
-          <div className="flex items-center gap-2">
-            <SeverityPill severity={t.severity} />
-            {admin && (
-              <button className="btn btn-secondary btn-sm" type="submit">
-                Save
-              </button>
-            )}
-          </div>
-        </form>
-      ))}
-    </div>
   );
 }
 
 function AssetsTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
+  // A number saved on leaving its box; a failure says so instead of vanishing.
+  const save = useAction((patch: Partial<BrandKit>, what: string) => updateKit(patch, what), { errorPrefix: "Could not save the change" });
   return (
     <div className="space-y-8">
-      <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <div>
-          <h2 className="text-[16px] font-semibold">Palette</h2>
-          <p className="mt-1 text-[13px] leading-5 text-muted">Creatives are flagged when a dominant colour is more than ΔE2000 10 from every colour here (VIS-01).</p>
-        </div>
-        <ul className="grid grid-cols-2 gap-3 md:grid-cols-5">
-          {kit.palette.map((p, i) => (
-            <li key={p.name} className="rounded-[14px] border border-line p-3">
-              <div className="h-14 rounded-[10px]" style={{ background: p.hex }} aria-hidden="true" />
-              <p className="mt-2 text-[13px] font-medium">{p.name}</p>
-              <label htmlFor={`hex-${i}`} className="sr-only">
-                {p.name} hex
-              </label>
-              <input
-                id={`hex-${i}`}
-                className="field mt-1 !h-8 font-mono text-[12.5px]"
-                defaultValue={p.hex}
-                disabled={!admin}
-                onBlur={(e) => {
-                  const hex = e.target.value.trim().toUpperCase();
-                  if (/^#[0-9A-F]{6}$/.test(hex) && hex !== p.hex) void updateKit({ palette: kit.palette.map((x, j) => (j === i ? { ...x, hex } : x)) }, `palette ${p.name}`);
-                }}
-              />
-            </li>
-          ))}
-        </ul>
-      </section>
-      <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
+      <PaletteSection kit={kit} admin={admin} />
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <div>
           <h2 className="text-[16px] font-semibold">Logo</h2>
-          <p className="mt-1 text-[13px] leading-5 text-muted">Checked against the logo box a creator marks on a creative (VIS-03). Automatic logo detection is Round 3.</p>
+          <p className="mt-1 text-[13px] leading-5 text-muted">Checked against the logo box a creator marks on a creative (VIS-03). Assay does not find logos by itself yet.</p>
         </div>
         <div className="max-w-[320px]">
           <label htmlFor="logo-min" className="text-[13px] font-medium">
@@ -509,17 +397,19 @@ function AssetsTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
             disabled={!admin}
             onBlur={(e) => {
               const v = Number(e.target.value);
-              if (v > 0 && v !== kit.logo.minWidthPx) void updateKit({ logo: { ...kit.logo, minWidthPx: v } }, "logo minimum width");
+              if (v > 0 && v !== kit.logo.minWidthPx) void save.run({ logo: { ...kit.logo, minWidthPx: v } }, "logo minimum width");
             }}
           />
         </div>
       </section>
-      <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
+      <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
         <div>
           <h2 className="text-[16px] font-semibold">Channel limits</h2>
-          <p className="mt-1 text-[13px] leading-5 text-muted">Used by VOICE-02 (exclamation marks), A11Y-05 (emoji and capitals) and A11Y-03 (readability).</p>
+          <p className="mt-1 text-[13px] leading-5 text-muted">
+            Used by VOICE-02 (exclamation marks), A11Y-05 (emoji and capitals) and A11Y-03 (readability, scored as <Term id="flesch">Flesch reading ease</Term>).
+          </p>
         </div>
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full min-w-[520px] text-[14px]">
             <thead>
               <tr className="text-left text-[12px] text-muted">
@@ -549,7 +439,7 @@ function AssetsTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
                           disabled={!admin}
                           onBlur={(e) => {
                             const v = Number(e.target.value);
-                            if (Number.isFinite(v) && v !== l[k]) void updateKit({ channelLimits: { ...kit.channelLimits, [c.id]: { ...l, [k]: v } } }, `${c.label} ${k}`);
+                            if (Number.isFinite(v) && v !== l[k]) void save.run({ channelLimits: { ...kit.channelLimits, [c.id]: { ...l, [k]: v } } }, `${c.label} ${k}`);
                           }}
                         />
                       </td>
@@ -568,12 +458,12 @@ function AssetsTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
 
 export function ConfidentialRow({ kit, admin }: { kit: BrandKit; admin: boolean }) {
   return (
-    <section className="grid gap-4 lg:grid-cols-[320px_1fr]">
+    <section className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
       <div>
         <h2 className="text-[16px] font-semibold">Confidential mode</h2>
         <p className="mt-1 text-[13px] leading-5 text-muted">When on, nothing from this Brand Kit&apos;s drafts is sent to any AI service. Checks run as rule checks only.</p>
       </div>
-      <label className="flex max-w-[560px] items-center justify-between gap-4 rounded-[14px] bg-raised p-4 text-[14px]">
+      <label className="flex max-w-[560px] items-center justify-between gap-4 rounded-[22px] bg-field p-5 text-[14px]">
         <span>
           <span className="font-medium">Send nothing to AI services</span>
           <span className="block text-[13px] text-muted">{kit.confidential ? "On: rule checks only." : "Off: redacted paragraphs may go to Gemini for tone and messaging judgment."}</span>
@@ -591,56 +481,45 @@ export function ConfidentialRow({ kit, admin }: { kit: BrandKit; admin: boolean 
   );
 }
 
-function ImportTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
-  const ai = useAiStatus();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [note, setNote] = useState<string | null>(null);
-  const pending = kit.rules.filter((r) => r.pending);
+/** What an import did, said plainly: what was found, who read which pages, what was thrown away, and what is still the admin's to enter. */
+function importSummary(r: BookImportResult, file: string): string[] {
+  const pages = `${r.pagesTotal} page${r.pagesTotal === 1 ? "" : "s"}`;
+  const heuristic = "the must, never, always, avoid and don't heuristic";
+  const lines = [`${r.rules} candidate rule${r.rules === 1 ? "" : "s"} from ${pages} of ${file}. None is active until you approve it.`];
+  if (r.pagesByAi === 0) lines.push(`The AI read none of the pages, so all ${pages} went through ${heuristic}.`);
+  else if (r.pagesByAi < r.pagesTotal) lines.push(`The AI (${r.model}) read ${r.pagesByAi} of ${pages}. The other ${r.pagesTotal - r.pagesByAi} went through ${heuristic}.`);
+  else lines.push(`The AI (${r.model}) read all ${pages}.`);
+  if (r.rejected > 0) lines.push(`${r.rejected} AI candidate${r.rejected === 1 ? " was" : "s were"} dropped because ${r.rejected === 1 ? "its" : "their"} quote wasn't on the page it cited.`);
+  if (file.toLowerCase().endsWith(".docx")) lines.push("A Word file has no pages, so these rules cite page 1 and there is no file to open.");
+  lines.push("Facts and terms aren't imported. Enter them by hand in the Claim Ledger and Terms tabs.");
+  return lines;
+}
 
-  const run = async (file: File) => {
-    setBusy(`Reading ${file.name}…`);
-    setNote(null);
-    try {
-      const buf = await file.arrayBuffer();
-      let pages: { page: number; text: string }[];
-      if (file.name.toLowerCase().endsWith(".pdf")) {
-        const r = await pdfText(buf);
-        pages = r.pages.map((p) => ({ page: p.page, text: r.text.slice(p.start, p.end) }));
-      } else if (file.name.toLowerCase().endsWith(".docx")) {
-        pages = [{ page: 1, text: await docxText(buf) }];
-      } else throw new Error("Import a PDF or DOCX brand book.");
-      let candidates: Candidate[] = [];
-      let by = "heuristic";
-      if (ai?.aiConfigured && !kit.confidential) {
-        setBusy("Asking the AI to draft candidate rules…");
-        let budget = INPUT_CAP - 200;
-        const sent = pages.filter((p) => (budget -= p.text.length) >= 0);
-        const r = await aiTask("draftRules", { pages: sent });
-        if (r.ok) {
-          // Keep only AI candidates whose quote really is on the page it cites.
-          candidates = r.data.rules
-            .filter((c) => pages.find((p) => p.page === c.page)?.text.replace(/\s+/g, " ").includes(c.quote.replace(/\s+/g, " ").slice(0, 60)))
-            .map((c) => ({ ...c, by: "ai" as const }));
-          by = `AI (${r.model})`;
-          const rest = pages.filter((p) => !sent.includes(p));
-          if (rest.length) candidates.push(...heuristicCandidates(rest));
-        }
+function ImportTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
+  const brand = useBrand();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [note, setNote] = useState<string[] | null>(null);
+  const pending = kit.rules.filter((r) => r.pending);
+  const decide = useAction((rule: Rule, approve: boolean) => (approve ? upsertRule({ ...rule, pending: false, active: true }) : deleteRule(rule.id)), { errorPrefix: "Could not save the decision" });
+
+  // One import at a time. The book is read in batches: the one being read is said, and what happened is said when it is done.
+  const importing = useAction(
+    async (file: File) => {
+      setNote(null);
+      setProgress(`Reading ${file.name}…`);
+      try {
+        const result = await importBrandBook(file, (i, total) => setProgress(`Reading batch ${i + 1} of ${total}`));
+        setNote(importSummary(result, file.name));
+      } finally {
+        setProgress(null);
       }
-      if (!candidates.length) {
-        candidates = heuristicCandidates(pages);
-        by = "heuristic (must / never / always / avoid / don't)";
-      }
-      const base = kit.rules.filter((r) => r.id.startsWith("IMP-")).length;
-      const rules = candidates.map((c, i) => candidateToRule(c, `IMP-${String(base + i + 1).padStart(2, "0")}`, file.name));
-      await updateKit({ rules: [...kit.rules, ...rules] }, `imported ${rules.length} candidate rules from ${file.name}`);
-      setNote(`${rules.length} candidate rule${rules.length === 1 ? "" : "s"} from ${pages.length} page${pages.length === 1 ? "" : "s"}, drafted by ${by}. None is active until you approve it.`);
-    } catch (e) {
-      setNote((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
+    },
+    { toastError: false },
+  );
+  const busy = progress;
+  const sample = useAction(async () => importing.run(await fetchAsFile("/samples/velvra-brand-book-update.pdf", "velvra-brand-book-update.pdf")), { toastError: false });
+  const failure = importing.error ?? sample.error;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
@@ -657,7 +536,7 @@ function ImportTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
           aria-label="Brand book file"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) void run(f);
+            if (f) void importing.run(f);
             e.target.value = "";
           }}
         />
@@ -665,24 +544,39 @@ function ImportTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
           <button className="btn btn-secondary btn-sm" disabled={!admin || !!busy} onClick={() => fileRef.current?.click()}>
             <Upload size={14} /> Upload brand book
           </button>
-          <button
-            className="btn btn-ghost btn-sm"
-            disabled={!admin || !!busy}
-            onClick={async () => run(await fetchAsFile("/samples/velvra-brand-book-update.pdf", "velvra-brand-book-update.pdf"))}
-          >
-            Try the sample update pages
-          </button>
+          {brand?.demo && (
+            <button
+              className="btn btn-ghost btn-sm"
+              disabled={!admin || !!busy}
+              onClick={() => void sample.run()}
+            >
+              Try the sample update pages
+            </button>
+          )}
         </div>
         {!admin && <p className="text-[13px] text-muted">Switch to Brand Admin to import.</p>}
         {busy && <Spinner label={busy} />}
-        {note && <Notice tone="info">{note}</Notice>}
+        {failure && (
+          <Notice tone="error" role="alert">
+            {failure}
+          </Notice>
+        )}
+        {note && (
+          <Notice tone="info" role="status">
+            {note.map((line, i) => (
+              <p key={i} className={i ? "mt-1.5" : ""}>
+                {line}
+              </p>
+            ))}
+          </Notice>
+        )}
       </div>
       <div>
         <h2 className="text-[16px] font-semibold">Waiting for approval</h2>
         <ul className="mt-3 space-y-3">
           {pending.length === 0 && <li><Empty title="No imported rules are waiting." /></li>}
           {pending.map((r) => (
-            <li key={r.id} className="rounded-[14px] border border-line p-4">
+            <li key={r.id} className="rounded-[24px] bg-raised p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <Code>{r.id}</Code>
                 <span className="text-[13px] font-medium">{CATEGORY_LABEL[r.category]}</span>
@@ -692,12 +586,17 @@ function ImportTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
                 </span>
               </div>
               <p className="mt-2 text-[14px] leading-[22px]">{r.text}</p>
+              {r.source.bookId && r.source.page > 0 && (
+                <p className="mt-2 text-[13px]">
+                  <CitationButton target={ruleTarget(r)}>Open page {r.source.page} of {r.source.doc}</CitationButton>
+                </p>
+              )}
               {admin && (
                 <div className="mt-3 flex gap-2">
-                  <button className="btn btn-primary btn-sm" onClick={() => upsertRule({ ...r, pending: false, active: true })}>
+                  <button className="btn btn-primary btn-sm" disabled={decide.busy} onClick={() => decide.run(r, true)}>
                     Approve
                   </button>
-                  <button className="btn btn-ghost btn-sm" onClick={() => deleteRule(r.id)}>
+                  <button className="btn btn-ghost btn-sm" disabled={decide.busy} onClick={() => decide.run(r, false)}>
                     Reject
                   </button>
                 </div>
@@ -710,11 +609,30 @@ function ImportTab({ kit, admin }: { kit: BrandKit; admin: boolean }) {
   );
 }
 
-function VersionsTab() {
+function VersionsTab({ admin }: { admin: boolean }) {
+  const confirm = useConfirm();
   const versions = useLiveQuery(() => db.rulebooks.orderBy("publishedAt").reverse().toArray(), []);
+  const back = useAction(
+    async (v: RulebookVersion, current: string) => {
+      const yes = await confirm({
+        title: `Roll back to v${v.version}?`,
+        body: (
+          <>
+            <p>
+              Assay publishes a new version with exactly the rules, facts, terms and palette that v{v.version} had. Nothing is deleted: v{current} stays in this list, and every Hallmark keeps the version it was sealed with.
+            </p>
+            <p className="mt-2">The Brand Kit draft moves back only what differs between v{current} and v{v.version}, so edits you have not published yet stay as they are.</p>
+          </>
+        ),
+        confirmLabel: `Roll back to v${v.version}`,
+      });
+      return yes ? await rollbackRulebook(v.version) : undefined;
+    },
+    { errorPrefix: "Could not roll back", success: (n) => (n ? `Rolled back: v${n} is published with the earlier content.` : undefined) },
+  );
   if (!versions) return null;
   return (
-    <ol className="max-w-[860px] space-y-3">
+    <ol className="max-w-[960px] space-y-4">
       {versions.map((v, i) => {
         const prev = versions[i + 1];
         const ids = new Set(v.snapshot.rules.map((r) => r.id));
@@ -722,17 +640,37 @@ function VersionsTab() {
         const added = [...ids].filter((x) => !prevIds.has(x));
         const removed = [...prevIds].filter((x) => !ids.has(x));
         const changed = prev ? v.snapshot.rules.filter((r) => prevIds.has(r.id) && JSON.stringify(r) !== JSON.stringify(prev.snapshot.rules.find((p) => p.id === r.id))).map((r) => r.id) : [];
+        const c = v.clarification;
         return (
-          <li key={v.id} className="rounded-[14px] border border-line p-4">
+          <li key={v.id} className="rounded-[28px] bg-raised p-5 md:p-6" data-version={v.version}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-[15px] font-semibold">
                 Rulebook v{v.version} {i === 0 && <span className="pill ml-1 bg-pos-bg text-pos-ink">In use</span>}
+                {v.rolledBackTo && <span className="pill ml-1 bg-neutral-bg text-neutral-ink">Rolled back to v{v.rolledBackTo}</span>}
+                {c && <span className="pill ml-1 bg-gold-soft text-gold-ink">Clarification</span>}
               </h2>
               <span className="text-[12px] text-muted">
                 {v.publishedBy} · {fmtTime(v.publishedAt)}
               </span>
             </div>
             <p className="mt-1 text-[14px]">{v.notes}</p>
+            {c && (
+              <dl className="mt-3 grid gap-x-4 gap-y-1.5 rounded-[20px] bg-field px-5 py-4 text-[13.5px] leading-5 sm:grid-cols-[110px_minmax(0,1fr)]">
+                <dt className="text-muted">Rule reworded</dt>
+                <dd>
+                  <Code>{c.ruleId}</Code>
+                </dd>
+                <dt className="text-muted">Why</dt>
+                <dd>{c.rationale}</dd>
+                <dt className="text-muted">Drafted by</dt>
+                <dd>{c.draftedBy}</dd>
+                <dt className="text-muted">Published</dt>
+                <dd>{fmtTime(c.at)}</dd>
+                <dt className="text-muted">Wording before</dt>
+                <dd className="text-muted">“{c.before.text}”</dd>
+              </dl>
+            )}
+            {v.rolledBackTo && <p className="mt-2 text-[13px] text-muted">Restores the content of v{v.rolledBackTo}. Nothing was deleted.</p>}
             {prev && (
               <p className="mt-1 text-[13px] text-muted">
                 {added.length ? `Added ${added.join(", ")}. ` : ""}
@@ -741,12 +679,59 @@ function VersionsTab() {
                 {!added.length && !removed.length && !changed.length ? "Facts, terms or assets changed." : ""}
               </p>
             )}
-            <p className="mt-1 text-[12px] text-muted">
+            {prev && <VersionDiffs v={v} prev={prev} added={added} changed={changed} />}
+            <p className="mt-3 text-[12px] text-muted">
               SHA-256 <Code title={v.hash}>{v.hash.slice(0, 16)}…</Code> · {v.snapshot.rules.length} rules · {v.snapshot.facts.length} facts
             </p>
+            {i > 0 && (
+              <div className="mt-3">
+                <button className="btn btn-secondary btn-sm" disabled={!admin || back.busy} aria-describedby={admin ? undefined : `roll-why-${v.id}`} onClick={() => back.run(v, versions[0].version)}>
+                  <RotateCcw size={14} aria-hidden="true" /> Roll back to v{v.version}
+                </button>
+                {!admin && (
+                  <p id={`roll-why-${v.id}`} className="mt-1.5 text-[12.5px] text-muted">
+                    Only a Brand Admin can roll back.
+                  </p>
+                )}
+              </div>
+            )}
           </li>
         );
       })}
     </ol>
+  );
+}
+
+/** What a version changed, word by word: the rules whose text moved, the rules it added, and the facts whose approved wording moved. */
+function VersionDiffs({ v, prev, added, changed }: { v: RulebookVersion; prev: RulebookVersion; added: string[]; changed: string[] }) {
+  const LIMIT = 4;
+  const rows: { key: string; code: string; title: string; before?: string; after: string; note?: string }[] = [];
+  for (const id of added) {
+    const r = v.snapshot.rules.find((x) => x.id === id)!;
+    rows.push({ key: `a-${id}`, code: id, title: r.title, after: r.text, note: "Added" });
+  }
+  for (const id of changed) {
+    const r = v.snapshot.rules.find((x) => x.id === id)!;
+    const was = prev.snapshot.rules.find((x) => x.id === id)!;
+    rows.push({ key: `c-${id}`, code: id, title: r.title, before: was.text, after: r.text, note: was.text === r.text ? "Settings changed, the wording did not" : undefined });
+  }
+  for (const f of v.snapshot.facts) {
+    const was = prev.snapshot.facts.find((x) => x.id === f.id);
+    if (was && JSON.stringify(was) !== JSON.stringify(f)) rows.push({ key: `f-${f.id}`, code: f.id, title: "Claim Ledger fact", before: was.approvedWording, after: f.approvedWording, note: was.approvedWording === f.approvedWording ? "Dates, owner or figures changed, the wording did not" : undefined });
+  }
+  if (!rows.length) return null;
+  return (
+    <ul className="mt-3 space-y-2" aria-label={`What v${v.version} changed`}>
+      {rows.slice(0, LIMIT).map((r) => (
+        <li key={r.key} className="rounded-[20px] bg-field px-4 py-3 text-[13.5px] leading-5">
+          <p className="flex flex-wrap items-center gap-2">
+            <Code>{r.code}</Code>
+            <span className="font-medium">{r.title}</span>
+          </p>
+          <div className="mt-1.5 text-[14px]">{r.note && r.before === r.after ? <span className="text-muted">{r.note}.</span> : r.before !== undefined ? <DiffView before={r.before} after={r.after} /> : <span className="text-muted">{r.note}: </span>}{r.before === undefined ? r.after : null}</div>
+        </li>
+      ))}
+      {rows.length > LIMIT && <li className="px-1 text-[13px] text-muted">and {rows.length - LIMIT} more change{rows.length - LIMIT === 1 ? "" : "s"}.</li>}
+    </ul>
   );
 }

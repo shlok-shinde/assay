@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { gsap } from "gsap";
+import { SplitText } from "gsap/SplitText";
+import { useGSAP } from "@gsap/react";
 import { VELVRA_KIT } from "@/seed/velvra";
 import { ruleChecks } from "@/engine/rules";
 import { analyzeClaims } from "@/engine/claims";
@@ -13,7 +16,10 @@ import { sha256Hex } from "@/engine/hash";
 import { AnnotatedText } from "./AnnotatedText";
 import { CATEGORY_LABEL, Mark, SeverityPill } from "./ui";
 import { AssayScene } from "./AssayScene";
+import { Term } from "./primitives";
 import "./landing.css";
+
+gsap.registerPlugin(useGSAP, SplitText);
 
 // Class names for landing.css, which is global with an lp- prefix (next.config routes *.css through the
 // Tailwind loader, which turns CSS Modules into plain CSS).
@@ -80,18 +86,58 @@ function Readout({ value }: { value: string }) {
 function Hero() {
   const [fixed, setFixed] = useState(false);
   const touched = useRef(false);
+  const root = useRef<HTMLElement>(null);
+  const title = useRef<HTMLHeadingElement>(null);
   // Once the load sequence has settled, the fixes apply themselves once; after that the switch is the visitor's.
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const t = window.setTimeout(() => {
       if (!touched.current) setFixed(true);
-    }, 2200);
+    }, 2400);
     return () => window.clearTimeout(t);
   }, []);
   const toggle = () => {
     touched.current = true;
     setFixed((f) => !f);
   };
+
+  // The title is split into lines once the fonts are in (so the lines are the real ones) and each line rises
+  // out of its own mask. Reduced motion shows the finished title at once. Transform and opacity only.
+  useGSAP(
+    () => {
+      const el = title.current;
+      if (!el) return;
+      let cancelled = false;
+      const mm = gsap.matchMedia();
+      void document.fonts.ready.then(() => {
+        if (cancelled) return;
+        el.setAttribute("data-ready", "");
+        mm.add(
+          { wide: "(min-width: 640px) and (prefers-reduced-motion: no-preference)", narrow: "(max-width: 639px) and (prefers-reduced-motion: no-preference)" },
+          (ctx) => {
+            const { wide } = ctx.conditions as { wide: boolean };
+            if (!wide) {
+              gsap.from(el, { y: 22, opacity: 0, duration: 0.8, ease: "expo.out" });
+              return;
+            }
+            SplitText.create(el.querySelectorAll(`.${s.lineInner}`), {
+              type: "lines",
+              mask: "lines",
+              aria: "none",
+              autoSplit: true,
+              onSplit: (self) => gsap.from(self.lines, { yPercent: 110, duration: 1, ease: "expo.out", stagger: 0.12 }),
+            });
+          },
+        );
+      });
+      return () => {
+        cancelled = true;
+        mm.revert();
+      };
+    },
+    { scope: root },
+  );
+
   const images = (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element -- static crop of the sample creative */}
@@ -101,7 +147,7 @@ function Hero() {
     </>
   );
   return (
-    <section className={`${s.hero} ${fixed ? s.isFixed : ""}`}>
+    <section ref={root} className={`${s.hero} ${fixed ? s.isFixed : ""}`}>
       <div className={`${s.wrap} w-full`}>
         <header className={s.bar}>
           <Link href="/" className={s.wordmark}>
@@ -121,15 +167,7 @@ function Hero() {
       </div>
 
       <div className={`${s.wrap} ${s.stage} w-full`}>
-        <div className={`${s.chipRow} ${s.chipRowTop}`}>
-          <div data-ui className={`${s.chip} ${s.chipA} ${s.load}`} style={{ ["--d" as string]: "560ms" }}>
-            <span className={s.chipLabel}>Palette · VIS-01</span>
-            <Readout value={fixed ? "ΔE 2" : "ΔE 18"} />
-            <span className={s.chipNote}>{fixed ? "On palette: Rose Clay" : "Off palette; the limit is 10"}</span>
-          </div>
-        </div>
-
-        <h1 className={`${s.display} ${s.title}`}>
+        <h1 ref={title} className={`${s.display} ${s.title}`}>
           <span className={s.line}>
             <span className={s.lineInner}>
               Brand content,
@@ -139,53 +177,60 @@ function Hero() {
             </span>
           </span>{" "}
           <span className={s.line}>
-            <span className={s.lineInner} style={{ ["--i" as string]: 1 }}>
-              tested before it ships.
-            </span>
+            <span className={s.lineInner}>tested before it ships.</span>
           </span>
         </h1>
         <div className={`${s.strip} ${s.load}`} style={{ ["--d" as string]: "420ms" }} aria-hidden="true">
           {images}
         </div>
 
-        <div className={`${s.chipRow} ${s.chipRowBottom}`}>
-          <div data-ui className={`${s.chip} ${s.chipB} ${s.load}`} style={{ ["--d" as string]: "640ms" }}>
-            <span className={s.chipLabel}>Headline contrast · A11Y-01</span>
-            <Readout value={fixed ? "5.7:1" : "1.7:1"} />
-            <span className={s.chipNote}>{fixed ? "Passes WCAG AA" : "Fails WCAG AA; needs 3:1"}</span>
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={fixed}
-            aria-describedby="hero-switch-desc"
-            onClick={toggle}
-            data-ui
-            className={`${s.chip} ${s.chipC} ${s.load}`}
-            style={{ ["--d" as string]: "720ms" }}
-          >
-            <span className={s.chipLabel}>Apply the fixes</span>
-            <span className={s.switch} aria-hidden="true" />
-            <span className={s.chipNote}>
-              {fixed ? "0" : "4"} visual findings on the sample creative
-            </span>
-            <span id="hero-switch-desc" className={s.srOnly}>
-              Switches the sample Velvra creative, a sunscreen tube photographed on hot pink, to the corrected version on Rose Clay.
-            </span>
-          </button>
-        </div>
+        <div className={s.heroGrid}>
+          <div className={s.heroText}>
+            <p className={`${s.lead} ${s.load}`} style={{ ["--d" as string]: "460ms" }}>
+              Assay checks captions, emails, product pages and creatives against a brand&apos;s approved rules, facts and palette. Every finding quotes its evidence, cites its
+              source and comes with a fix that keeps your message.
+            </p>
+            <div className={`${s.actions} ${s.load}`} style={{ ["--d" as string]: "540ms" }}>
+              <Link href={DEMO} className={`${s.button} ${s.buttonAccent}`}>
+                Start the demo, no sign-up
+              </Link>
+              <Link href="/app/new" className={s.textLink}>
+                Check your own draft
+              </Link>
+            </div>
 
-        <p className={`${s.lead} ${s.load}`} style={{ ["--d" as string]: "460ms" }}>
-          Assay checks captions, emails, product pages and creatives against a brand&apos;s approved rules, facts and palette. Every finding quotes its evidence, cites its
-          source and comes with a fix that keeps your message.
-        </p>
-        <div className={`${s.actions} ${s.load}`} style={{ ["--d" as string]: "540ms" }}>
-          <Link href={DEMO} className={`${s.button} ${s.buttonAccent}`}>
-            Start the demo, no sign-up
-          </Link>
-          <Link href="/app/new" className={s.textLink}>
-            Check your own draft
-          </Link>
+            <div data-ui className={`${s.readings} ${s.load}`} style={{ ["--d" as string]: "640ms" }} role="group" aria-label="Readings on the sample creative">
+              <div className={s.reading}>
+                <span className={s.readingLabel}>Palette · VIS-01</span>
+                <Readout value={fixed ? "ΔE 2" : "ΔE 18"} />
+                <span className={s.readingNote}>{fixed ? "On palette: Rose Clay" : "Off palette; the limit is 10"}</span>
+              </div>
+              <div className={s.reading}>
+                <span className={s.readingLabel}>Headline contrast · A11Y-01</span>
+                <Readout value={fixed ? "5.7:1" : "1.7:1"} />
+                <span className={s.readingNote}>
+                  {fixed ? "Passes " : "Fails "}
+                  <Term id="wcag">WCAG</Term> AA{fixed ? "" : "; needs 3:1"}
+                </span>
+              </div>
+              <button type="button" role="switch" aria-checked={fixed} aria-describedby="hero-switch-desc" onClick={toggle} className={`${s.reading} ${s.readingSwitch}`}>
+                <span className={s.readingLabel}>Apply the fixes</span>
+                <span className={s.switch} aria-hidden="true" />
+                <span className={s.readingNote}>{fixed ? "0" : "4"} visual findings on the sample creative</span>
+                <span id="hero-switch-desc" className={s.srOnly}>
+                  Switches the sample Velvra creative, a sunscreen tube photographed on hot pink, to the corrected version on Rose Clay.
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <figure className={`${s.heroPicture} ${s.load}`} style={{ ["--d" as string]: "300ms" }}>
+            <div className={s.heroPictureFrame}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a cropped archive photograph, sized by CSS */}
+              <img src="/landing/world/touchstone-crop.webp" alt="Streaks of gold rubbed onto a black touchstone." width={1000} height={1069} fetchPriority="high" />
+            </div>
+            <figcaption className={s.caption2}>Gold rubbed on a touchstone. The colour of the streak told an assayer how pure the metal was.</figcaption>
+          </figure>
         </div>
       </div>
     </section>
@@ -199,6 +244,7 @@ function LiveChecker() {
     return raw.map((f, i) => ({ ...f, id: `live-${i}`, checkId: "live", submissionId: "live", versionId: "live", status: "open" }));
   }, [text]);
   const numbers = useMemo(() => new Map(findings.map((f, i) => [f.id, i + 1])), [findings]);
+  const written = text.trim().length > 0;
   return (
     <section id="try" aria-labelledby="try-h" className={`${s.showcase} ${s.wrap}`}>
       <div className={s.showGrid}>
@@ -227,12 +273,10 @@ function LiveChecker() {
         <div data-enter data-ui className={`${s.answer} ${s.reveal}`} style={{ ["--i" as string]: 3 }} aria-live="polite">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[16px] font-semibold">Velvra rulebook v3.2 · Instagram</p>
-            <p className="num text-[16px] text-muted">
-              {findings.length} finding{findings.length === 1 ? "" : "s"}
-            </p>
+            <p className="num text-[16px] text-muted">{written ? `${findings.length} finding${findings.length === 1 ? "" : "s"}` : "No caption yet"}</p>
           </div>
           <div className="mt-4 rounded-[16px] bg-raised p-4 text-[16px]">
-            <AnnotatedText text={text} findings={findings} numbers={numbers} />
+            {written ? <AnnotatedText text={text} findings={findings} numbers={numbers} /> : <p className="text-muted">Type or paste a caption on the left, or pick one of the three examples, and its findings appear here.</p>}
           </div>
           <ol className="mt-5 space-y-3">
             {findings.slice(0, 6).map((f) => (
@@ -248,7 +292,12 @@ function LiveChecker() {
                 </span>
               </li>
             ))}
-            {findings.length === 0 && <li className="text-[16px] text-positive">No findings: this caption follows the rulebook.</li>}
+            {written && findings.length === 0 && (
+              <li className="text-[16px] leading-[24px]">
+                <span className="font-medium text-positive">No findings from the rule checks.</span>
+                <span className="block text-muted">These cover banned phrases and terms, claims against the Claim Ledger, disclaimers, readability, link text and hashtags. Tone and messaging are judged by the AI inside the app, which this page does not use.</span>
+              </li>
+            )}
           </ol>
         </div>
       </div>
@@ -417,13 +466,51 @@ function Proof() {
   );
 }
 
+/** The word's own history, in three real pictures from Wikimedia Commons: an assay office's balance, and a punch striking a mark. Never shown as Velvra's or as the product. */
+const PICTURES = [
+  { href: "https://commons.wikimedia.org/wiki/File:2_Touchstones.JPG", title: "2 Touchstones", by: "Mauro Cateb", licence: "CC BY-SA 3.0", note: "cropped" },
+  { href: "https://commons.wikimedia.org/wiki/File:1917-04-21_IB%C3%89RICA_01.jpg", title: "1917-04-21 IBÉRICA 01", by: "unknown author", licence: "public domain", note: "cropped" },
+  { href: "https://commons.wikimedia.org/wiki/File:Making_a_silver_chain,_18_(25).jpg", title: "Making a silver chain, 18 (25)", by: "W.carter", licence: "CC BY-SA 4.0", note: "resized" },
+] as const;
+
+function World() {
+  return (
+    <section aria-labelledby="world-h" className={s.world}>
+      <div className={`${s.wrap} ${s.worldGrid}`}>
+        <figure data-enter className={`${s.worldMain} ${s.reveal}`}>
+          <div className={s.worldFrame}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- an archive photograph, sized by CSS */}
+            <img src="/landing/world/assay-office-1917.webp" alt="Four men in an assay office stand around a very large balance, with bars of gold on one pan." width={1300} height={1315} loading="lazy" />
+          </div>
+          <figcaption className={s.worldCaption}>Weighing gold in an assay office in New York, from a magazine of 1917.</figcaption>
+        </figure>
+        <div className={s.worldSide}>
+          <h2 id="world-h" data-enter className={`${s.display} ${s.h2} ${s.reveal}`}>
+            Test it, then mark it
+          </h2>
+          <p data-enter className={`${s.worldLead} ${s.reveal}`} style={{ ["--i" as string]: 1 }}>
+            An assay office tests a metal for purity, and only then strikes a hallmark into it. Assay does the same for brand content: it tests a draft against the rules, facts and palette the brand has approved, then writes a Hallmark that anyone can check later.
+          </p>
+          <figure data-enter className={`${s.worldSmall} ${s.reveal}`} style={{ ["--i" as string]: 2 }}>
+            <div className={s.worldFrameSmall}>
+              {/* eslint-disable-next-line @next/next/no-img-element -- a photograph, sized by CSS */}
+              <img src="/landing/world/hallmark-strike.webp" alt="Two hands hold a steel punch on a small piece of silver and strike it with a hammer." width={1300} height={976} loading="lazy" />
+            </div>
+            <figcaption className={s.worldCaption}>A steel punch and a hammer, striking a mark into silver.</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function About() {
   return (
     <section aria-labelledby="trust-h" className={s.about}>
       <div className={`${s.wrap} ${s.aboutGrid}`}>
         <div className={s.facts}>
           <p>Made in Mumbai</p>
-          <p>CodeStar 30, Round 2</p>
+          <p>CodeStar 30, Round 3</p>
           <p>
             <a href={REPO} className={`${s.textLink} underline`}>
               Source on GitHub
@@ -479,8 +566,20 @@ function Close() {
         </nav>
       </div>
       <div className={`${s.wrap} ${s.credits} w-full`}>
-        <p>Team 24K MAGIC · Shlok Sudhakar Shinde · SPIT, Mumbai · CodeStar 30 Round 2, problem statement by Inkloom AI.</p>
+        <p>Team 24K MAGIC · Shlok Sudhakar Shinde · SPIT, Mumbai · CodeStar 30 Round 3, problem statement by Inkloom AI.</p>
         <p>Google Gemini runs inside the app. Velvra is fictional; its product photo was generated with Gemini.</p>
+        <p className={s.pictureCredits}>
+          Pictures of the assaying world, all from Wikimedia Commons and none of them Velvra&apos;s or Assay&apos;s own:{" "}
+          {PICTURES.map((c, i) => (
+            <span key={c.title}>
+              <a href={c.href} className="underline">
+                “{c.title}”
+              </a>{" "}
+              by {c.by}, {c.licence} ({c.note})
+              {i < PICTURES.length - 1 ? "; " : "."}
+            </span>
+          ))}
+        </p>
       </div>
       <p className={s.giant} aria-hidden="true">
         Assay
@@ -493,12 +592,16 @@ export function Landing() {
   const root = useEntrances();
   return (
     <div ref={root} className={s.page}>
-      <main>
+      <a href="#main" className="skip-link">
+        Skip to main content
+      </a>
+      <main id="main" tabIndex={-1} className="outline-none">
         <Hero />
         <LiveChecker />
         <AssayScene />
         <Features />
         <Proof />
+        <World />
         <About />
       </main>
       <Close />

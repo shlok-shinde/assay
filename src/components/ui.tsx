@@ -1,7 +1,8 @@
 "use client";
 
-import { useId, useRef, type ReactNode } from "react";
-import { useGlide } from "./motion";
+import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
+import { SlideIn, useGlide } from "./motion";
 import type { Category, FindingStatus, Role, Severity, SubmissionStatus } from "@/lib/types";
 
 /** The Assay mark: a hallmark punch, the stamp an assay office strikes into tested gold. */
@@ -47,6 +48,27 @@ export function PageLoading({ label }: { label: string }) {
       <AssayLoader size={36} />
       {label}
     </div>
+  );
+}
+
+/**
+ * A notice that takes the whole screen or the whole page area: an error, a missing page, blocked
+ * storage. The mark, one plain sentence of what happened, and what to do next. The panel is a
+ * lightness step above its ground, round, with no border.
+ */
+export function StatusPanel({ title, children, actions, fullscreen }: { title: ReactNode; children: ReactNode; actions?: ReactNode; fullscreen?: boolean }) {
+  const panel = (
+    <section className={`w-full max-w-[540px] rounded-[28px] p-7 md:p-9 ${fullscreen ? "bg-sheet" : "bg-raised"}`}>
+      <Mark size={36} />
+      <h1 className="mt-5 font-display text-[26px] font-medium leading-8 tracking-[-0.02em] md:text-[30px] md:leading-9">{title}</h1>
+      <div className="mt-3 space-y-3 text-[15px] leading-7 text-muted">{children}</div>
+      {actions && <div className="mt-7 flex flex-wrap items-center gap-2">{actions}</div>}
+    </section>
+  );
+  return fullscreen ? (
+    <main className="theme-night flex min-h-screen items-center justify-center bg-chrome px-4 py-10 text-ink">{panel}</main>
+  ) : (
+    <div className="flex justify-center px-4 py-10 md:py-16">{panel}</div>
   );
 }
 
@@ -104,26 +126,70 @@ export const ROLE_LABEL: Record<Role, string> = {
   admin: "Brand Admin",
 };
 
-export function Tabs<T extends string>({ tabs, value, onChange, label }: { tabs: { id: T; label: ReactNode }[]; value: T; onChange: (t: T) => void; label: string }) {
+/**
+ * Tabs the way a keyboard expects them: one stop in the Tab order (the chosen tab), Left and Right to
+ * move between tabs with Home and End for the ends, and each tab choosing as focus lands on it. Give it
+ * the same `idBase` as the TabPanel that shows its content, so each tab and its panel name each other.
+ */
+export function Tabs<T extends string>({ tabs, value, onChange, label, idBase }: { tabs: { id: T; label: ReactNode }[]; value: T; onChange: (t: T) => void; label: string; idBase: string }) {
   const box = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLSpanElement>(null);
   useGlide(box, bar, '[aria-selected="true"]', [value, tabs.length]);
+  const move = (e: KeyboardEvent<HTMLButtonElement>, at: number) => {
+    const to = e.key === "ArrowRight" ? (at + 1) % tabs.length : e.key === "ArrowLeft" ? (at - 1 + tabs.length) % tabs.length : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -1;
+    if (to < 0) return;
+    e.preventDefault();
+    box.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[to]?.focus();
+    onChange(tabs[to].id);
+  };
   return (
     <div ref={box} role="tablist" aria-label={label} className="relative flex gap-7 overflow-x-auto border-b border-line">
-      {tabs.map((t) => (
+      {tabs.map((t, i) => (
         <button
           key={t.id}
+          id={`${idBase}-tab-${t.id}`}
           role="tab"
+          type="button"
           aria-selected={value === t.id}
+          aria-controls={`${idBase}-panel-${t.id}`}
+          tabIndex={value === t.id ? 0 : -1}
           onClick={() => onChange(t.id)}
+          onKeyDown={(e) => move(e, i)}
           className={`tab-btn relative h-11 shrink-0 text-[14.5px] transition-colors duration-300 ${value === t.id ? "text-ink font-medium" : "text-muted hover:text-ink"}`}
         >
           {t.label}
         </button>
       ))}
-      <span ref={bar} aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full bg-gold-mark opacity-0" />
+      <span ref={bar} aria-hidden="true" className="pointer-events-none absolute bottom-0 left-0 h-[3px] rounded-full bg-ink opacity-0" />
     </div>
   );
+}
+
+/** The panel for one tab: labelled by it, and sliding in when the tab changes. Only the chosen tab's panel is rendered. */
+export function TabPanel({ idBase, id, className, children }: { idBase: string; id: string; className?: string; children: ReactNode }) {
+  return (
+    <div role="tabpanel" id={`${idBase}-panel-${id}`} aria-labelledby={`${idBase}-tab-${id}`} className={className}>
+      <SlideIn k={id}>{children}</SlideIn>
+    </div>
+  );
+}
+
+/**
+ * The tab a screen opens on: `?tab=` when it names one of `valid`, otherwise `fallback`, so a mistyped or
+ * stale link shows the first tab and not a blank panel. A link that changes `?tab=` while the screen is
+ * open moves the tab too.
+ */
+export function useTabParam<T extends string>(valid: readonly T[], fallback: T): [T, (tab: T) => void] {
+  const wanted = useSearchParams().get("tab");
+  const named = (v: string | null): T | null => (v && (valid as readonly string[]).includes(v) ? (v as T) : null);
+  const [tab, setTab] = useState<T>(named(wanted) ?? fallback);
+  const [seen, setSeen] = useState(wanted);
+  if (seen !== wanted) {
+    setSeen(wanted);
+    const next = named(wanted);
+    if (next) setTab(next);
+  }
+  return [tab, setTab];
 }
 
 export function Empty({ title, children }: { title: string; children?: ReactNode }) {
@@ -135,14 +201,18 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
   );
 }
 
-export function Notice({ tone = "warn", children }: { tone?: "warn" | "info" | "error"; children: ReactNode }) {
+export function Notice({ tone = "warn", children, role }: { tone?: "warn" | "info" | "error"; children: ReactNode; role?: "alert" | "status" }) {
   const cls =
     tone === "warn"
       ? "bg-warn-bg border-warn-line text-warn-ink"
       : tone === "error"
         ? "bg-neg-bg border-neg-line text-neg-ink"
         : "bg-raised border-line text-muted";
-  return <div className={`rounded-[12px] border px-4 py-3 text-[13px] leading-5 ${cls}`}>{children}</div>;
+  return (
+    <div role={role} className={`min-w-0 break-words rounded-[16px] border px-4 py-3 text-[13px] leading-5 ${cls}`}>
+      {children}
+    </div>
+  );
 }
 
 export function Kv({ k, v }: { k: ReactNode; v: ReactNode }) {

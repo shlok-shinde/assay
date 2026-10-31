@@ -58,10 +58,13 @@ export function useGlide(container: RefObject<HTMLElement | null>, marker: RefOb
     const place = (animate: boolean) => {
       const el = box.querySelector<HTMLElement>(active);
       if (!el) return gsap.set(m, { opacity: 0 });
+      // Offsets ignore transforms, so a link that is still sliding in (the phone menu) or lifted by its hover
+      // is measured where it belongs. A choice nested deeper than the box falls back to the drawn rectangles.
+      const direct = el.offsetParent === box;
       const b = box.getBoundingClientRect();
       const r = el.getBoundingClientRect();
-      const to: gsap.TweenVars = { opacity: 1, x: r.left - b.left + box.scrollLeft, width: r.width };
-      if (axis !== "x") Object.assign(to, { y: r.top - b.top + box.scrollTop, height: r.height });
+      const to: gsap.TweenVars = direct ? { opacity: 1, x: el.offsetLeft, width: el.offsetWidth } : { opacity: 1, x: r.left - b.left + box.scrollLeft, width: r.width };
+      if (axis !== "x") Object.assign(to, direct ? { y: el.offsetTop, height: el.offsetHeight } : { y: r.top - b.top + box.scrollTop, height: r.height });
       if (animate && motionAllowed()) gsap.to(m, { ...to, duration: 0.5, ease: "expo.out", overwrite: true });
       else gsap.set(m, to);
     };

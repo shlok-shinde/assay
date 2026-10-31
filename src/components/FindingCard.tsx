@@ -1,17 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { motionAllowed, Rise } from "./motion";
-import { Check, MessageSquare } from "lucide-react";
+import { Check, MessageSquare, TriangleAlert } from "lucide-react";
 import type { Comment, Fact, Finding, IntentCard, Role, Rule, SubmissionStatus } from "@/lib/types";
 import { applyFixes, intentCheck } from "@/engine/fix";
 import { formatDate, isExpired } from "@/engine/claims";
 import { addComment, complianceDecision, reopenFinding, resolveFinding } from "@/store/actions";
 import { todayIso } from "@/store/db";
+import { CitationButton, factTarget, ruleTarget } from "./Citation";
+import { IntentLine, previewIntent } from "./Intent";
+import { useAction } from "./primitives";
 import { CATEGORY_LABEL, Code, FINDING_STATUS_LABEL, fmtTime, SeverityPill } from "./ui";
 
-type Mode = null | "edit" | "dismiss" | "contest" | "comment" | "reopen" | "reject";
+type Mode = null | "edit" | "dismiss" | "contest" | "comment" | "reopen" | "reject" | "override";
 
 export function FindingCard({
   finding: f,
@@ -44,8 +47,6 @@ export function FindingCard({
 }) {
   const [mode, setMode] = useState<Mode>(null);
   const [input, setInput] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const card = useRef<HTMLElement>(null);
   const lastStatus = useRef(f.status);
   // A decision lands like a stamp: the verdict strikes in and the slip settles.
@@ -58,28 +59,29 @@ export function FindingCard({
     gsap.fromTo(card.current, { y: 0 }, { y: 3, duration: 0.07, yoyo: true, repeat: 1, ease: "power1.out", clearProps: "transform" });
   }, [f.status]);
 
+  // The check made when the finding was found (and the AI's reading, once it lands) is what the card says.
+  // A finding stored before that existed falls back to the term check on the fix as it stands.
   const preview = useMemo(() => {
-    if (!f.fix || f.fix.kind === "manual" || f.start < 0) return null;
+    if (f.intentCheck || !f.fix || f.fix.kind === "manual" || f.start < 0) return null;
     const after = applyFixes(text, [{ id: f.id, start: f.start, end: f.end, fix: f.fix }]).text;
-    return intentCheck(text, after, intent);
+    return previewIntent(intentCheck(text, after, intent));
   }, [f, text, intent]);
+  const intentSays = f.intentCheck ?? preview;
 
-  const act = async (fn: () => Promise<void>) => {
-    setBusy(true);
-    setError(null);
-    try {
+  // The error shows on the card it belongs to, so it is not also raised as a toast.
+  const { run: act, busy, error } = useAction(
+    async (fn: () => Promise<void>) => {
       await fn();
       setMode(null);
       setInput("");
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
+    },
+    { toastError: false },
+  );
 
   const editable = status === "draft" || status === "checked" || status === "changes_requested";
   const open = f.status === "open" || f.status === "reopened";
+  // Contesting a high-severity finding is an objection, not a clearance: the slip stays unsettled.
+  const contestedHigh = f.status === "contested" && f.severity === "high";
   const creatorCanAct = role === "creator" && editable && open && !versionLabel;
   const highLocked = f.severity === "high" && role === "creator";
   const origin =
@@ -90,6 +92,7 @@ export function FindingCard({
         : f.region
           ? "Rule check on the image"
           : "Rule check";
+  const factCite = fact ? factTarget(fact) : null;
   const rangeStart = f.fix?.range?.start ?? f.start;
   const rangeEnd = f.fix?.range?.end ?? f.end;
   const before = f.start >= 0 ? text.slice(rangeStart, rangeEnd) : "";
@@ -101,7 +104,7 @@ export function FindingCard({
       aria-label={`Finding ${n}`}
       onClick={onSelect}
       data-sev={f.severity}
-      data-settled={open ? undefined : ""}
+      data-settled={open || contestedHigh ? undefined : ""}
       data-selected={selected ? "" : undefined}
       className="slip"
     >
@@ -134,7 +137,10 @@ export function FindingCard({
         {rule && (
           <p className="flex flex-wrap items-baseline gap-x-2">
             <span className="slip-tag">{rule.id}</span> <span className="text-muted">·</span>
-            {rule.title} <span className="text-muted">· {rule.source.doc} p.{rule.source.page} {rule.source.section}</span>
+            {rule.title} <span className="text-muted">·</span>
+            <CitationButton target={ruleTarget(rule)}>
+              {rule.source.page > 0 ? `${rule.source.doc} p.${rule.source.page} ${rule.source.section}` : `${rule.source.doc}, no page`}
+            </CitationButton>
           </p>
         )}
         {fact && (
@@ -144,6 +150,15 @@ export function FindingCard({
               · owner {fact.owner}
               {fact.validTo ? ` · ${isExpired(fact, todayIso()) ? "expired" : "valid to"} ${formatDate(fact.validTo)}` : ""}
             </span>
+            {factCite && (
+              <>
+                {" "}
+                <span className="text-muted">·</span>{" "}
+                <CitationButton target={factCite}>
+                  Ledger p.{factCite.paragraph!.page} §{factCite.paragraph!.section}
+                </CitationButton>
+              </>
+            )}
           </p>
         )}
         {relatedRules.length > 0 && (
@@ -181,19 +196,14 @@ export function FindingCard({
             <p className="mt-1 text-[14px] leading-[22px]">{f.fix.kind === "append" ? <ins className="diff-ins">{f.fix.replacement}</ins> : f.fix.replacement}</p>
           )}
           {f.fix.footnote && <p className="mt-1 text-[13px] text-muted">Adds footnote: {f.fix.footnote}</p>}
-          {preview && (
-            <p className={`mt-2 flex items-center gap-1.5 text-[13px] ${preview.kept ? "text-positive" : "text-warn-ink"}`}>
-              {preview.kept ? <Check size={14} /> : <span aria-hidden="true">!</span>}
-              {preview.summary}
-            </p>
-          )}
+          {intentSays && <IntentLine check={intentSays} className="mt-2" />}
         </div>
       )}
 
       {!open && f.status !== "superseded" && (
         <p className="mt-3 flex flex-wrap items-center gap-x-2 text-[13px] leading-5">
-          <span data-verdict className="slip-verdict">
-            <Check size={12} strokeWidth={3} aria-hidden="true" />
+          <span data-verdict data-pending={contestedHigh ? "" : undefined} className="slip-verdict">
+            {contestedHigh ? <span className="h-2.5 w-2.5 rounded-full border-2 border-current" aria-hidden="true" /> : <Check size={12} strokeWidth={3} aria-hidden="true" />}
             {FINDING_STATUS_LABEL[f.status]}
           </span>
           {f.resolution && (
@@ -205,11 +215,47 @@ export function FindingCard({
           )}
         </p>
       )}
+      {f.intentOverride && (f.status === "accepted" || f.status === "edited") && (
+        <p className="mt-2 flex items-start gap-1.5 text-[13px] leading-5 text-warn-ink">
+          <TriangleAlert size={14} strokeWidth={2} aria-hidden="true" className="mt-[3px] flex-none" />
+          <span>
+            Accepted over the intent check by {f.intentOverride.by}: “{f.intentOverride.reason}” · {fmtTime(f.intentOverride.at)}
+          </span>
+        </p>
+      )}
+      {f.notApplied && (
+        <p className="mt-2 text-[13px] leading-5 text-warn-ink">
+          This fix waits for the next version: another fix changed the same words. Your decision stays, and it applies when the draft is re-checked.
+        </p>
+      )}
       {f.status === "reopened" && f.resolution?.reason && <p className="mt-2 text-[13px] text-warn-ink">Reopened by {f.resolution.by}: “{f.resolution.reason}”</p>}
+      {contestedHigh && (
+        <p className="mt-2 text-[13px] leading-5 text-warn-ink">
+          {f.category === "claim"
+            ? "Contesting does not clear this claim. It goes to Compliance when the draft is submitted, and Compliance decides it."
+            : "Contesting does not clear a high-severity finding. A reviewer has to clear it, by approving over it with a reason or by sending it back."}
+        </p>
+      )}
+      {f.contest && f.status !== "contested" && (
+        <p className="mt-2 text-[13px] leading-5 text-muted">
+          Rule contested by {f.contest.by}
+          {f.contest.reason ? `: “${f.contest.reason}”` : ""} · {fmtTime(f.contest.at)}
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
         {creatorCanAct && f.fix && f.fix.kind !== "manual" && (
-          <button className="btn btn-primary btn-sm" disabled={busy} onClick={() => act(() => resolveFinding(f.id, "accepted", role))}>
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={busy}
+            onClick={() => {
+              // A fix the check says loses the message is accepted with a reason, so the choice is on the record.
+              if (f.intentCheck?.verdict === "lost") {
+                setMode("override");
+                setInput("");
+              } else void act(() => resolveFinding(f.id, "accepted", role));
+            }}
+          >
             Accept
           </button>
         )}
@@ -294,6 +340,7 @@ export function FindingCard({
             e.preventDefault();
             const v = input.trim();
             if (!v) return;
+            if (mode === "override") void act(() => resolveFinding(f.id, "accepted", role, { intentOverride: v }));
             if (mode === "edit") void act(() => resolveFinding(f.id, "edited", role, { editedText: input }));
             if (mode === "dismiss") void act(() => resolveFinding(f.id, "dismissed", role, { reason: v }));
             if (mode === "contest") void act(() => resolveFinding(f.id, "contested", role, { reason: v }));
@@ -302,16 +349,33 @@ export function FindingCard({
             if (mode === "reject") void act(() => complianceDecision(f.id, false, v));
           }}
         >
-          <label htmlFor={`in-${f.id}`} className="text-[13px] font-medium">
+          <label htmlFor={`in-${f.id}`} className="block text-[13px] font-medium">
             {
-              {
-                edit: "Your edit (replaces the quoted text)",
-                dismiss: "Why dismiss it? Reviewers see this reason",
-                contest: "What is wrong with the rule? Brand Admin sees this in Guideline Health",
-                comment: "Comment on this finding",
-                reopen: "Why reopen it?",
-                reject: "What has to change in the claim?",
-              }[mode]
+              (
+                {
+                  edit: "Your edit (replaces the quoted text)",
+                  override: (
+                    <>
+                      This fix may lose the message. Why accept it anyway?
+                      <span className="mt-0.5 block font-normal text-muted">The reason stays on the finding and is sealed into the Hallmark.</span>
+                    </>
+                  ),
+                  dismiss: "Why dismiss it? Reviewers see this reason",
+                  contest: (
+                    <>
+                      What is wrong with the rule? Brand Admin sees this in Guideline Health
+                      {f.severity === "high" && (
+                        <span className="mt-0.5 block font-normal text-muted">
+                          Contesting does not clear a high-severity finding: {f.category === "claim" ? "Compliance decides this claim when you submit" : "a reviewer has to clear it"}.
+                        </span>
+                      )}
+                    </>
+                  ),
+                  comment: "Comment on this finding",
+                  reopen: "Why reopen it?",
+                  reject: "What has to change in the claim?",
+                } satisfies Record<NonNullable<Mode>, ReactNode>
+              )[mode]
             }
           </label>
           <textarea id={`in-${f.id}`} className="field" rows={2} value={input} onChange={(e) => setInput(e.target.value)} autoFocus />

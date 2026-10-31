@@ -12,7 +12,9 @@ import { aiTask } from "@/lib/ai-client";
 import { checkVersion, createSubmission } from "@/store/actions";
 import { useAiStatus, useKit } from "@/store/hooks";
 import { TitleRow } from "./AppShell";
+import { useBrand } from "./BrandSwitcher";
 import { ImageMarker } from "./ImageMarker";
+import { Term } from "./primitives";
 import { Notice, Spinner } from "./ui";
 import { useDealIn } from "./motion";
 
@@ -37,18 +39,22 @@ export function NewDraft() {
   const params = useSearchParams();
   const ai = useAiStatus();
   const kit = useKit();
+  const brand = useBrand();
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [intent, setIntent] = useState<IntentCard>(EMPTY_INTENT);
   const [busy, setBusy] = useState<string | null>(null);
+  // Why the last file or sample could not be read, shown beside the upload button; and why the check failed, shown beside Run check.
+  const [fileError, setFileError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [over, setOver] = useState(false);
   const autoloaded = useRef(false);
   const samples = useRef<HTMLUListElement>(null);
   useDealIn(samples, ":scope > li", []);
 
   const loadSample = async (s: Sample) => {
-    setError(null);
+    setFileError(null);
     setBusy(`Loading “${s.title}”…`);
     try {
       let next: Draft = { ...EMPTY, title: s.title, channel: s.channel, audience: s.audience, campaign: s.campaign, agency: s.agency, text: s.text, sampleId: s.id, source: { kind: "paste" } };
@@ -63,7 +69,7 @@ export function NewDraft() {
       setDraft(next);
       setIntent({ ...s.intent, confirmed: true, draftedBy: "creator" });
     } catch (e) {
-      setError((e as Error).message);
+      setFileError((e as Error).message);
     } finally {
       setBusy(null);
     }
@@ -78,8 +84,9 @@ export function NewDraft() {
     }
   }, [params]);
 
+  // A file that cannot be read says why and changes nothing: the pasted copy, the title and the Intent Card stay as they were.
   const onFile = async (file: File) => {
-    setError(null);
+    setFileError(null);
     setBusy(`Reading ${file.name}…`);
     try {
       const parsed = await parseFile(file);
@@ -94,7 +101,7 @@ export function NewDraft() {
       }));
       if (parsed.text) setIntent((i) => (i.keyMessage ? i : draftIntent(parsed.text)));
     } catch (e) {
-      setError(e instanceof IntakeError ? e.message : `Could not read ${file.name}.`);
+      setFileError(e instanceof IntakeError ? e.message : `Could not read ${file.name}, so nothing was changed.`);
     } finally {
       setBusy(null);
     }
@@ -132,68 +139,69 @@ export function NewDraft() {
   };
 
   return (
-    <div className="px-4 py-5 md:px-6 md:py-6">
+    <div className="px-4 py-5 md:px-8 md:py-8">
       <TitleRow
         title="New draft"
-        sub="Paste copy or upload a file. Assay checks it against Velvra's published rulebook and Claim Ledger, then shows every issue with its source."
+        sub={
+          <>
+            Paste copy or upload a file. Assay checks it against {kit?.name ?? "the brand"}&apos;s published rulebook and <Term id="claim-ledger">Claim Ledger</Term>, then shows every issue with its source.
+          </>
+        }
       />
 
-      <section aria-labelledby="samples" className="mt-6">
-        <div className="flex items-baseline justify-between">
-          <h2 id="samples" className="text-[16px] font-semibold">
-            Try a sample
-          </h2>
-          <p className="hidden text-[13px] text-muted md:block">Fictional Velvra drafts; each loads through the same upload path you would use.</p>
-        </div>
-        <ul ref={samples} className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {SAMPLES.map((s) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                onClick={() => loadSample(s)}
-                disabled={!!busy}
-                className={`flex h-full w-full flex-col items-start gap-1 rounded-[14px] border p-4 text-left transition-colors ${
-                  draft.sampleId === s.id ? "border-gold bg-gold-wash" : "border-line hover:border-control hover:bg-raised"
-                }`}
-              >
-                <span className="flex w-full items-center justify-between gap-2">
-                  <span className="text-[14px] font-medium">{s.title}</span>
-                  <span className="pill bg-neutral-bg text-neutral-ink">{CHANNELS.find((c) => c.id === s.channel)?.label}</span>
-                </span>
-                <span className="text-[13px] leading-5 text-muted">{s.shows}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <div className="mt-8 grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
-        <section aria-labelledby="content" className="min-w-0">
-          <div className="flex items-baseline justify-between gap-3">
-            <h2 id="content" className="text-[16px] font-semibold">
+      <div className="mt-8 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <section aria-labelledby="content" className="card min-w-0 p-5 md:p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 id="content" className="text-[18px] font-semibold">
               Content
             </h2>
-            <div className="flex items-center gap-2">
-              <input
-                ref={fileRef}
-                type="file"
-                accept={ACCEPT}
-                className="sr-only"
-                aria-label="Upload a file"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void onFile(f);
-                  e.target.value = "";
-                }}
-              />
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => fileRef.current?.click()} disabled={!!busy}>
-                <Upload size={14} /> Upload DOCX, PDF or image
-              </button>
-            </div>
+            <p className="num text-[12.5px] text-faint">{draft.text.length.toLocaleString("en-IN")} characters</p>
           </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept={ACCEPT}
+            className="sr-only"
+            aria-label="Upload a file"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onFile(f);
+              e.target.value = "";
+            }}
+          />
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setOver(true);
+            }}
+            onDragLeave={() => setOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setOver(false);
+              const f = e.dataTransfer.files?.[0];
+              if (f && !busy) void onFile(f);
+            }}
+            className={`mt-4 flex flex-col items-center gap-3 rounded-[28px] px-6 py-9 text-center transition-colors duration-200 md:py-12 ${over ? "bg-active" : "bg-field"}`}
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-raised text-muted" aria-hidden="true">
+              <Upload size={22} />
+            </span>
+            <p className="text-[16px] font-medium">Drop a DOCX, a PDF or a creative here</p>
+            <p className="max-w-[420px] text-[13.5px] leading-5 text-muted">Text, page numbers and the picture are read in this browser. Or paste the copy straight into the box below.</p>
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => fileRef.current?.click()} disabled={!!busy}>
+              <Upload size={14} aria-hidden="true" /> Upload DOCX, PDF or image
+            </button>
+          </div>
+          {fileError && (
+            <div className="mt-3">
+              <Notice tone="error" role="alert">
+                {fileError}
+              </Notice>
+            </div>
+          )}
           {draft.source.fileName && (
-            <p className="mt-2 flex items-center gap-1.5 text-[13px] text-muted">
-              <FileText size={14} /> From {draft.source.fileName}
+            <p className="mt-3 flex items-center gap-1.5 text-[13px] text-muted">
+              <FileText size={14} aria-hidden="true" /> From {draft.source.fileName}
               {draft.pages ? ` · ${draft.pages.length} page${draft.pages.length === 1 ? "" : "s"}, page numbers kept` : ""}
             </p>
           )}
@@ -202,15 +210,14 @@ export function NewDraft() {
           </label>
           <textarea
             id="copy"
-            className="field mt-3 min-h-[220px] font-[inherit]"
+            className="field mt-4 min-h-[240px] !rounded-[22px] !border-0 !bg-field p-4 font-[inherit]"
             placeholder="Paste a caption, email, product page or brochure copy…"
             value={draft.text}
             onChange={(e) => setDraft((d) => ({ ...d, text: e.target.value, pages: undefined }))}
           />
-          <p className="num mt-1 text-right text-[12px] text-faint">{draft.text.length.toLocaleString("en-IN")} characters</p>
 
           {draft.image && (
-            <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,320px)_1fr]">
+            <div className="mt-5 grid gap-5 rounded-[24px] bg-field p-4 md:grid-cols-[minmax(0,320px)_1fr]">
               <ImageMarker image={draft.image} onBox={(logoBox) => setDraft((d) => ({ ...d, image: { ...d.image!, logoBox } }))} />
               <div className="space-y-4">
                 <div>
@@ -228,7 +235,7 @@ export function NewDraft() {
                 </div>
                 <div className="text-[13px] leading-5 text-muted">
                   <p className="font-medium text-ink">Logo size check</p>
-                  <p>Drag a box around the logo on the image. Assay measures it against the 120 px minimum. Automatic logo detection is planned for Round 3.</p>
+                  <p>Drag a box around the logo on the image. Assay measures it against the 120 px minimum. Assay does not find logos by itself, so the box is yours to draw.</p>
                   {draft.image.logoBox && (
                     <button type="button" className="mt-1 text-ink underline" onClick={() => setDraft((d) => ({ ...d, image: { ...d.image!, logoBox: undefined } }))}>
                       Clear the logo box
@@ -241,19 +248,14 @@ export function NewDraft() {
               </div>
             </div>
           )}
-        </section>
 
-        <section aria-labelledby="details" className="space-y-5">
-          <h2 id="details" className="text-[16px] font-semibold">
-            Details
-          </h2>
-          <div>
-            <label htmlFor="title" className="text-[14px] font-medium">
-              Title
-            </label>
-            <input id="title" className="field mt-2" value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} placeholder="Monsoon launch: Instagram post" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label htmlFor="title" className="text-[14px] font-medium">
+                Title
+              </label>
+              <input id="title" className="field mt-2" value={draft.title} onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))} placeholder="Monsoon launch: Instagram post" />
+            </div>
             <div>
               <label htmlFor="channel" className="text-[14px] font-medium">
                 Channel
@@ -272,17 +274,21 @@ export function NewDraft() {
               </label>
               <input id="audience" className="field mt-2" value={draft.audience} onChange={(e) => setDraft((d) => ({ ...d, audience: e.target.value }))} placeholder="Gen Z, 18–24" />
             </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="campaign" className="text-[14px] font-medium">
+                Campaign
+              </label>
+              <input id="campaign" className="field mt-2" value={draft.campaign} onChange={(e) => setDraft((d) => ({ ...d, campaign: e.target.value }))} placeholder="Monsoon launch" />
+            </div>
           </div>
-          <div>
-            <label htmlFor="campaign" className="text-[14px] font-medium">
-              Campaign
-            </label>
-            <input id="campaign" className="field mt-2" value={draft.campaign} onChange={(e) => setDraft((d) => ({ ...d, campaign: e.target.value }))} placeholder="Monsoon launch" />
-          </div>
+        </section>
 
-          <div className="rounded-[16px] bg-raised p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-[14px] font-semibold">Intent Card</h3>
+        <div className="space-y-6 xl:sticky xl:top-3">
+          <section aria-labelledby="intent-h" className="rounded-[32px] bg-active p-6">
+            <div className="flex items-start justify-between gap-2">
+              <h2 id="intent-h" className="font-display text-[22px] font-medium leading-7 tracking-[-0.02em]">
+                <Term id="intent-card">Intent Card</Term>
+              </h2>
               <div className="flex gap-1">
                 <button type="button" className="btn btn-ghost btn-sm" disabled={!draft.text.trim()} onClick={() => setIntent({ ...draftIntent(draft.text), confirmed: false })}>
                   Draft it
@@ -294,7 +300,7 @@ export function NewDraft() {
                 )}
               </div>
             </div>
-            <p className="mt-1 text-[13px] leading-5 text-muted">What the draft is for. Fixes are checked against it, so they keep your message.</p>
+            <p className="mt-1.5 text-[13.5px] leading-5 text-muted">What the draft is for. Fixes are checked against it, so they keep your message.</p>
             {(
               [
                 ["goal", "Goal", "Launch awareness"],
@@ -302,8 +308,8 @@ export function NewDraft() {
                 ["cta", "Call to action", "Shop via link in bio"],
               ] as const
             ).map(([k, label, ph]) => (
-              <div key={k} className="mt-3">
-                <label htmlFor={`intent-${k}`} className="text-[13px] font-medium">
+              <div key={k} className="mt-4">
+                <label htmlFor={`intent-${k}`} className="text-[13.5px] font-medium">
                   {label}
                 </label>
                 <input
@@ -315,18 +321,22 @@ export function NewDraft() {
                 />
               </div>
             ))}
-            <label className="mt-4 flex items-start gap-2.5 text-[13px] leading-5">
-              <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#17140f]" checked={intent.confirmed} onChange={(e) => setIntent((i) => ({ ...i, confirmed: e.target.checked }))} />
+            <label className="mt-5 flex items-start gap-2.5 rounded-[20px] bg-sheet p-4 text-[13.5px] leading-5">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#f4efe4]" checked={intent.confirmed} onChange={(e) => setIntent((i) => ({ ...i, confirmed: e.target.checked }))} />
               <span>
                 I confirm this is what the draft is for
                 {intent.draftedBy !== "creator" && <span className="text-muted"> (drafted by {intent.draftedBy === "ai" ? "the AI" : "a heuristic"}; check it)</span>}
               </span>
             </label>
-          </div>
+          </section>
 
-          {error && <Notice tone="error">{error}</Notice>}
+          {error && (
+            <Notice tone="error" role="alert">
+              {error}
+            </Notice>
+          )}
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" className="btn btn-primary" disabled={!canRun} onClick={run}>
+            <button type="button" className="btn btn-primary btn-lg" disabled={!canRun} onClick={run}>
               Run check
             </button>
             {busy ? (
@@ -340,8 +350,37 @@ export function NewDraft() {
             )}
           </div>
           {kit?.confidential && <Notice tone="info">Confidential mode is on: nothing in this draft will be sent to an AI service.</Notice>}
-        </section>
+        </div>
       </div>
+
+      {brand?.demo && (
+        <section aria-labelledby="samples" className="mt-12">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="samples" className="text-[15px] font-semibold text-muted">
+              Or start from a sample
+            </h2>
+            <p className="text-[13px] text-muted">Fictional Velvra drafts; each loads through the same upload path you would use.</p>
+          </div>
+          <ul ref={samples} className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {SAMPLES.map((s) => (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => loadSample(s)}
+                  disabled={!!busy}
+                  className={`flex h-full w-full flex-col items-start gap-1.5 rounded-[24px] p-5 text-left transition-colors ${draft.sampleId === s.id ? "bg-active" : "bg-raised hover:bg-active"}`}
+                >
+                  <span className="flex w-full items-center justify-between gap-2">
+                    <span className="text-[14.5px] font-medium">{s.title}</span>
+                    <span className="pill bg-neutral-bg text-neutral-ink">{CHANNELS.find((c) => c.id === s.channel)?.label}</span>
+                  </span>
+                  <span className="text-[13px] leading-5 text-muted">{s.shows}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
