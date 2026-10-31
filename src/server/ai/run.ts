@@ -2,7 +2,7 @@
 // output, map offsets back. Content is never logged.
 import { z } from "zod";
 import { INPUT_CAP, TASKS, textLength, type AiRouteResponse, type TaskName } from "@/lib/ai-tasks";
-import { redact, toOriginal, type Redaction } from "@/engine/redact";
+import { redact, redactDeep, toOriginal, type Redaction } from "@/engine/redact";
 import { callGemini, type GeminiOptions } from "./gemini";
 import type { KeyPool } from "./keys";
 import { SYSTEM } from "./prompts";
@@ -19,22 +19,6 @@ function geminiSchema(schema: z.ZodType): object {
     return v;
   };
   return strip(json) as object;
-}
-
-/** Redacts every string inside a value. Returns the count of redactions. */
-function redactDeep<T>(value: T): { value: T; count: number } {
-  let count = 0;
-  const walk = (v: unknown): unknown => {
-    if (typeof v === "string") {
-      const r = redact(v);
-      count += r.redactions.length;
-      return r.text;
-    }
-    if (Array.isArray(v)) return v.map(walk);
-    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
-    return v;
-  };
-  return { value: walk(value) as T, count };
 }
 
 export async function runTask(task: string, rawInput: unknown, pool: KeyPool, opts: GeminiOptions = {}): Promise<AiRouteResponse<unknown>> {
