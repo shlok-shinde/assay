@@ -2,6 +2,8 @@
 // in the AI call log (task, model, outcome, timing, redaction count; never content).
 import type { AiRouteResponse, TaskInput, TaskName, TaskOutput } from "./ai-tasks";
 import type { AiClient } from "@/engine/pipeline";
+import { redactDeep } from "@/engine/redact";
+import { DEMO_PEOPLE } from "@/seed/velvra";
 import { db, nowIso, uid } from "@/store/db";
 
 export interface AiStatus {
@@ -17,13 +19,26 @@ export function aiStatus(refresh = false): Promise<AiStatus | null> {
   if (!statusPromise || refresh) {
     statusPromise = fetch("/api/status", { cache: "no-store" })
       .then((r) => (r.ok ? (r.json() as Promise<AiStatus>) : null))
-      .catch(() => null);
+      .catch(() => null)
+      // A failed look is not an answer: without this, one dropped request reads as "no AI" for the whole session.
+      .then((s) => {
+        if (!s) statusPromise = null;
+        return s;
+      });
   }
   return statusPromise;
 }
 
-export async function aiTask<T extends TaskName>(task: T, input: TaskInput<T>): Promise<AiRouteResponse<TaskOutput<T>>> {
+/** People this workspace names: the demo cast, and fact owners someone entered by hand. Team names like "Marketing" are ordinary words and stay. */
+export async function peopleNames(): Promise<string[]> {
+  const owners = await db.owners.toArray().catch(() => []);
+  return [...new Set([...Object.values(DEMO_PEOPLE).map((p) => p.name.split(" ")[0]), ...owners.filter((o) => !o.simulated).map((o) => o.name)])];
+}
+
+export async function aiTask<T extends TaskName>(task: T, rawInput: TaskInput<T>): Promise<AiRouteResponse<TaskOutput<T>>> {
   const t0 = performance.now();
+  // Every task is redacted here, before anything leaves the browser. The server redacts again behind this.
+  const input = redactDeep(rawInput, await peopleNames()).value;
   let res: AiRouteResponse<TaskOutput<T>>;
   try {
     // The route gives up after 20 s; this caps the browser's wait too, so nothing that waits on the AI
@@ -55,7 +70,7 @@ export async function pipelineAi(): Promise<AiClient | null> {
     async judge(req) {
       const r = await aiTask("judge", req);
       if (!r.ok) {
-        const reason = r.reason === "throttled" || r.reason === "rate_limited" ? "rate_limited" : r.reason === "unconfigured" ? "unconfigured" : r.reason === "timeout" ? "timeout" : r.reason === "offline" ? "offline" : "error";
+        const reason = r.reason === "throttled" || r.reason === "rate_limited" ? "rate_limited" : r.reason === "unconfigured" ? "unconfigured" : r.reason === "too_large" ? "too_large" : r.reason === "timeout" ? "timeout" : r.reason === "offline" ? "offline" : "error";
         return { ok: false, reason, message: r.message };
       }
       return { ok: true, data: { findings: r.data.findings, factChoices: r.data.factChoices }, model: r.model, ms: r.ms, redactions: r.redactions };

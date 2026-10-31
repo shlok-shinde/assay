@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { VELVRA_KIT } from "@/seed/velvra";
 import { verifyAiFindings } from "./verifier";
 import { redact, toOriginal } from "./redact";
-import { applyFixes, draftIntent, intentCheck, intentVerdict } from "./fix";
+import { applyFixes, applyFixPlan, draftIntent, intentCheck, intentVerdict, planFixes, validateMerge } from "./fix";
+import { acceptanceByRule, editShare } from "./health";
+import { ruleChecks } from "./rules";
 import { contrastRatio, deltaE, hexToRgb, kmeans, nearestPaletteColor } from "./color";
 import { canonicalJson, sha256Hex } from "./hash";
 import { GENESIS, sealHallmark, verifyHallmark } from "./hallmark";
-import type { HallmarkBody } from "@/lib/types";
+import type { FixEvent, HallmarkBody } from "@/lib/types";
 
 const TEXT = "OMG 😍 our new sunblock is clinically proven to erase dark spots in just 7 days!";
 
@@ -180,5 +182,125 @@ describe("Hallmark", () => {
     const tampered = { ...second, findings: [] };
     expect((await verifyHallmark(tampered, content, first)).bodyMatches).toBe(false);
     expect((await verifyHallmark(second, content, { ...first, hash: "f".repeat(64) })).chainMatches).toBe(false);
+  });
+});
+
+describe("fixes that collide", () => {
+  const ctx = { kit: VELVRA_KIT, channel: "email" as const, today: "2026-10-26" };
+  const f = (id: string, ruleId: string, start: number, end: number, replacement: string, over: object = {}) => ({
+    id,
+    ruleId,
+    start,
+    end,
+    quote: "",
+    severity: "medium" as const,
+    category: "tone" as const,
+    origin: "rule" as const,
+    fix: { kind: "replace" as const, replacement, label: "" },
+    ...over,
+  });
+
+  it("composes fixes in one sentence and only flags true overlaps", () => {
+    const text = "Our sunblock is insane today.";
+    const plan = planFixes(text, [f("a", "TERM-04", 4, 12, "Daily Shield SPF 50"), f("b", "VOICE-02", 16, 22, "really good")], ctx);
+    expect(plan.conflicts).toEqual([]);
+    expect(plan.composed).toHaveLength(1);
+    expect(plan.composed[0].ids).toEqual(["a", "b"]);
+    expect(applyFixPlan(text, [f("a", "TERM-04", 4, 12, "Daily Shield SPF 50"), f("b", "VOICE-02", 16, 22, "really good")], plan).text).toBe("Our Daily Shield SPF 50 is really good today.");
+  });
+
+  it("defaults an overlap to the more serious fix and reports the loser", () => {
+    const text = "Results guaranteed forever now.";
+    const low = f("low", "VOICE-02", 8, 26, "x", { severity: "low" });
+    const high = f("high", "CLAIM-02", 0, 18, "Results that build with daily use", { severity: "high", category: "claim" });
+    const plan = planFixes(text, [low, high], ctx);
+    expect(plan.conflicts).toHaveLength(1);
+    expect(plan.conflicts[0].defaultId).toBe("high");
+    const r = applyFixPlan(text, [low, high], plan);
+    expect(r.applied).toEqual(["high"]);
+    expect(r.conflicts).toEqual(["low"]);
+  });
+
+  it("merges when one fix's words contain the other's, and validates the result", () => {
+    const text = "This omg insane sunscreen is here.";
+    const outer = f("outer", "VOICE-02", 5, 15, "really good", { quote: "omg insane" });
+    const inner = f("inner", "VOICE-02", 9, 15, "good", { quote: "insane" });
+    const plan = planFixes(text, [outer, inner], ctx);
+    expect(plan.conflicts[0].merged).toBe("really good");
+    const r = applyFixPlan(text, [outer, inner], plan, { [plan.conflicts[0].id]: { kind: "text", text: plan.conflicts[0].merged! } });
+    expect(r.text).toBe("This really good sunscreen is here.");
+    expect(r.applied.sort()).toEqual(["inner", "outer"]);
+  });
+
+  it("refuses a merge that adds a number, a banned word or changes approved wording", () => {
+    const before = "It is a great sunscreen.";
+    const fix = f("a", "CLAIM-01", 6, 11, "shown in our study", { category: "claim", quote: "great" });
+    expect(validateMerge(before, "It is a 90% better sunscreen.", [fix], ctx).ok).toBe(false);
+    expect(validateMerge(before, "It is a whitening sunscreen.", [fix], ctx).problems.join()).toMatch(/TERM-05/);
+    expect(validateMerge(before, "It is shown in a study sunscreen.", [fix], ctx).problems.join()).toMatch(/approved wording/);
+  });
+
+  it("a deletion at a sentence start leaves the next word free for its own fix", () => {
+    const text = "OMG insane results here.";
+    const findings = ruleChecks(text, VELVRA_KIT, "instagram").filter((x) => x.ruleId === "VOICE-02");
+    expect(findings).toHaveLength(2);
+    const fixes = findings.map((x, i) => ({ id: String(i), start: x.start, end: x.end, fix: x.fix, ruleId: x.ruleId, quote: x.quote, severity: x.severity, category: x.category, origin: x.origin }));
+    const plan = planFixes(text, fixes);
+    expect(plan.conflicts).toEqual([]);
+    expect(applyFixPlan(text, fixes, plan).text).toBe("Really good results here.");
+  });
+
+  it("says plainly when an Intent Card gave it nothing to check", () => {
+    const blank = { goal: "", keyMessage: "", cta: "", confirmed: true, draftedBy: "creator" as const };
+    const h = intentCheck("Before.", "After.", blank);
+    expect(h.checked).toBe(false);
+    const v = intentVerdict(h);
+    expect(v.verdict).toBe("unchecked");
+    expect(v.summary).not.toMatch(/Intent kept/);
+  });
+});
+
+describe("fix acceptance", () => {
+  const ev = (findingId: string, kind: FixEvent["kind"], at: number, over: Partial<FixEvent> = {}): FixEvent => ({ id: `${findingId}${at}`, at: new Date(at * 1000).toISOString(), kind, ruleId: "TERM-04", findingId, submissionId: "s", role: "creator", ...over });
+
+  it("counts accepted and lightly edited over decided, with the last event winning", () => {
+    const [row] = acceptanceByRule([
+      ev("a", "offered", 1), ev("a", "accepted", 2),
+      ev("b", "offered", 1), ev("b", "edited", 2, { editShare: 0.2 }),
+      ev("c", "offered", 1), ev("c", "edited", 2, { editShare: 0.6 }),
+      ev("d", "offered", 1), ev("d", "dismissed", 2),
+      ev("e", "offered", 1), ev("e", "accepted", 2), ev("e", "undone", 3),
+      ev("f", "offered", 1),
+    ]);
+    expect(row).toMatchObject({ ruleId: "TERM-04", offered: 6, decided: 4, accepted: 2, rate: 0.5 });
+  });
+
+  it("leaves out automated runs, and has no rate before a decision", () => {
+    expect(acceptanceByRule([ev("a", "accepted", 1, { automated: true })])).toEqual([]);
+    expect(acceptanceByRule([ev("a", "offered", 1)])[0].rate).toBeNull();
+  });
+
+  it("measures how much of a suggestion was edited", () => {
+    expect(editShare("even tone", "even tone")).toBe(0);
+    expect(editShare("abcd", "abcf")).toBe(0.25);
+    expect(editShare("", "x")).toBe(1);
+  });
+});
+
+describe("the sample whose fixes collide", () => {
+  const ctx = { kit: VELVRA_KIT, channel: "instagram" as const, today: "2026-10-26" };
+  const text = "OMG 😍🔥💧🌞 our new Daily Shield is here. Shop now via the link in bio";
+  const fixes = ruleChecks(text, VELVRA_KIT, "instagram")
+    .filter((f) => f.fix && f.fix.kind === "replace")
+    .map((f, i) => ({ id: String(i), start: f.start, end: f.end, fix: f.fix, ruleId: f.ruleId, quote: f.quote, severity: f.severity, category: f.category, origin: f.origin, factId: f.factId }));
+
+  it("collides, and the merge reads the same as the winning fix", () => {
+    const plan = planFixes(text, fixes, ctx);
+    expect(plan.conflicts).toHaveLength(1);
+    const c = plan.conflicts[0];
+    expect(c.merged).toBe("");
+    const merged = applyFixPlan(text, fixes, plan, { [c.id]: { kind: "text", text: c.merged! } }).text;
+    expect(merged).toBe("Our new Daily Shield is here. Shop now via the link in bio");
+    expect(applyFixPlan(text, fixes, plan).text).toBe(merged);
   });
 });

@@ -9,7 +9,8 @@ function priority(f: RawFinding): number[] {
   return [SEVERITY_RANK[f.severity], f.factId ? 1 : 0, f.category === "claim" ? 1 : 0, f.origin === "rule" ? 1 : 0, f.end - f.start];
 }
 
-function compare(a: RawFinding, b: RawFinding): number {
+/** Sorts the more serious finding first. Also decides which fix wins when two want the same words. */
+export function compare(a: RawFinding, b: RawFinding): number {
   const pa = priority(a);
   const pb = priority(b);
   for (let i = 0; i < pa.length; i++) if (pa[i] !== pb[i]) return pb[i] - pa[i];

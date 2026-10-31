@@ -2,8 +2,8 @@
 // careful reviewer would expect to fire. Labels were written by the builder
 // with AI assistance from the rule texts, before looking at the engine's
 // output on each draft. They measure the engine against its own spec, not
-// real-world accuracy. Judgment-only rules (VOICE-01, MSG-01) are not
-// labelled here because the AI is not part of the rule-check evaluation.
+// real-world accuracy. Human labels from people other than the builder live
+// in golden/labels/ and are scored separately.
 import type { Channel } from "@/lib/types";
 
 export interface GoldenDraft {
@@ -97,4 +97,72 @@ export const GOLDEN: GoldenDraft[] = [
     expect: ["A11Y-03"],
   },
   { id: "a11y-07", channel: "instagram", text: "Find the full guide on our website. #SunCareTips", expect: [] },
+
+  // ---- Added for Round 3. Labels written from the rule texts before these drafts met the engine. -----
+
+  // ---- Judgment: voice ------------------------------------------------------
+  { id: "voice-01", channel: "instagram", text: "Buy it. Wear it. Stop asking questions. Daily Shield SPF 50.", expect: ["VOICE-01"] },
+  { id: "voice-02", channel: "linkedin", text: "Sunscreen isn't optional and anyone skipping it is making a mistake. Daily Shield SPF 50 exists.", expect: ["VOICE-01"] },
+  { id: "voice-03", channel: "email", text: "You have one job this monsoon: wear sunscreen. Do it or regret it. Reapply every 2 hours.", expect: ["VOICE-01"] },
+  { id: "voice-04", channel: "instagram", text: "Sunscreen. You know why. Go.", expect: ["VOICE-01"] },
+  { id: "voice-05", channel: "website", text: "Our formula has been engineered around photostability parameters across the relevant spectrum. Reapply every 2 hours.", expect: ["VOICE-01"] },
+  { id: "voice-06", channel: "instagram", text: "Still not wearing sunscreen? Seriously? Daily Shield SPF 50.", expect: ["VOICE-01"] },
+  { id: "voice-07", channel: "email", text: "Everything you were told about sun care is wrong, and it is time someone said so. Reapply every 2 hours.", expect: ["VOICE-01"] },
+  { id: "voice-08", channel: "instagram", text: "Sunscreen can feel like one more step, so we made Daily Shield SPF 50 light enough to forget. #EasyMornings", expect: [] },
+
+  // ---- Judgment: launches and the pillars -----------------------------------
+  { id: "launch-01", channel: "instagram", text: "New drop. Go get it. Daily Shield SPF 50 lands Friday.", expect: ["MSG-01"] },
+  { id: "launch-02", channel: "linkedin", text: "We are launching Daily Shield SPF 50 on Monday. Our team worked hard and we could not be happier.", expect: ["MSG-01"] },
+  { id: "launch-03", channel: "email", text: "It's here. Daily Shield SPF 50 launches today. Reapply every 2 hours.", expect: ["MSG-01"] },
+  { id: "launch-04", channel: "instagram", text: "Launch day! Daily Shield SPF 50 comes in a cream tube and a new box.", expect: ["MSG-01"] },
+  { id: "launch-05", channel: "website", text: "Now available: Daily Shield SPF 50, in a 50 ml tube. Reapply every 2 hours.", expect: ["MSG-01"] },
+  { id: "launch-06", channel: "instagram", text: "Launching today: Daily Shield SPF 50, daily protection that helps skin look visibly more even.", expect: [] },
+  { id: "launch-07", channel: "linkedin", text: "Today we launch Daily Shield SPF 50, built for daily protection in Indian weather.", expect: [] },
+  { id: "launch-08", channel: "instagram", text: "Meet Daily Shield SPF 50. Out now, in a new tube.", expect: ["MSG-01"] },
+
+  // ---- Legal, second round --------------------------------------------------
+  { id: "legal-05", channel: "email", text: "Your SPF 50 is running low? Order Daily Shield on our website.", expect: ["LEGAL-01"] },
+  { id: "legal-06", channel: "website", text: "What does SPF 50 mean? It shows how much UVB reaches your skin.", expect: ["LEGAL-01"] },
+  { id: "legal-07", channel: "email", text: "SPF 50 for the whole family. Reapply every 2 hours.", expect: [] },
+  { id: "legal-08", channel: "linkedin", text: "SPF 50 matters, even on cloudy days.", expect: [] },
+  { id: "legal-09", channel: "brochure", text: "Daily Shield SPF 50 comes in a 50 ml tube.", expect: [] },
+  { id: "legal-10", channel: "website", text: "Daily Shield is a gel sunscreen with SPF 50 PA++++ broad-spectrum protection.", expect: ["LEGAL-01"] },
+
+  // ---- Several problems at once ----------------------------------------------
+  { id: "multi-01", channel: "email", text: "OMG!!! Our new sunblock is clinically proven to erase dark spots overnight. Click here. SPF 50.", expect: ["VOICE-02", "TERM-04", "CLAIM-01", "MSG-02", "A11Y-02", "LEGAL-01"] },
+  { id: "multi-02", channel: "email", text: "Hi there,\n\nSay goodbye to embarrassing flaws with our whitening serum. Results guaranteed.\n\nClick here to order.", expect: ["VOICE-03", "TERM-05", "TERM-03", "CLAIM-02", "A11Y-02"] },
+  { id: "multi-03", channel: "email", text: "Get the best skin care of your life. 30% off this monsoon with code RAIN30. SPF 50 protection. Read more on our website.", expect: ["CLAIM-03", "TERM-01", "CLAIM-01", "LEGAL-01", "A11Y-02"] },
+  { id: "multi-04", channel: "email", text: "This game changer treats acne and heals sunburn. Reapply every 2 hours.", expect: ["VOICE-02", "CLAIM-04"] },
+  { id: "multi-05", channel: "email", text: "Our chemical-free moisturiser is a must-have. Free shipping on orders over ₹199. Reapply every 2 hours.", expect: ["TERM-02", "TERM-03", "VOICE-02", "CLAIM-01"] },
+  { id: "multi-06", channel: "email", text: "90% of people saw fairer skin in just 3 days. Tap here to read the study. SPF 50.", expect: ["CLAIM-01", "TERM-05", "MSG-02", "A11Y-02", "LEGAL-01"] },
+  { id: "multi-07", channel: "email", text: "Forever young skin, instantly! Daily Shield SPF 50 is the No. 1 choice.", expect: ["CLAIM-02", "MSG-02", "CLAIM-03", "LEGAL-01"] },
+  { id: "multi-08", channel: "email", text: "We're proud to say our product is risk-free with no side effects. Learn more on our website. Reapply every 2 hours.", expect: ["CLAIM-02", "A11Y-02"] },
+  { id: "multi-09", channel: "email", text: "Dear customer, your sun cream is waiting. It is water-resistant for 2 hours, so swim as long as you like. Reapply every 2 hours.", expect: ["TERM-04", "CLAIM-01"] },
+  { id: "multi-10", channel: "email", text: "Hide your dark spots with our treatment. It works immediately and lasts forever. Click here. SPF 50.", expect: ["VOICE-03", "CLAIM-04", "MSG-02", "CLAIM-02", "A11Y-02", "LEGAL-01"] },
+  { id: "multi-11", channel: "website", text: "The most effective sunblock in India, clinically proven. Read more.", expect: ["CLAIM-03", "TERM-04", "CLAIM-01", "A11Y-02"] },
+  { id: "multi-12", channel: "instagram", text: "insane glow, zero flaws, guaranteed!!! #glowup #bestsunscreen", expect: ["VOICE-02", "VOICE-03", "CLAIM-02", "A11Y-05"] },
+
+  // ---- Near misses and approved wording --------------------------------------
+  { id: "near-01", channel: "instagram", text: "Visit the store for a fair deal this weekend. #WeekendPlans", expect: [] },
+  { id: "near-02", channel: "website", text: "Our in-house study of 40 people found 82% saw a more even tone.", expect: ["CLAIM-01", "CLAIM-05"] },
+  { id: "near-03", channel: "instagram", text: "Offer ends 20 November: 20% off for the monsoon.", expect: [] },
+  { id: "near-04", channel: "linkedin", text: "A panel of 120 people told us it leaves no white cast.", expect: ["CLAIM-01"] },
+  { id: "near-05", channel: "brochure", text: "Water-resistant for 40 minutes and fragrance-free. Find it at your nearest pharmacy.", expect: [] },
+  { id: "near-06", channel: "website", text: "Cures sun damage. Reapply every 2 hours.", expect: ["CLAIM-04"] },
 ];
+
+/** The first drafts, whose rule-check scores form the regression gate in golden/baseline.json. */
+export const ROUND2_DRAFTS = 64;
+
+/** Rules only the AI can judge. The rule-check score leaves them out, and says so. */
+export const JUDGMENT_ONLY = new Set(["VOICE-01", "MSG-01"]);
+
+/**
+ * Half the drafts are for tuning and half are kept back, chosen from the ID alone so the split can't
+ * be nudged after seeing results. Only the kept-back half counts as a test of the engine.
+ */
+export function goldenSplit(id: string): "dev" | "heldout" {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return h % 2 === 0 ? "dev" : "heldout";
+}

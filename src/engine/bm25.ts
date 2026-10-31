@@ -21,7 +21,11 @@ export function withoutNames(text: string, names: string[]): string {
 }
 
 export function buildIndex(facts: Fact[], synonymGroups: string[][] = [], names: string[] = []): Bm25Index {
-  const docs = facts.map((f) => ({ id: f.id, terms: stems(withoutNames(factDocument(f), names)) }));
+  return buildDocIndex(facts.map((f) => ({ id: f.id, text: factDocument(f) })), synonymGroups, names);
+}
+
+export function buildDocIndex(items: { id: string; text: string }[], synonymGroups: string[][] = [], names: string[] = []): Bm25Index {
+  const docs = items.map((d) => ({ id: d.id, terms: stems(withoutNames(d.text, names)) }));
   const df = new Map<string, number>();
   for (const d of docs) for (const t of new Set(d.terms)) df.set(t, (df.get(t) ?? 0) + 1);
   const avgLen = docs.reduce((n, d) => n + d.terms.length, 0) / Math.max(1, docs.length);

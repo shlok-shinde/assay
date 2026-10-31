@@ -2,6 +2,7 @@
 // readability, link text, hashtags and required disclaimers. These run
 // on every check, with or without the AI.
 import type { Channel, KitContent, Rule } from "@/lib/types";
+import { VELVRA_DISCLAIMER, VELVRA_VOCABULARY } from "@/seed/velvra-content";
 import { readability } from "./readability";
 import { EMOJI_RE, findPhrases, sentences, words } from "./text";
 import type { RawFinding } from "./types";
@@ -17,17 +18,16 @@ export function matchCase(original: string, replacement: string): string {
   return replacement;
 }
 
-/** A deletion that also swallows emoji and spaces after the phrase, and re-capitalises the sentence. */
+/**
+ * A deletion that also swallows emoji and spaces after the phrase. The word after it takes the capital
+ * when the fix is applied, not as part of this fix's range, so that word stays free for its own finding.
+ */
 function deletionFix(text: string, start: number, end: number, label: string): RawFinding["fix"] {
   let e = end;
   const tail = /^(?:\s*\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic})*)*[\s,]*/u.exec(text.slice(e));
   if (tail) e += tail[0].length;
   const atSentenceStart = start === 0 || /[.!?\n]\s*$/.test(text.slice(0, start));
-  if (atSentenceStart && /\p{Ll}/u.test(text[e] ?? "")) {
-    // Re-capitalise the next word, and show it in the fix so the edit reads naturally.
-    const next = /^[\p{L}\p{N}'’-]+/u.exec(text.slice(e))![0];
-    return { kind: "replace", replacement: next[0].toUpperCase() + next.slice(1), label, range: { start, end: e + next.length } };
-  }
+  if (atSentenceStart && /\p{Ll}/u.test(text[e] ?? "")) return { kind: "replace", replacement: "", label, capNext: true, range: { start, end: e } };
   if (!atSentenceStart && /\s$/.test(text.slice(0, start)) && e === end) e += /^\s/.test(text.slice(e)) ? 1 : 0;
   return { kind: "replace", replacement: "", label, range: { start, end: e } };
 }
@@ -132,10 +132,18 @@ function superlativeFindings(text: string, kit: KitContent): RawFinding[] {
   return out;
 }
 
-const COMMON_WORDS =
-  "sun screen sunscreen tok daily shield skin care skincare glow monsoon spf protect protection even tone velvra lab life day beauty routine summer rain ready wear every morning love new launch drop fresh tips tip friday monday self team india indian health happy natural light weight lightweight clean free fragrance tested derm dermatologist study science water proof shine bright".split(
-    " ",
-  );
+/** A snapshot from before the kit carried these fields can only be Velvra's, so it reads Velvra's. */
+const vocabularyOf = (kit: KitContent) => kit.vocabulary ?? (kit.name === "Velvra" ? VELVRA_VOCABULARY : []);
+const disclaimerOf = (kit: KitContent) => kit.disclaimer ?? (kit.name === "Velvra" ? VELVRA_DISCLAIMER : undefined);
+
+/** A brand admin may write these patterns, so a broken one skips the check instead of breaking every check. */
+function pattern(source: string): RegExp | null {
+  try {
+    return new RegExp(source, "i");
+  } catch {
+    return null;
+  }
+}
 
 /** Splits "sunscreentok" into ["sunscreen", "tok"] using a small vocabulary. */
 export function segmentHashtag(tag: string, vocab: Set<string>): string[] | null {
@@ -234,7 +242,7 @@ function structuralFindings(text: string, kit: KitContent, channel: Channel): Ra
       });
     }
     const vocab = new Set([
-      ...COMMON_WORDS,
+      ...vocabularyOf(kit),
       ...kit.terms.flatMap((t) => t.preferred.toLowerCase().split(/\s+/)),
       ...words(kit.facts.map((f) => f.keywords.join(" ")).join(" ")).map((w) => w.text.toLowerCase()),
       ...kit.pillars.flatMap((p) => p.split(/\s+/)),
@@ -283,10 +291,13 @@ function structuralFindings(text: string, kit: KitContent, channel: Channel): Ra
     }
   }
 
-  const legal = rules.get("LEGAL-01");
-  if (legal && appliesTo(legal, channel)) {
-    const mention = /\bDaily Shield(?: SPF ?\d+)?|\bSPF ?\d+|\bsunscreen\b/i.exec(text);
-    if (mention && !/\breappl(y|ied|ication)\b/i.test(text)) {
+  const disclaimer = disclaimerOf(kit);
+  const legal = disclaimer && rules.get(disclaimer.ruleId);
+  const mentions = disclaimer && pattern(disclaimer.mentions);
+  const present = disclaimer && pattern(disclaimer.present);
+  if (legal && mentions && present && appliesTo(legal, channel)) {
+    const mention = mentions.exec(text);
+    if (mention && !present.test(text)) {
       out.push({
         ruleId: legal.id,
         relatedRuleIds: [],

@@ -5,7 +5,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import type { Role } from "@/lib/types";
 import { aiStatus, type AiStatus } from "@/lib/ai-client";
 import { db } from "./db";
-import { ensureSeeded } from "./actions";
+import { ensureSeeded, KIT_ID } from "./actions";
 
 export function useWorkspace(): { ready: boolean; error?: string } {
   const [state, setState] = useState<{ ready: boolean; error?: string }>({ ready: false });
@@ -34,7 +34,7 @@ export function useAiStatus(): AiStatus | null | undefined {
 }
 
 export function useKit() {
-  return useLiveQuery(() => db.kits.get("velvra"), []);
+  return useLiveQuery(() => db.kits.get(KIT_ID), []);
 }
 
 export interface JudgeStep {

@@ -1,6 +1,6 @@
 // The pure part of the visual checks (no DOM, no workers), shared by the page and the analysis worker:
 // palette (k-means + ΔE2000), text contrast (tesseract.js word boxes + a
-// 2-cluster split per line), alt text and the hand-marked logo box.
+// 2-cluster split per line), alt text and the logo: a box marked by hand, or else the brand's wordmark as OCR reads it.
 import type { ImageAsset, KitContent } from "@/lib/types";
 import { contrastRatio, deltaE, hexToRgb, kmeans, nearestPaletteColor, rgbToHex, textColors, type RGB } from "./color";
 import type { RawFinding } from "./types";
@@ -16,6 +16,20 @@ export interface VisualReport {
   dominant: { hex: string; share: number; nearest: string; deltaE: number }[];
   lines: (OcrLine & { fg: string; bg: string; ratio: number; large: boolean })[];
   ocr: "done" | "skipped" | "failed";
+  /** Where the logo was measured from, when anything found it. */
+  logo?: { box: OcrLine["box"]; source: "hand" | "wordmark" };
+}
+
+const lettersOnly = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+/**
+ * The brand's name standing alone on a line, which is how a wordmark logo reads to OCR. A name inside a sentence is
+ * copy, not a logo. A logo that is a picture has no text to find; those still take a box marked by hand.
+ */
+export function findWordmark(lines: OcrLine[] | null, kit: Pick<KitContent, "name">): OcrLine["box"] | undefined {
+  const word = lettersOnly(kit.name.split(/\s+/)[0] ?? "");
+  if (word.length < 3) return undefined;
+  return (lines ?? []).filter((l) => l.confidence >= 40 && lettersOnly(l.text) === word).sort((a, b) => b.box.w - a.box.w)[0]?.box;
 }
 
 export type Pixels = { data: Uint8ClampedArray; width: number; height: number };
@@ -36,7 +50,7 @@ function crop(img: Pixels, box: OcrLine["box"]): Uint8ClampedArray {
 }
 
 /** Pure part of the visual check, given decoded pixels and OCR lines. Unit-tested. */
-export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, lines: OcrLine[] | null): VisualReport {
+export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, lines: OcrLine[] | null, wordmark?: OcrLine["box"]): VisualReport {
   const rules = new Map(kit.rules.filter((r) => r.active && !r.pending).map((r) => [r.id, r]));
   const findings: RawFinding[] = [];
   const whole = { x: 0, y: 0, w: img.width, h: img.height };
@@ -50,8 +64,9 @@ export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, 
       sample.push(img.data[i], img.data[i + 1], img.data[i + 2], img.data[i + 3]);
     }
   const clusters = kmeans(sample, 5);
+  // A new brand has no palette yet: there is nothing to be off, so no colour is reported as off it.
   const dominant = clusters
-    .filter((c) => c.share >= 0.15)
+    .filter((c) => c.share >= 0.15 && kit.palette.length)
     .map((c) => {
       const hex = rgbToHex(c.rgb);
       const n = nearestPaletteColor(hex, kit.palette);
@@ -106,7 +121,7 @@ export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, 
     const box = { x, y, w: Math.max(...block.map((b) => b.line.box.x + b.line.box.w)) - x, h: Math.max(...block.map((b) => b.line.box.y + b.line.box.h)) - y };
     const ratio = Math.min(...block.map((b) => b.ratio));
     const best = [...kit.palette].sort((p, q) => contrastRatio(hexToRgb(q.hex), first.bg) - contrastRatio(hexToRgb(p.hex), first.bg))[0];
-    const bestRatio = Math.round(contrastRatio(hexToRgb(best.hex), first.bg) * 10) / 10;
+    const bestRatio = best ? Math.round(contrastRatio(hexToRgb(best.hex), first.bg) * 10) / 10 : 0;
     findings.push({
       ruleId: a11y01!.id,
       relatedRuleIds: [],
@@ -119,7 +134,7 @@ export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, 
       quote: `“${block.map((b) => b.line.text).join(" ")}”`,
       title: "Low text contrast",
       reason: `Text contrast is ${ratio}:1 (${rgbToHex(first.fg)} on ${rgbToHex(first.bg)}), below the ${first.min}:1 WCAG AA minimum for ${first.large ? "large" : "normal"} text (${a11y01!.id}).`,
-      fix: { kind: "manual", replacement: `Use ${best.name} ${best.hex} for this text (${bestRatio}:1 on this background).`, label: "Change the text colour" },
+      fix: { kind: "manual", replacement: best ? `Use ${best.name} ${best.hex} for this text (${bestRatio}:1 on this background).` : `Use a text colour with at least ${first.min}:1 on this background.`, label: "Change the text colour" },
     });
   }
 
@@ -142,8 +157,9 @@ export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, 
   }
 
   const vis03 = rules.get("VIS-03");
-  if (vis03 && asset.logoBox) {
-    const b = asset.logoBox;
+  const logo: VisualReport["logo"] = asset.logoBox ? { box: asset.logoBox, source: "hand" } : wordmark ? { box: wordmark, source: "wordmark" } : undefined;
+  if (vis03 && logo) {
+    const b = logo.box;
     const clear = kit.logo.clearSpaceRatio * b.h;
     const tight = b.x < clear || b.y < clear || img.width - (b.x + b.w) < clear || img.height - (b.y + b.h) < clear;
     if (b.w < kit.logo.minWidthPx || tight) {
@@ -161,11 +177,11 @@ export function visualFindings(img: Pixels, asset: ImageAsset, kit: KitContent, 
         reason:
           (b.w < kit.logo.minWidthPx ? `The logo is ${Math.round(b.w)} px wide, below the ${kit.logo.minWidthPx} px minimum (${vis03.id}).` : "") +
           (tight ? ` Clear space is under half the logo height on at least one side.` : "") +
-          " Measured from the logo box marked by hand; automatic logo detection is planned for Round 3.",
+          (logo.source === "hand" ? " Measured from the logo box marked by hand." : ` Measured from where the text reader found the wordmark “${kit.name.split(/\s+/)[0].toLowerCase()}”. If that is not the logo, mark the logo by hand.`),
         fix: { kind: "manual", replacement: `Scale the logo to at least ${kit.logo.minWidthPx} px wide.`, label: "Resize the logo" },
       });
     }
   }
-  return { findings, dominant, lines: reportLines, ocr: lines ? "done" : "skipped" };
+  return { findings, dominant, lines: reportLines, ocr: lines ? "done" : "skipped", logo };
 }
 

@@ -1,7 +1,7 @@
 // Visual checks for PNG and JPG creatives, run entirely in the browser: decoding and OCR here, the
 // palette and contrast analysis (visual-core) in a Web Worker so it never blocks the page.
 import type { ImageAsset, KitContent } from "@/lib/types";
-import { visualFindings, type OcrLine, type Pixels, type VisualReport } from "./visual-core";
+import { findWordmark, visualFindings, type OcrLine, type Pixels, type VisualReport } from "./visual-core";
 
 export { visualFindings, type OcrLine, type VisualReport } from "./visual-core";
 export type { RGB } from "./color";
@@ -16,6 +16,9 @@ export async function decodeImage(dataUrl: string): Promise<Pixels & { canvas: H
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;
   const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  // Transparent pixels read as black, which would invent dark colours and contrast failures. Creatives sit on white unless they say otherwise.
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0);
   const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
   return { data, width: canvas.width, height: canvas.height, canvas };
@@ -100,22 +103,89 @@ export function linesFromTsv(tsv: string): OcrLine[] {
   }));
 }
 
-export async function ocrLines(src: Pixels): Promise<OcrLine[]> {
-  const worker = await getWorker();
-  const { data } = await worker.recognize(ocrCanvas(src), {}, { text: false, blocks: false, tsv: true });
-  return linesFromTsv(data.tsv ?? "");
+const OCR_MS = 60_000;
+let ocrTurn: Promise<unknown> = Promise.resolve();
+
+/**
+ * One job at a time on the shared OCR worker, since a job can change its reading mode. A failure or a stall
+ * drops the worker, so the next try starts clean instead of joining a dead one.
+ */
+function withOcr<T>(ms: number, job: (worker: import("tesseract.js").Worker) => Promise<T>): Promise<T> {
+  const run = async () => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => reject(new Error("OCR took too long")), ms);
+    });
+    try {
+      return await Promise.race([getWorker().then(job), timeout]);
+    } catch (e) {
+      const stuck = workerPromise;
+      workerPromise = null;
+      void stuck?.then((w) => w.terminate()).catch(() => undefined);
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const result = ocrTurn.then(run, run);
+  ocrTurn = result.catch(() => undefined);
+  return result;
+}
+
+/** Reads a creative's text. */
+export function ocrLines(src: Pixels, ms = OCR_MS): Promise<OcrLine[]> {
+  return withOcr(ms, async (worker) => {
+    const { data } = await worker.recognize(ocrCanvas(src), {}, { text: false, blocks: false, tsv: true });
+    return linesFromTsv(data.tsv ?? "");
+  });
+}
+
+/** A logo sits at the top or bottom of a creative, small. These strips, stretched and enlarged on their own, are where OCR can read it. */
+const LOGO_STRIPS = [
+  [0.8, 1],
+  [0, 0.2],
+] as const;
+const LOGO_SCALE = 3;
+// Tesseract's page modes, as strings so the OCR engine stays out of the first load. 6 is tesseract.js's default.
+const SPARSE_WORDS = "11" as unknown as import("tesseract.js").PSM;
+const WHOLE_BLOCK = "6" as unknown as import("tesseract.js").PSM;
+
+/** Looks for the brand's wordmark, one strip at a time, in the OCR mode for scattered words. Finding nothing is not an error: the logo may be a picture. */
+export function findLogo(src: Pixels, kit: Pick<KitContent, "name">): Promise<OcrLine["box"] | undefined> {
+  return withOcr(OCR_MS, async (worker) => {
+    await worker.setParameters({ tessedit_pageseg_mode: SPARSE_WORDS });
+    try {
+      for (const [from, to] of LOGO_STRIPS) {
+        const top = Math.floor(from * src.height);
+        const bottom = Math.floor(to * src.height);
+        const strip = ocrCanvas({ data: src.data.subarray(top * src.width * 4, bottom * src.width * 4), width: src.width, height: bottom - top });
+        const large = document.createElement("canvas");
+        large.width = strip.width * LOGO_SCALE;
+        large.height = strip.height * LOGO_SCALE;
+        large.getContext("2d")!.drawImage(strip, 0, 0, large.width, large.height);
+        const { data } = await worker.recognize(large, {}, { text: false, blocks: false, tsv: true });
+        const box = findWordmark(linesFromTsv(data.tsv ?? ""), kit);
+        if (box) return { x: box.x / LOGO_SCALE, y: box.y / LOGO_SCALE + top, w: box.w / LOGO_SCALE, h: box.h / LOGO_SCALE };
+      }
+      return undefined;
+    } finally {
+      await worker.setParameters({ tessedit_pageseg_mode: WHOLE_BLOCK });
+    }
+  });
 }
 
 export async function analyzeImage(asset: ImageAsset, kit: KitContent): Promise<VisualReport> {
   const px = await decodeImage(asset.dataUrl);
   let lines: OcrLine[] | null = null;
   let failed = false;
+  let wordmark: OcrLine["box"] | undefined;
   try {
     lines = await ocrLines(px);
+    if (!asset.logoBox) wordmark = await findLogo(px, kit);
   } catch {
-    failed = true;
+    failed = !lines;
   }
-  const report = await findingsOffThread(px, asset, kit, lines);
+  const report = await findingsOffThread(px, asset, kit, lines, wordmark);
   return failed ? { ...report, ocr: "failed" } : report;
 }
 
@@ -123,7 +193,7 @@ let analyst: Worker | null | undefined;
 let jobs = 0;
 
 /** visualFindings in a Web Worker; on the main thread only if a worker cannot start. */
-async function findingsOffThread(px: Pixels, asset: ImageAsset, kit: KitContent, lines: OcrLine[] | null): Promise<VisualReport> {
+async function findingsOffThread(px: Pixels, asset: ImageAsset, kit: KitContent, lines: OcrLine[] | null, wordmark?: OcrLine["box"]): Promise<VisualReport> {
   if (analyst === undefined) {
     try {
       analyst = new Worker(new URL("./visual.worker.ts", import.meta.url), { type: "module" });
@@ -131,19 +201,24 @@ async function findingsOffThread(px: Pixels, asset: ImageAsset, kit: KitContent,
       analyst = null;
     }
   }
-  if (!analyst) return visualFindings(px, asset, kit, lines);
+  if (!analyst) return visualFindings(px, asset, kit, lines, wordmark);
   const worker = analyst;
   const id = ++jobs;
   const { dataUrl: _skip, ...meta } = asset;
   const data = px.data.slice(); // the worker takes this copy; the decoded image stays usable here
-  return new Promise<VisualReport>((resolve) => {
+  return new Promise<VisualReport>((resolve, reject) => {
     let settled = false;
     const finish = (report?: VisualReport) => {
       if (settled) return;
       settled = true;
       worker.removeEventListener("message", done);
       window.clearTimeout(timer);
-      resolve(report ?? visualFindings(px, asset, kit, lines));
+      // This runs from a timer or an event, so a throw here would leave the check waiting forever.
+      try {
+        resolve(report ?? visualFindings(px, asset, kit, lines, wordmark));
+      } catch (e) {
+        reject(e);
+      }
     };
     const done = (e: MessageEvent<{ id: number; report?: VisualReport; error?: string }>) => {
       if (e.data.id === id) finish(e.data.report);
@@ -152,7 +227,7 @@ async function findingsOffThread(px: Pixels, asset: ImageAsset, kit: KitContent,
     const timer = window.setTimeout(() => finish(), 8_000);
     worker.addEventListener("message", done);
     worker.addEventListener("error", () => finish(), { once: true });
-    worker.postMessage({ id, data, width: px.width, height: px.height, asset: meta, kit, lines }, [data.buffer]);
+    worker.postMessage({ id, data, width: px.width, height: px.height, asset: meta, kit, lines, wordmark }, [data.buffer]);
   });
 }
 

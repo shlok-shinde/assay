@@ -3,6 +3,8 @@
 import type { ImageAsset, PageSpan } from "./types";
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+/** A small file can still decode to gigabytes of pixels. 40 MP is well past any real social or print creative. */
+export const MAX_IMAGE_PIXELS = 40_000_000;
 export const ACCEPT = ".txt,.docx,.pdf,.png,.jpg,.jpeg";
 
 export interface ParsedFile {
@@ -28,7 +30,12 @@ export async function parseFile(file: File): Promise<ParsedFile> {
   if (file.size > MAX_FILE_BYTES) throw new IntakeError(`${file.name} is over 10 MB.`);
   const kind = fileKind(file);
   if (!kind) throw new IntakeError(`${file.name} is not a supported file. Use .docx, .pdf, .png, .jpg or .txt.`);
-  if (kind === "text") return { kind: "paste", text: await file.text(), fileName: file.name };
+  if (file.size === 0) throw new IntakeError(`${file.name} is empty, so nothing was changed.`);
+  if (kind === "text") {
+    const text = await file.text();
+    if (!text.trim()) throw new IntakeError(`${file.name} has no text in it, so nothing was changed.`);
+    return { kind: "paste", text, fileName: file.name };
+  }
   if (kind === "docx") return { kind, text: await docxText(await file.arrayBuffer()), fileName: file.name };
   if (kind === "pdf") return { kind, ...(await pdfText(await file.arrayBuffer())), fileName: file.name };
   return { kind, text: "", image: await imageAsset(file), fileName: file.name };
@@ -75,7 +82,7 @@ export async function pdfText(buffer: ArrayBuffer): Promise<{ text: string; page
     text += pageText;
     pages.push({ page: p, start, end: text.length });
   }
-  if (!text.trim()) throw new IntakeError("This PDF has no text layer. Scanned PDFs need OCR, which is planned for Round 3.");
+  if (!text.trim()) throw new IntakeError("This PDF has no text layer. Scanned PDFs need OCR, which Assay can't do yet. Export it with its text, or paste the words.");
   return { text, pages };
 }
 
@@ -87,9 +94,18 @@ export async function imageAsset(file: File): Promise<ImageAsset> {
     r.readAsDataURL(file);
   });
   const img = new Image();
-  img.src = dataUrl;
+  const unreadable = () => new IntakeError("This image could not be decoded.");
+  // load gives the size without decoding every pixel, so an oversized image is refused before it costs anything.
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(unreadable());
+    img.src = dataUrl;
+  });
+  const pixels = img.naturalWidth * img.naturalHeight;
+  if (!pixels) throw unreadable();
+  if (pixels > MAX_IMAGE_PIXELS) throw new IntakeError(`${file.name} is ${img.naturalWidth} x ${img.naturalHeight} pixels. Use an image of 40 megapixels or less.`);
   await img.decode().catch(() => {
-    throw new IntakeError("This image could not be decoded.");
+    throw unreadable();
   });
   return { dataUrl, width: img.naturalWidth, height: img.naturalHeight, alt: "", fileName: file.name };
 }

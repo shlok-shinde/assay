@@ -11,12 +11,13 @@ export interface VisualJob {
   asset: Omit<ImageAsset, "dataUrl">;
   kit: KitContent;
   lines: OcrLine[] | null;
+  wordmark?: OcrLine["box"];
 }
 
 self.onmessage = (e: MessageEvent<VisualJob>) => {
-  const { id, data, width, height, asset, kit, lines } = e.data;
+  const { id, data, width, height, asset, kit, lines, wordmark } = e.data;
   try {
-    const report = visualFindings({ data, width, height }, { ...asset, dataUrl: "" }, kit, lines);
+    const report = visualFindings({ data, width, height }, { ...asset, dataUrl: "" }, kit, lines, wordmark);
     self.postMessage({ id, report });
   } catch (err) {
     self.postMessage({ id, error: (err as Error).message });

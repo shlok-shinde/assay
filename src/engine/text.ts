@@ -156,3 +156,24 @@ export function stem(w: string): string {
   if (w.length > 3 && w.endsWith("s") && !w.endsWith("ss")) return w.slice(0, -1);
   return w;
 }
+
+const COMMON_ENGLISH = new Set("an and are as at be but by can for from has have in is it not of on or our that the this to was we will with you your".split(" "));
+// Function words of the languages a brand here most often gets copy in, Hinglish among them. Only words English doesn't share.
+const COMMON_ELSEWHERE = new Set("el la los las una del con que por para es esta le les des et du pour avec une der die das und ist mit ein eine il di per che hai aur ke ki ka ko se mein nahi hain yeh kya".split(" "));
+
+/**
+ * True when text is probably not English. The rules are written for English, so such a draft can come back
+ * with no findings without having passed anything. It takes evidence of another language: product copy can be
+ * short on "the" and "of" and still be English. Short text is left alone: there is too little to tell.
+ */
+export function looksNonEnglish(text: string): boolean {
+  const letters = text.match(/\p{L}/gu) ?? [];
+  if (letters.length < 20) return false;
+  const latin = letters.filter((c) => /[a-z\u00C0-\u024F]/i.test(c)).length;
+  if (latin / letters.length < 0.6) return true;
+  const words = text.toLowerCase().match(/[a-z\u00C0-\u024F']+/g) ?? [];
+  if (words.length < 8) return false;
+  const count = (set: Set<string>) => words.filter((w) => set.has(w)).length;
+  const elsewhere = count(COMMON_ELSEWHERE);
+  return elsewhere / words.length >= 0.12 && elsewhere > count(COMMON_ENGLISH);
+}

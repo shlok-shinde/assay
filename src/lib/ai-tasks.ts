@@ -49,6 +49,20 @@ export const intentCheckInput = z.object({
 });
 export const intentCheckOutput = z.object({ kept: z.boolean(), explanation: str(400) });
 
+/** One call for all of a check's fixes. Each fix carries only its sentence, before and after. */
+export const intentCheckBatchInput = z.object({
+  intent: intentIn,
+  fixes: z.array(z.object({ id: str(40), rule: str(200), before: str(700), after: str(700) })).min(1).max(10),
+});
+export const intentCheckBatchOutput = z.object({ results: z.array(z.object({ id: str(40), kept: z.boolean(), explanation: str(300) })).max(10) });
+
+export const mergeFixesInput = z.object({
+  intent: intentIn,
+  before: str(1500),
+  fixes: z.array(z.object({ rule: str(200), text: str(700) })).min(2).max(5),
+});
+export const mergeFixesOutput = z.object({ text: str(1500), explanation: str(300) });
+
 export const draftIntentInput = z.object({ text: str(6000), channel });
 export const draftIntentOutput = z.object({ goal: str(200), keyMessage: str(300), cta: str(200) });
 
@@ -78,6 +92,8 @@ export const TASKS = {
   judge: { input: judgeInput, output: judgeOutput, tier: "judge" as const },
   matchFacts: { input: matchFactsInput, output: matchFactsOutput, tier: "lite" as const },
   intentCheck: { input: intentCheckInput, output: intentCheckOutput, tier: "lite" as const },
+  intentCheckBatch: { input: intentCheckBatchInput, output: intentCheckBatchOutput, tier: "lite" as const },
+  mergeFixes: { input: mergeFixesInput, output: mergeFixesOutput, tier: "lite" as const },
   draftIntent: { input: draftIntentInput, output: draftIntentOutput, tier: "lite" as const },
   draftRules: { input: draftRulesInput, output: draftRulesOutput, tier: "lite" as const },
   clarifyRule: { input: clarifyRuleInput, output: clarifyRuleOutput, tier: "judge" as const },

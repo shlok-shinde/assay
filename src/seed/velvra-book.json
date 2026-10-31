@@ -1,0 +1,1235 @@
+{
+ "id": "velvra-book-v3",
+ "title": "Velvra Brand Book v3",
+ "file": "/samples/velvra-brand-book.pdf",
+ "fictional": true,
+ "pages": [
+  {
+   "page": 1,
+   "blocks": [
+    {
+     "kind": "cover",
+     "text": "Brand Book, version 3"
+    }
+   ]
+  },
+  {
+   "page": 2,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "About this book"
+    },
+    {
+     "kind": "p",
+     "text": "This book is how Velvra sounds, looks and proves what it says. Everyone who writes for us uses it: our own team, our agencies and the creators we work with.",
+     "section": "0",
+     "id": "p2-0-1"
+    },
+    {
+     "kind": "p",
+     "text": "Each rule has a section number. When a draft is questioned, the question should name the section, so that anyone can open the page and read the words for themselves.",
+     "section": "0",
+     "id": "p2-0-2"
+    },
+    {
+     "kind": "p",
+     "text": "Velvra, its products, its people and its studies are fictional. This book was written as demo content for Assay, a tool that checks drafts against a brand's rules. No real company or product is described here.",
+     "section": "0",
+     "id": "p2-0-3"
+    }
+   ]
+  },
+  {
+   "page": 3,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "Contents"
+    },
+    {
+     "kind": "li",
+     "text": "1  Who we are: page 4",
+     "section": "0",
+     "id": "p3-0-1"
+    },
+    {
+     "kind": "li",
+     "text": "2  How we sound: page 6",
+     "section": "0",
+     "id": "p3-0-2"
+    },
+    {
+     "kind": "li",
+     "text": "3  What we say: page 9",
+     "section": "0",
+     "id": "p3-0-3"
+    },
+    {
+     "kind": "li",
+     "text": "4  The words we use: page 12",
+     "section": "0",
+     "id": "p3-0-4"
+    },
+    {
+     "kind": "li",
+     "text": "5  How we look: page 14",
+     "section": "0",
+     "id": "p3-0-5"
+    },
+    {
+     "kind": "li",
+     "text": "6  What we can claim: page 18",
+     "section": "0",
+     "id": "p3-0-6"
+    },
+    {
+     "kind": "li",
+     "text": "7  What the law asks: page 21",
+     "section": "0",
+     "id": "p3-0-7"
+    },
+    {
+     "kind": "li",
+     "text": "8  Making it readable by everyone: page 23",
+     "section": "0",
+     "id": "p3-0-8"
+    },
+    {
+     "kind": "li",
+     "text": "9  The Claim Ledger register: page 25",
+     "section": "0",
+     "id": "p3-0-9"
+    },
+    {
+     "kind": "li",
+     "text": "Version history: page 28",
+     "section": "0",
+     "id": "p3-0-10"
+    }
+   ]
+  },
+  {
+   "page": 4,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "1  Who we are"
+    },
+    {
+     "kind": "h2",
+     "text": "§1.1 A skincare brand for Indian weather",
+     "section": "1.1"
+    },
+    {
+     "kind": "p",
+     "text": "Velvra makes everyday skincare for heat, humidity and strong sun. Our first product is Daily Shield SPF 50, a light sunscreen gel made to be worn every morning.",
+     "section": "1.1",
+     "id": "p4-1.1-1"
+    },
+    {
+     "kind": "p",
+     "text": "We are a small brand and we would rather be believed than be loud. We explain what a product does, how long it takes and what it can't do.",
+     "section": "1.1",
+     "id": "p4-1.1-2"
+    },
+    {
+     "kind": "p",
+     "text": "When we don't know something, we say so. When a study is small, we give its size. That is what people come back for.",
+     "section": "1.1",
+     "id": "p4-1.1-3"
+    }
+   ]
+  },
+  {
+   "page": 5,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§1.2 Who we speak to",
+     "section": "1.2"
+    },
+    {
+     "kind": "p",
+     "text": "Most of the people we write for are between 22 and 38. They read ingredient lists and they have been promised too much by other brands. Many have melanin-rich skin and have been told for years that it needs correcting. It doesn't.",
+     "section": "1.2",
+     "id": "p5-1.2-1"
+    },
+    {
+     "kind": "p",
+     "text": "They come to us through Instagram, a friend or a dermatologist. Some are new to sunscreen and want to know why it matters. Others have tried ten and want to know whether this one leaves a white cast.",
+     "section": "1.2",
+     "id": "p5-1.2-2"
+    },
+    {
+     "kind": "p",
+     "text": "Write for someone intelligent and a little sceptical, and you will rarely go wrong.",
+     "section": "1.2",
+     "id": "p5-1.2-3"
+    }
+   ]
+  },
+  {
+   "page": 6,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "2  How we sound"
+    },
+    {
+     "kind": "h2",
+     "text": "§2.1 Calm, expert, warm",
+     "section": "2.1"
+    },
+    {
+     "kind": "p",
+     "text": "Write like a dermatologist friend: calm, specific and warm. Explain, don't shout.",
+     "section": "2.1",
+     "id": "p6-2.1-1"
+    },
+    {
+     "kind": "example",
+     "text": "Yes: Daily Shield sits light on skin, so it is easy to wear every morning.",
+     "section": "2.1",
+     "id": "p6-2.1-2"
+    },
+    {
+     "kind": "example",
+     "text": "No: You NEED this right now!!",
+     "section": "2.1",
+     "id": "p6-2.1-3"
+    },
+    {
+     "kind": "h2",
+     "text": "§2.2 Never hype",
+     "section": "2.2"
+    },
+    {
+     "kind": "p",
+     "text": "Velvra never hypes. No slang superlatives, no shouting, no runs of exclamation marks.",
+     "section": "2.2",
+     "id": "p6-2.2-1"
+    },
+    {
+     "kind": "example",
+     "text": "Yes: Meet Daily Shield SPF 50, made for everyday protection.",
+     "section": "2.2",
+     "id": "p6-2.2-2"
+    },
+    {
+     "kind": "example",
+     "text": "No: OMG this is insane!!!",
+     "section": "2.2",
+     "id": "p6-2.2-3"
+    }
+   ]
+  },
+  {
+   "page": 7,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§2.3 No fear-based beauty language",
+     "section": "2.3"
+    },
+    {
+     "kind": "p",
+     "text": "Never make people feel bad about their skin. Talk about care, not flaws.",
+     "section": "2.3",
+     "id": "p7-2.3-1"
+    },
+    {
+     "kind": "example",
+     "text": "Yes: Care for skin that sees the sun every day.",
+     "section": "2.3",
+     "id": "p7-2.3-2"
+    },
+    {
+     "kind": "example",
+     "text": "No: Hide those embarrassing flaws.",
+     "section": "2.3",
+     "id": "p7-2.3-3"
+    },
+    {
+     "kind": "p",
+     "text": "Skin has texture, marks and history. None of that is a problem we have come to solve. A sentence that needs someone to feel worse before it works is the wrong sentence.",
+     "section": "2.3",
+     "id": "p7-2.3-4"
+    },
+    {
+     "kind": "p",
+     "text": "Before you send anything, read it aloud. If it sounds like a shop assistant following you round the aisle, start again.",
+     "section": "2.3",
+     "id": "p7-2.3-5"
+    }
+   ]
+  },
+  {
+   "page": 8,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§2.4 Limits for each channel",
+     "section": "2.4"
+    },
+    {
+     "kind": "p",
+     "text": "How much emphasis a channel can carry differs. Stay within these limits. The reading score is Flesch reading ease, where higher is easier.",
+     "section": "2.4",
+     "id": "p8-2.4-1"
+    },
+    {
+     "kind": "li",
+     "text": "Instagram: 3 emoji, 1 exclamation mark, 2 all-caps words, reading score 60 or higher.",
+     "section": "2.4",
+     "id": "p8-2.4-2"
+    },
+    {
+     "kind": "li",
+     "text": "Email: 1 emoji, 1 exclamation mark, 1 all-caps word, reading score 55 or higher.",
+     "section": "2.4",
+     "id": "p8-2.4-3"
+    },
+    {
+     "kind": "li",
+     "text": "Website: no emoji, no exclamation marks, 1 all-caps word, reading score 50 or higher.",
+     "section": "2.4",
+     "id": "p8-2.4-4"
+    },
+    {
+     "kind": "li",
+     "text": "LinkedIn: 2 emoji, 1 exclamation mark, 1 all-caps word, reading score 40 or higher.",
+     "section": "2.4",
+     "id": "p8-2.4-5"
+    },
+    {
+     "kind": "li",
+     "text": "Brochure: no emoji, no exclamation marks, 1 all-caps word, reading score 50 or higher.",
+     "section": "2.4",
+     "id": "p8-2.4-6"
+    }
+   ]
+  },
+  {
+   "page": 9,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "3  What we say"
+    },
+    {
+     "kind": "h2",
+     "text": "§3.1 Tie launches to the pillars",
+     "section": "3.1"
+    },
+    {
+     "kind": "p",
+     "text": "Launch messages should connect to our pillars where it makes sense.",
+     "section": "3.1",
+     "id": "p9-3.1-1"
+    },
+    {
+     "kind": "example",
+     "text": "Yes: Daily protection that helps skin look visibly more even.",
+     "section": "3.1",
+     "id": "p9-3.1-2"
+    },
+    {
+     "kind": "example",
+     "text": "No: New drop. Go get it.",
+     "section": "3.1",
+     "id": "p9-3.1-3"
+    },
+    {
+     "kind": "h2",
+     "text": "§3.2 No instant-results promises",
+     "section": "3.2"
+    },
+    {
+     "kind": "p",
+     "text": "Skin changes take weeks. Never promise instant, overnight or vanishing results.",
+     "section": "3.2",
+     "id": "p9-3.2-1"
+    },
+    {
+     "kind": "example",
+     "text": "Yes: With daily use, skin can look more even over a few weeks.",
+     "section": "3.2",
+     "id": "p9-3.2-2"
+    },
+    {
+     "kind": "example",
+     "text": "No: Erase dark spots overnight.",
+     "section": "3.2",
+     "id": "p9-3.2-3"
+    }
+   ]
+  },
+  {
+   "page": 10,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§3.3 Our two pillars",
+     "section": "3.3"
+    },
+    {
+     "kind": "p",
+     "text": "Everything we say comes back to two ideas: daily protection and a visibly even tone.",
+     "section": "3.3",
+     "id": "p10-3.3-1"
+    },
+    {
+     "kind": "p",
+     "text": "Daily protection means sunscreen is a habit, like brushing your teeth. We talk about mornings, reapplying and cloudy days, and we don't save sunscreen for the beach.",
+     "section": "3.3",
+     "id": "p10-3.3-2"
+    },
+    {
+     "kind": "p",
+     "text": "A visibly even tone means skin that looks more even with steady use. It says nothing about colour. We never suggest that lighter skin is the goal, and section 4.3 bans the words that would.",
+     "section": "3.3",
+     "id": "p10-3.3-3"
+    }
+   ]
+  },
+  {
+   "page": 11,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§3.4 The shape of a launch post",
+     "section": "3.4"
+    },
+    {
+     "kind": "p",
+     "text": "A launch post answers three questions, in this order: what is it, who is it for, and what should you do next?",
+     "section": "3.4",
+     "id": "p11-3.4-1"
+    },
+    {
+     "kind": "p",
+     "text": "Name the product in the first line. Say who it suits in the second. Give one action at the end, and make it the only one.",
+     "section": "3.4",
+     "id": "p11-3.4-2"
+    },
+    {
+     "kind": "p",
+     "text": "Leave the rest out. A caption that lists every benefit is remembered for none of them, and most of them will need a fact from section 9 before you can use them anyway.",
+     "section": "3.4",
+     "id": "p11-3.4-3"
+    }
+   ]
+  },
+  {
+   "page": 12,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "4  The words we use"
+    },
+    {
+     "kind": "h2",
+     "text": "§4.1 Spelling and claims about ingredients",
+     "section": "4.1"
+    },
+    {
+     "kind": "p",
+     "text": "Write “skincare”, not “skin care”.",
+     "section": "4.1",
+     "id": "p12-4.1-1"
+    },
+    {
+     "kind": "p",
+     "text": "Everything is a chemical. Name what the product is free from instead.",
+     "section": "4.1",
+     "id": "p12-4.1-2"
+    },
+    {
+     "kind": "h2",
+     "text": "§4.2 Calling the product by its name",
+     "section": "4.2"
+    },
+    {
+     "kind": "p",
+     "text": "Daily Shield is a sunscreen. Never call it a serum or a moisturiser.",
+     "section": "4.2",
+     "id": "p12-4.2-1"
+    },
+    {
+     "kind": "p",
+     "text": "Use “Daily Shield SPF 50”, not “sunblock” or “sun cream”.",
+     "section": "4.2",
+     "id": "p12-4.2-2"
+    },
+    {
+     "kind": "h2",
+     "text": "§4.3 Fairness language",
+     "section": "4.3"
+    },
+    {
+     "kind": "p",
+     "text": "“Fair”, “fairness”, “whitening” and “lightening” are banned. Say “even tone”.",
+     "section": "4.3",
+     "id": "p12-4.3-1"
+    }
+   ]
+  },
+  {
+   "page": 13,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§4.4 The word list",
+     "section": "4.4"
+    },
+    {
+     "kind": "p",
+     "text": "Use the word on the right wherever you would have used a word on the left.",
+     "section": "4.4",
+     "id": "p13-4.4-1"
+    },
+    {
+     "kind": "li",
+     "text": "skin care: skincare",
+     "section": "4.4",
+     "id": "p13-4.4-2"
+    },
+    {
+     "kind": "li",
+     "text": "chemical-free, chemical free: fragrance-free",
+     "section": "4.4",
+     "id": "p13-4.4-3"
+    },
+    {
+     "kind": "li",
+     "text": "serum, moisturiser, moisturizer: sunscreen",
+     "section": "4.4",
+     "id": "p13-4.4-4"
+    },
+    {
+     "kind": "li",
+     "text": "sunblock, sun block, sun cream: Daily Shield SPF 50",
+     "section": "4.4",
+     "id": "p13-4.4-5"
+    },
+    {
+     "kind": "li",
+     "text": "fairness, fairer skin, fair skin, whitening, skin lightening, lightening: even tone",
+     "section": "4.4",
+     "id": "p13-4.4-6"
+    }
+   ]
+  },
+  {
+   "page": 14,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "5  How we look"
+    },
+    {
+     "kind": "h2",
+     "text": "§5.1 Stay on palette",
+     "section": "5.1"
+    },
+    {
+     "kind": "p",
+     "text": "Dominant colours stay within ΔE2000 10 of a brand palette colour.",
+     "section": "5.1",
+     "id": "p14-5.1-1"
+    },
+    {
+     "kind": "palette",
+     "text": "Rose Clay #C98B7F|Ink #1F1B24|Sand #EADCCB|Sage #8FA58A|Cream #FBF6EF",
+     "section": "5.1"
+    },
+    {
+     "kind": "h2",
+     "text": "§5.2 Type",
+     "section": "5.2"
+    },
+    {
+     "kind": "p",
+     "text": "Fraunces for headlines, Inter for body copy. Don't set long text in Fraunces, and don't stretch or outline either face.",
+     "section": "5.2",
+     "id": "p14-5.2-1"
+    }
+   ]
+  },
+  {
+   "page": 15,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§5.3 Logo",
+     "section": "5.3"
+    },
+    {
+     "kind": "p",
+     "text": "The logo is at least 120 px wide, with clear space of half its height on every side.",
+     "section": "5.3",
+     "id": "p15-5.3-1"
+    },
+    {
+     "kind": "logo",
+     "text": "velvra",
+     "section": "5.3"
+    },
+    {
+     "kind": "p",
+     "text": "Set the logo in Ink on light grounds and in Cream on dark ones. Never recolour it, tilt it or put it on a busy part of a photograph.",
+     "section": "5.3",
+     "id": "p15-5.3-2"
+    }
+   ]
+  },
+  {
+   "page": 16,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§5.4 Photography",
+     "section": "5.4"
+    },
+    {
+     "kind": "p",
+     "text": "Show skin as it is. We don't retouch texture, marks or hair, and we never lighten a model's skin in post.",
+     "section": "5.4",
+     "id": "p16-5.4-1"
+    },
+    {
+     "kind": "p",
+     "text": "Light should look like real daylight: morning sun through a window, overcast streets, the flat brightness before the rain. Use props from everyday life and leave out the laboratory glass.",
+     "section": "5.4",
+     "id": "p16-5.4-2"
+    },
+    {
+     "kind": "p",
+     "text": "Show the product at the size it really is, and with its label readable.",
+     "section": "5.4",
+     "id": "p16-5.4-3"
+    }
+   ]
+  },
+  {
+   "page": 17,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§5.5 Before a creative goes out",
+     "section": "5.5"
+    },
+    {
+     "kind": "p",
+     "text": "Go through this list for every creative:",
+     "section": "5.5",
+     "id": "p17-5.5-1"
+    },
+    {
+     "kind": "li",
+     "text": "Is the main colour on the palette?",
+     "section": "5.5",
+     "id": "p17-5.5-2"
+    },
+    {
+     "kind": "li",
+     "text": "Can the headline be read against what is behind it?",
+     "section": "5.5",
+     "id": "p17-5.5-3"
+    },
+    {
+     "kind": "li",
+     "text": "Is the logo large enough, with clear space around it?",
+     "section": "5.5",
+     "id": "p17-5.5-4"
+    },
+    {
+     "kind": "li",
+     "text": "Does the image have alt text?",
+     "section": "5.5",
+     "id": "p17-5.5-5"
+    },
+    {
+     "kind": "li",
+     "text": "Is every claim in the headline in the register in section 9?",
+     "section": "5.5",
+     "id": "p17-5.5-6"
+    }
+   ]
+  },
+  {
+   "page": 18,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "6  What we can claim"
+    },
+    {
+     "kind": "h2",
+     "text": "§6.1 Claims must match the Claim Ledger",
+     "section": "6.1"
+    },
+    {
+     "kind": "p",
+     "text": "Any study or numeric claim must match an approved Claim Ledger fact and use its approved wording. “Clinically proven” is allowed only for clinical facts.",
+     "section": "6.1",
+     "id": "p18-6.1-1"
+    },
+    {
+     "kind": "p",
+     "text": "The Claim Ledger is the register in section 9. If a number isn't there, it can't be used, however true it feels.",
+     "section": "6.1",
+     "id": "p18-6.1-2"
+    },
+    {
+     "kind": "h2",
+     "text": "§6.2 No guarantees",
+     "section": "6.2"
+    },
+    {
+     "kind": "p",
+     "text": "Never guarantee results or promise anything permanent.",
+     "section": "6.2",
+     "id": "p18-6.2-1"
+    },
+    {
+     "kind": "p",
+     "text": "Skin varies and so do results. Say what the product is designed to do, and what most people in a study saw.",
+     "section": "6.2",
+     "id": "p18-6.2-2"
+    }
+   ]
+  },
+  {
+   "page": 19,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§6.3 Superlatives",
+     "section": "6.3"
+    },
+    {
+     "kind": "p",
+     "text": "Superlatives and comparisons (“best”, “No. 1”, “better than”) need an approved Claim Ledger fact.",
+     "section": "6.3",
+     "id": "p19-6.3-1"
+    },
+    {
+     "kind": "h2",
+     "text": "§6.4 No medical claims",
+     "section": "6.4"
+    },
+    {
+     "kind": "p",
+     "text": "Velvra is cosmetic. Never say a product cures, treats or heals a condition.",
+     "section": "6.4",
+     "id": "p19-6.4-1"
+    },
+    {
+     "kind": "p",
+     "text": "Saying a product suits acne-prone skin describes who can use it. Saying it treats acne makes it a medicine, in law as well as in tone.",
+     "section": "6.4",
+     "id": "p19-6.4-2"
+    },
+    {
+     "kind": "h2",
+     "text": "§6.5 Footnotes on studies",
+     "section": "6.5"
+    },
+    {
+     "kind": "p",
+     "text": "Every study claim carries a footnote with the study type, size and year.",
+     "section": "6.5",
+     "id": "p19-6.5-1"
+    }
+   ]
+  },
+  {
+   "page": 20,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§6.6 How a fact gets into the ledger",
+     "section": "6.6"
+    },
+    {
+     "kind": "p",
+     "text": "Each fact has one owner, the team that can answer for it. The owner supplies the source document and the approved wording, and Compliance approves it.",
+     "section": "6.6",
+     "id": "p20-6.6-1"
+    },
+    {
+     "kind": "p",
+     "text": "Some facts expire. An offer ends, and a study or a panel gets old. A fact past its date can't be used, even if the wording is still accurate.",
+     "section": "6.6",
+     "id": "p20-6.6-2"
+    },
+    {
+     "kind": "p",
+     "text": "Owners are told before a fact expires, so they can renew it or retire it. If you think a fact should be in the register, ask its likely owner rather than writing the claim and hoping.",
+     "section": "6.6",
+     "id": "p20-6.6-3"
+    }
+   ]
+  },
+  {
+   "page": 21,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "7  What the law asks"
+    },
+    {
+     "kind": "h2",
+     "text": "§7.1 SPF reapply disclaimer",
+     "section": "7.1"
+    },
+    {
+     "kind": "p",
+     "text": "Email and website copy that mentions SPF must include the reapply disclaimer.",
+     "section": "7.1",
+     "id": "p21-7.1-1"
+    },
+    {
+     "kind": "p",
+     "text": "The disclaimer reads: Reapply every 2 hours, and after swimming or sweating.",
+     "section": "7.1",
+     "id": "p21-7.1-2"
+    },
+    {
+     "kind": "p",
+     "text": "Keep it in the body of the message, at the same size as the text around it. Don't move it into an image, where people using screen readers would miss it.",
+     "section": "7.1",
+     "id": "p21-7.1-3"
+    }
+   ]
+  },
+  {
+   "page": 22,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§7.2 Offers and prices",
+     "section": "7.2"
+    },
+    {
+     "kind": "p",
+     "text": "State a price or an offer only as the register in section 9 gives it, and only while that fact is valid.",
+     "section": "7.2",
+     "id": "p22-7.2-1"
+    },
+    {
+     "kind": "p",
+     "text": "A discount needs its end date somewhere in the same message. If the offer has a code, print the code exactly.",
+     "section": "7.2",
+     "id": "p22-7.2-2"
+    },
+    {
+     "kind": "p",
+     "text": "Ask Compliance before you write anything that compares our price with another brand's.",
+     "section": "7.2",
+     "id": "p22-7.2-3"
+    }
+   ]
+  },
+  {
+   "page": 23,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "8  Making it readable by everyone"
+    },
+    {
+     "kind": "h2",
+     "text": "§8.1 Text contrast",
+     "section": "8.1"
+    },
+    {
+     "kind": "p",
+     "text": "Text needs a contrast ratio of at least 4.5:1, or 3:1 for large text (WCAG 2.2 AA).",
+     "section": "8.1",
+     "id": "p23-8.1-1"
+    },
+    {
+     "kind": "h2",
+     "text": "§8.2 Link text",
+     "section": "8.2"
+    },
+    {
+     "kind": "p",
+     "text": "Link text says where it goes. Never “click here” or “read more”.",
+     "section": "8.2",
+     "id": "p23-8.2-1"
+    },
+    {
+     "kind": "h2",
+     "text": "§8.3 Reading level",
+     "section": "8.3"
+    },
+    {
+     "kind": "p",
+     "text": "Copy meets the readability target for its channel (Flesch reading ease).",
+     "section": "8.3",
+     "id": "p23-8.3-1"
+    },
+    {
+     "kind": "p",
+     "text": "The targets are in section 2.4. Short sentences and everyday words do most of the work.",
+     "section": "8.3",
+     "id": "p23-8.3-2"
+    }
+   ]
+  },
+  {
+   "page": 24,
+   "blocks": [
+    {
+     "kind": "h2",
+     "text": "§8.4 Alt text",
+     "section": "8.4"
+    },
+    {
+     "kind": "p",
+     "text": "Every image needs alt text that describes it.",
+     "section": "8.4",
+     "id": "p24-8.4-1"
+    },
+    {
+     "kind": "p",
+     "text": "Describe what someone would miss without the picture. Say what is in it, and include any words it shows.",
+     "section": "8.4",
+     "id": "p24-8.4-2"
+    },
+    {
+     "kind": "h2",
+     "text": "§8.5 Hashtags, emoji and capitals",
+     "section": "8.5"
+    },
+    {
+     "kind": "p",
+     "text": "Use CamelCase hashtags so screen readers read them as words. Keep emoji and ALL-CAPS words within the channel limit.",
+     "section": "8.5",
+     "id": "p24-8.5-1"
+    }
+   ]
+  },
+  {
+   "page": 25,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "9  The Claim Ledger register"
+    },
+    {
+     "kind": "h3",
+     "text": "F-101  Sun protection",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "Daily Shield is SPF 50 PA++++, broad spectrum (UVA and UVB).",
+     "section": "9",
+     "id": "p25-9-1"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: SPF 50 PA++++, broad-spectrum protection",
+     "section": "9",
+     "id": "p25-9-2"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: Product. Source: Lab certificate LC-4471. No end date.",
+     "section": "9",
+     "id": "p25-9-3"
+    },
+    {
+     "kind": "h3",
+     "text": "F-104  Price",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "Daily Shield SPF 50 costs ₹649 for 50 ml.",
+     "section": "9",
+     "id": "p25-9-4"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: ₹649 for 50 ml",
+     "section": "9",
+     "id": "p25-9-5"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: Commercial. Source: Price list PL-Q3. No end date.",
+     "section": "9",
+     "id": "p25-9-6"
+    },
+    {
+     "kind": "h3",
+     "text": "F-107  Monsoon offer",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "Monsoon offer: 20% off Daily Shield, code RAIN20.",
+     "section": "9",
+     "id": "p25-9-7"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: 20% off for the monsoon",
+     "section": "9",
+     "id": "p25-9-8"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: Marketing. Source: Campaign brief CB-Monsoon. Valid 15 Sep to 20 Nov 2026.",
+     "section": "9",
+     "id": "p25-9-9"
+    }
+   ]
+  },
+  {
+   "page": 26,
+   "blocks": [
+    {
+     "kind": "h3",
+     "text": "F-109  Dermatologist testing",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "Dermatologist-tested by an external lab (2024).",
+     "section": "9",
+     "id": "p26-9-1"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: Dermatologist-tested",
+     "section": "9",
+     "id": "p26-9-2"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: Regulatory. Source: External lab report DT-2024-11. No end date.",
+     "section": "9",
+     "id": "p26-9-3"
+    },
+    {
+     "kind": "h3",
+     "text": "F-112  Even-tone study",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "4-week in-house study, n=40, 2025: 82% saw a visibly more even skin tone.",
+     "section": "9",
+     "id": "p26-9-4"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: In our 4-week study, 82% saw a visibly more even skin tone",
+     "section": "9",
+     "id": "p26-9-5"
+    },
+    {
+     "kind": "li",
+     "text": "Footnote: *In-house study, 40 participants, 2025.",
+     "section": "9",
+     "id": "p26-9-6"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: R&D. Source: Velvra R&D report RD-2025-07. Valid 1 Sep 2025 to 31 Mar 2027.",
+     "section": "9",
+     "id": "p26-9-7"
+    },
+    {
+     "kind": "h3",
+     "text": "F-115  White cast panel",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "“No white cast” consumer panel, n=120.",
+     "section": "9",
+     "id": "p26-9-8"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: No white cast, in a consumer panel of 120 people",
+     "section": "9",
+     "id": "p26-9-9"
+    },
+    {
+     "kind": "li",
+     "text": "Footnote: *Consumer panel, 120 people.",
+     "section": "9",
+     "id": "p26-9-10"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: Marketing Insights. Source: Consumer panel CP-2024-03. Valid 1 Jul 2024 to 30 Jun 2025.",
+     "section": "9",
+     "id": "p26-9-11"
+    }
+   ]
+  },
+  {
+   "page": 27,
+   "blocks": [
+    {
+     "kind": "h3",
+     "text": "F-120  Shipping",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "Free shipping on orders over ₹499.",
+     "section": "9",
+     "id": "p27-9-1"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: Free shipping on orders over ₹499",
+     "section": "9",
+     "id": "p27-9-2"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: E-commerce. Source: Shipping policy SP-2. No end date.",
+     "section": "9",
+     "id": "p27-9-3"
+    },
+    {
+     "kind": "h3",
+     "text": "F-121  Water resistance",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "Daily Shield is water-resistant for 40 minutes.",
+     "section": "9",
+     "id": "p27-9-4"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: Water-resistant for 40 minutes",
+     "section": "9",
+     "id": "p27-9-5"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: Product. Source: Lab certificate LC-4472. No end date.",
+     "section": "9",
+     "id": "p27-9-6"
+    },
+    {
+     "kind": "h3",
+     "text": "F-125  Fragrance",
+     "section": "9"
+    },
+    {
+     "kind": "p",
+     "text": "Daily Shield is fragrance-free.",
+     "section": "9",
+     "id": "p27-9-7"
+    },
+    {
+     "kind": "li",
+     "text": "Approved wording: Fragrance-free",
+     "section": "9",
+     "id": "p27-9-8"
+    },
+    {
+     "kind": "li",
+     "text": "Owner: Product. Source: Formula sheet FS-DS50. No end date.",
+     "section": "9",
+     "id": "p27-9-9"
+    }
+   ]
+  },
+  {
+   "page": 28,
+   "blocks": [
+    {
+     "kind": "chapter",
+     "text": "Version history"
+    },
+    {
+     "kind": "li",
+     "text": "Version 3, September 2026: added the Claim Ledger register, the rule on study footnotes and the accessibility section.",
+     "section": "0",
+     "id": "p28-0-1"
+    },
+    {
+     "kind": "li",
+     "text": "Version 2: added channel limits and the word list.",
+     "section": "0",
+     "id": "p28-0-2"
+    },
+    {
+     "kind": "li",
+     "text": "Version 1: first edition.",
+     "section": "0",
+     "id": "p28-0-3"
+    },
+    {
+     "kind": "p",
+     "text": "Rulebook 3.2 in Assay was drawn from this edition. Later rulebook versions published in Assay may go further than this printed book.",
+     "section": "0",
+     "id": "p28-0-4"
+    },
+    {
+     "kind": "p",
+     "text": "Velvra is fictional. This document was written as demo content for Assay.",
+     "section": "0",
+     "id": "p28-0-5"
+    }
+   ]
+  }
+ ],
+ "citations": {
+  "VOICE-01": "p6-2.1-1",
+  "VOICE-02": "p6-2.2-1",
+  "VOICE-03": "p7-2.3-1",
+  "LIMIT-instagram": "p8-2.4-2",
+  "LIMIT-email": "p8-2.4-3",
+  "LIMIT-website": "p8-2.4-4",
+  "LIMIT-linkedin": "p8-2.4-5",
+  "LIMIT-brochure": "p8-2.4-6",
+  "MSG-01": "p9-3.1-1",
+  "MSG-02": "p9-3.2-1",
+  "TERM-01": "p12-4.1-1",
+  "TERM-02": "p12-4.1-2",
+  "TERM-03": "p12-4.2-1",
+  "TERM-04": "p12-4.2-2",
+  "TERM-05": "p12-4.3-1",
+  "VIS-01": "p14-5.1-1",
+  "VIS-03": "p15-5.3-1",
+  "CLAIM-01": "p18-6.1-1",
+  "CLAIM-02": "p18-6.2-1",
+  "CLAIM-03": "p19-6.3-1",
+  "CLAIM-04": "p19-6.4-1",
+  "CLAIM-05": "p19-6.5-1",
+  "LEGAL-01": "p21-7.1-1",
+  "LEGAL-01-wording": "p21-7.1-2",
+  "A11Y-01": "p23-8.1-1",
+  "A11Y-02": "p23-8.2-1",
+  "A11Y-03": "p23-8.3-1",
+  "A11Y-04": "p24-8.4-1",
+  "A11Y-05": "p24-8.5-1",
+  "F-101": "p25-9-1",
+  "F-104": "p25-9-4",
+  "F-107": "p25-9-7",
+  "F-109": "p26-9-1",
+  "F-112": "p26-9-4",
+  "F-115": "p26-9-8",
+  "F-120": "p27-9-1",
+  "F-121": "p27-9-4",
+  "F-125": "p27-9-7"
+ }
+}

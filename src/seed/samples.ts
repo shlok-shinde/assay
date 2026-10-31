@@ -1,4 +1,4 @@
-// The six "Try a sample" drafts. All fictional. The DOCX, PDF and PNG files
+// The "Try a sample" drafts. All fictional. The DOCX, PDF and PNG files
 // in public/samples are generated from this text by scripts/make-samples.mjs,
 // so the upload path a judge uses is the same one these samples use.
 import type { Channel, IntentCard } from "@/lib/types";
@@ -133,6 +133,18 @@ Read the full study summary on our website. #DailyProtection #VelvraLab
     shows: "Youth slang that VOICE-02 flags, and that teams keep dismissing (see Guideline Health)",
     text: "ok this SPF is lowkey insane 🔥🔥 zero greasy feel, no cap. your skin will thank you!!! #sunscreentok #DailyShield",
     intent: { goal: "Campus awareness", keyMessage: "A sunscreen that doesn't feel greasy", cta: "" },
+  },
+  {
+    id: "colliding-fixes",
+    title: "Launch caption: two fixes want the same words",
+    channel: "instagram",
+    audience: "Women 22–35, metro India",
+    campaign: "Monsoon launch",
+    creator: "Riya (agency intern)",
+    agency: "Bloom Social",
+    shows: "Accept both fixes and Assay asks which wording survives",
+    text: "OMG 😍🔥💧🌞 our new Daily Shield is here. Shop now via the link in bio",
+    intent: { goal: "Launch awareness", keyMessage: "Daily Shield is here", cta: "Shop now via the link in bio" },
   },
 ];
 

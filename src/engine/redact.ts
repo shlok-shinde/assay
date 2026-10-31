@@ -22,9 +22,16 @@ const PATTERNS: [string, RegExp][] = [
   ["PHONE", /(?<![\w+])(?:\+\d{1,3}[\s-]?)?(?:\d[\s-]?){9}\d(?!\w)/g],
 ];
 
-export function redact(input: string): Redacted {
+const nameRegex = (names: string[]) => {
+  const usable = names.map((n) => n.trim()).filter((n) => n.length >= 3).sort((a, b) => b.length - a.length);
+  return usable.length ? new RegExp(`(?<![\\p{L}\\p{N}])(?:${usable.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![\\p{L}\\p{N}])`, "gu") : null;
+};
+
+/** `names` are people the workspace knows about; they are matched whole and case-sensitively, so "Mark" never hides "mark". */
+export function redact(input: string, names: string[] = []): Redacted {
   const hits: { kind: string; start: number; end: number }[] = [];
-  for (const [kind, re] of PATTERNS) {
+  const named = nameRegex(names);
+  for (const [kind, re] of named ? [...PATTERNS, ["NAME", named] as [string, RegExp]] : PATTERNS) {
     for (const m of input.matchAll(re)) {
       const start = m.index;
       const end = start + m[0].length;
@@ -45,6 +52,22 @@ export function redact(input: string): Redacted {
   }
   text += input.slice(cursor);
   return { text, redactions };
+}
+
+/** Redacts every string inside a value. Returns the count of redactions. */
+export function redactDeep<T>(value: T, names: string[] = []): { value: T; count: number } {
+  let count = 0;
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string") {
+      const r = redact(v, names);
+      count += r.redactions.length;
+      return r.text;
+    }
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+    return v;
+  };
+  return { value: walk(value) as T, count };
 }
 
 /** Maps an offset in redacted text back to the original. Null if it falls inside a placeholder. */

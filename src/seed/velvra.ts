@@ -1,6 +1,7 @@
 // Velvra is a fictional D2C skincare brand invented for this demo.
 // Its brand book, rules, facts and people are all made up.
 import type { Channel, ChannelLimits, Fact, KitContent, Rule, Term } from "@/lib/types";
+import { VELVRA_DISCLAIMER, VELVRA_VOCABULARY } from "./velvra-content";
 
 const BOOK = "Velvra Brand Book v3";
 const src = (page: number, section: string) => ({ doc: BOOK, page, section });
@@ -510,6 +511,8 @@ export const VELVRA_KIT: KitContent = {
   ],
   pillars: ["daily protection", "visibly even tone"],
   products: ["Velvra", "Daily Shield"],
+  vocabulary: VELVRA_VOCABULARY,
+  disclaimer: VELVRA_DISCLAIMER,
 };
 
 export const DEMO_PEOPLE = {

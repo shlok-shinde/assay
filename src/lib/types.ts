@@ -13,6 +13,10 @@ export interface SourceRef {
   doc: string;
   page: number;
   section: string;
+  /** Set on an imported rule: the book it came from, in the books table. */
+  bookId?: string;
+  /** Set on an imported rule: the book's own words, which the viewer looks for on the page. */
+  quote?: string;
 }
 
 export interface Rule {
@@ -104,6 +108,10 @@ export interface KitContent {
   pillars: string[];
   /** Brand and product names. They are not evidence when matching a claim to a fact. */
   products: string[];
+  /** Words a run-together hashtag can be split into. Absent on snapshots published before Round 3. */
+  vocabulary?: string[];
+  /** A line certain copy must carry: which rule asks, what triggers it, and what counts as having it (regular expressions). */
+  disclaimer?: { ruleId: string; mentions: string; present: string };
 }
 
 export interface BrandKit extends KitContent {
@@ -121,6 +129,10 @@ export interface RulebookVersion {
   notes: string;
   hash: string;
   snapshot: KitContent;
+  /** Set on a version published from a clarification: what changed, why, and who drafted it. */
+  clarification?: { ruleId: string; before: { text: string; dos: string[]; donts: string[] }; rationale: string; draftedBy: string; at: string };
+  /** Set on a version that restores an earlier one. */
+  rolledBackTo?: string;
 }
 
 export interface IntentCard {
@@ -158,12 +170,15 @@ export interface PageSpan {
 }
 
 export interface ImageAsset {
+  /** Empty on a stored version row: the file lives once in the blobs table under `blob`. */
   dataUrl: string;
+  /** sha256 of the data URL, the key into the blobs table. The Hallmark seals the same hash. */
+  blob?: string;
   width: number;
   height: number;
   alt: string;
   fileName: string;
-  /** Logo box marked by hand, in image pixels. Logo detection is Round 3. */
+  /** Logo box marked by hand, in image pixels. It wins over the wordmark OCR finds. */
   logoBox?: { x: number; y: number; w: number; h: number };
 }
 
@@ -179,7 +194,7 @@ export interface Version {
   author: string;
   note: string;
   /** Set on versions created by applying fixes. */
-  intentCheck?: { kept: boolean; summary: string; verdict?: "kept" | "review" | "lost"; ai?: { kept: boolean; explanation: string; model: string } };
+  intentCheck?: IntentCheckResult;
   /** Findings whose fixes made this version. */
   appliedFindingIds?: string[];
 }
@@ -206,6 +221,16 @@ export interface Fix {
   label: string;
   /** Range the fix replaces when it differs from the finding's span. */
   range?: { start: number; end: number };
+  /** The deletion starts a sentence, so the word after it takes the capital. */
+  capNext?: boolean;
+}
+
+/** Whether a change still carries the Intent Card. "unchecked" means the card was blank, so nothing could be compared. */
+export interface IntentCheckResult {
+  kept: boolean;
+  summary: string;
+  verdict?: "kept" | "review" | "lost" | "unchecked";
+  ai?: { kept: boolean; explanation: string; model: string };
 }
 
 export interface Finding {
@@ -235,7 +260,79 @@ export interface Finding {
   fix?: Fix;
   status: FindingStatus;
   resolution?: { by: string; role: Role; reason?: string; at: string; editedText?: string };
+  /** Kept after a contested finding moves on to Compliance or a waiver, so Guideline Health still counts it. */
+  contest?: { by: string; reason?: string; at: string };
+  /** What this finding's fix does to the Intent Card, checked when the finding is made and again on an edit. */
+  intentCheck?: IntentCheckResult;
+  /** Someone accepted a fix the check says loses the intent, and gave this reason. Sealed into the Hallmark. */
+  intentOverride?: { by: string; reason: string; at: string };
+  /** Accepted, but another fix won the same words; the decision carries to the next version. */
+  notApplied?: { reason: string; at: string };
   cached?: { model: string; at: string };
+}
+
+/** A stored file (creative or brand book), kept once however many versions point at it. */
+export interface BlobRow {
+  hash: string;
+  dataUrl: string;
+  at: string;
+}
+
+/** A brand book a kit cites, with its pages and paragraphs. */
+export interface BookRow {
+  id: string;
+  kitId: string;
+  title: string;
+  /** Hash of the PDF in the blobs table; absent for the seeded book, which ships as a static file. */
+  blob?: string;
+  url?: string;
+  importedAt: string;
+}
+
+export type FixEventKind = "offered" | "accepted" | "edited" | "dismissed" | "contested" | "undone";
+
+/** One thing someone did with a suggested fix. Append-only: the fix acceptance rate is computed from these. */
+export interface FixEvent {
+  id: string;
+  at: string;
+  kind: FixEventKind;
+  ruleId: string;
+  findingId: string;
+  submissionId: string;
+  role: Role;
+  /** Share of the suggestion the person changed, 0 to 1, on an edit. */
+  editShare?: number;
+  /** Made by an automated browser (a test run), so never counted in the acceptance rate. */
+  automated?: boolean;
+}
+
+export interface Owner {
+  id: string;
+  name: string;
+  email: string;
+  /** A made-up demo address: alerts to it are shown in the inbox, never sent. */
+  simulated?: boolean;
+}
+
+export interface NotificationRow {
+  id: string;
+  /** factId|validTo|threshold, so each alert is raised once. */
+  key: string;
+  factId: string;
+  ownerId: string;
+  threshold: number;
+  at: string;
+  sentAt?: string;
+  readAt?: string;
+}
+
+/** A local write waiting to reach the team server. Unused in a browser-only workspace. */
+export interface SyncRow {
+  seq?: number;
+  tbl: string;
+  rowId: string;
+  op: "put" | "delete";
+  at: string;
 }
 
 export interface DroppedFinding {
@@ -306,7 +403,7 @@ export interface HallmarkBody {
   contentHash: string;
   rulebookVersion: string;
   rulebookHash: string;
-  findings: { id: string; ruleId: string; severity: Severity; status: FindingStatus; reason?: string; by?: string }[];
+  findings: { id: string; ruleId: string; severity: Severity; status: FindingStatus; reason?: string; by?: string; intentOverride?: string }[];
   approvals: { role: Role; by: string; decision: string; at: string }[];
   ai: { models: string[]; calls: number; redactions: number; mode: string };
   prevHash: string;
