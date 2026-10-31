@@ -4,7 +4,7 @@
 
 Assay checks captions, emails, product pages, brochures and creatives against a brand's approved rules, facts and assets. Every issue quotes its evidence and cites the rule or fact behind it, comes with the smallest fix that keeps the creator's message, and goes to a person for the final call. Approved versions get a hash-chained **Hallmark**, and **Guideline Health** shows which rules people keep pushing back on.
 
-CodeStar 30 · Round 3 · Team **24K MAGIC** (solo: Shlok Sudhakar Shinde, SPIT Mumbai) · Problem statement by Inkloom AI.
+CodeStar 30 · Round 3 · Team **24K Magic** (solo: Shlok Sudhakar Shinde, SPIT Mumbai) · Problem statement by Inkloom AI.
 
 - **Live app:** https://assay-kappa-three.vercel.app (no sign-in; press "Start the demo, no sign-up")
 - **Start here:** open the app and press **Start the demo, no sign-up**. No account is needed; the demo workspace lives in your browser.
@@ -124,4 +124,4 @@ MIT licensed, apart from those pictures: see [LICENSE](LICENSE).
 
 ## Team
 
-**24K MAGIC**: Shlok Sudhakar Shinde (solo), 3rd year Computer Science and Engineering, Sardar Patel Institute of Technology (SPIT), Mumbai. GitHub [@shlok-shinde](https://github.com/shlok-shinde).
+**24K Magic**: Shlok Sudhakar Shinde (solo), 3rd year Computer Science and Engineering, Sardar Patel Institute of Technology (SPIT), Mumbai. GitHub [@shlok-shinde](https://github.com/shlok-shinde).

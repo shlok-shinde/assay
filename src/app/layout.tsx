@@ -9,7 +9,7 @@ const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], dis
 export const metadata: Metadata = {
   title: { default: "Assay: brand content, tested before it ships", template: "%s · Assay" },
   description:
-    "Assay checks drafts against a brand's approved rules, facts and assets, explains every issue with its source, suggests a fix that keeps the message, and routes it to a human for approval. CodeStar 30 Round 3, team 24K MAGIC.",
+    "Assay checks drafts against a brand's approved rules, facts and assets, explains every issue with its source, suggests a fix that keeps the message, and routes it to a human for approval. CodeStar 30 Round 3, team 24K Magic.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -527,7 +527,7 @@ function About() {
             only redacted paragraphs reach the AI route, and Confidential mode sends nothing. People decide: nothing is applied automatically.
           </p>
           <p className={s.soft}>
-            Built by Shlok Sudhakar Shinde, team 24K MAGIC, at SPIT Mumbai.{" "}
+            Built by Shlok Sudhakar Shinde, team 24K Magic, at SPIT Mumbai.{" "}
             <Link href="/about" className="text-ink underline">
               The About page
             </Link>{" "}
@@ -566,7 +566,7 @@ function Close() {
         </nav>
       </div>
       <div className={`${s.wrap} ${s.credits} w-full`}>
-        <p>Team 24K MAGIC · Shlok Sudhakar Shinde · SPIT, Mumbai · CodeStar 30 Round 3, problem statement by Inkloom AI.</p>
+        <p>Team 24K Magic · Shlok Sudhakar Shinde · SPIT, Mumbai · CodeStar 30 Round 3, problem statement by Inkloom AI.</p>
         <p>Google Gemini runs inside the app. Velvra is fictional; its product photo was generated with Gemini.</p>
         <p className={s.pictureCredits}>
           Pictures of the assaying world, all from Wikimedia Commons and none of them Velvra&apos;s or Assay&apos;s own:{" "}

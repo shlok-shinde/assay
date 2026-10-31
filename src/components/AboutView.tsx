@@ -205,7 +205,7 @@ export function AboutView() {
 
         <aside className="space-y-4">
           <section className="rounded-[28px] bg-raised p-6">
-            <h2 className="text-[15px] font-semibold">Team 24K MAGIC</h2>
+            <h2 className="text-[15px] font-semibold">Team 24K Magic</h2>
             <p className="mt-2 text-[14px] leading-[22px]">
               Shlok Sudhakar Shinde, solo participant. Sardar Patel Institute of Technology (SPIT), Mumbai, 3rd year Computer Science and Engineering.
             </p>
