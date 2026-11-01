@@ -45,6 +45,19 @@ export async function freshWorkspace(page: Page) {
   }));
   await page.goto("/app");
   await expect(page.getByRole("heading", { name: "Drafts", level: 1 })).toBeVisible();
+  // The demo ships saved AI answers for its samples. They would answer before a stubbed AI could.
+  if (!LIVE) {
+    await page.evaluate(() => new Promise<void>((resolve, reject) => {
+      const r = indexedDB.open("assay");
+      r.onerror = () => reject(r.error);
+      r.onsuccess = () => {
+        const tx = r.result.transaction("aiCache", "readwrite");
+        tx.objectStore("aiCache").clear();
+        tx.oncomplete = () => { r.result.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+    }));
+  }
 }
 
 export async function role(page: Page, name: "Creator" | "Reviewer" | "Compliance" | "Brand Admin") {
