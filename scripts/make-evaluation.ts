@@ -38,8 +38,17 @@ const rules = read<{ ranAt: string; factsAsOf: string; drafts: number; rows: Row
 const first = read<{ ranAt: string; rows: Row[]; misses: string[] }>("docs/eval-first-run-104.json");
 const ai = read<{ ranAt: string; all: { drafts: number; answered: number; models: string[]; rulesOnly: Scored; aiOnly: Scored; combined: Scored }; heldout: { answered: number; drafts: number; aiOnly: Scored; combined: Scored } }>("docs/eval-ai-results.json");
 const visual = read<{ ranAt: string; truth: string; categories: Row[]; rules: Row[]; logosFound: { found: number; of: number; note: string }; disagreements: string[] }>("docs/eval-visual-results.json");
-const people = read<{ ranAt: string; claim: string; people: number; draftsLabelled: number; draftsInSet: number; draftsWithTwoOrMore: number; ruleDecisions: number; unresolvedAndLeftOut: number; agreementBetweenPeople: { cohensKappa: number | null; decisionPairs: number }; agreementWithBuilderLabels: { cohensKappa: number | null; decisions: number }; aiCoverage: { answered: number; of: number }; rulesOnly: Scored; rulesOnlyHeldout: Scored; combined: Scored }>("docs/eval-people-results.json");
+const people = read<{ ranAt: string; claim: string; browserCodes: number; perCode: { code: string; answers: number; medianMs: number | null; mostRulesTicked: number }[]; draftsWithoutOneSetOf20: { code: string; drafts: number }[]; draftsLabelled: number; draftsInSet: number; draftsWithTwoOrMore: number; ruleDecisions: number; unresolvedAndLeftOut: number; agreementBetweenPeople: { cohensKappa: number | null; decisionPairs: number }; agreementWithBuilderLabels: { cohensKappa: number | null; decisions: number }; aiCoverage: { answered: number; of: number }; rulesOnly: Scored; rulesOnlyHeldout: Scored; combined: Scored }>("docs/eval-people-results.json");
 const perf = read<{ ranAt: string; throttle: number; steps: Record<string, number>; landingFps: number; scrollFps: number; worstBlockMs: number; blocksOver300ms: unknown[] }>("docs/perf-results.json");
+
+/** Stated whatever the scores are, because a person reading and ticking takes longer when there is more to tick. */
+const fast = (codes: { code: string; answers: number; medianMs: number | null; mostRulesTicked: number }[]) => {
+  const quick = codes.filter((c) => c.answers >= 10 && c.medianMs !== null && c.medianMs < 3000);
+  if (!quick.length) return [];
+  return [
+    `- **Timing.** ${quick.length} of the codes (${quick.reduce((n, c) => n + c.answers, 0)} answers) took a median of about ${(Math.max(...quick.map((c) => c.medianMs!)) / 1000).toFixed(1)} seconds a draft, nearly the same time on every draft, including one with ${Math.max(...quick.map((c) => c.mostRulesTicked))} rules ticked. That pace doesn't fit reading and ticking live on the page, and how those answers were entered isn't known. They are counted here because the builder reports them as human, so read the scores with that in mind.`,
+  ];
+};
 
 const out: string[] = [
   "# Evaluation",
@@ -53,7 +62,13 @@ if (people?.draftsLabelled) {
   out.push(
     `**${people.claim}**`,
     "",
-    `Scored on ${at(people.ranAt)} from the raw answers in \`golden/labels/\`. People: ${people.people}. Drafts labelled: ${people.draftsLabelled} of ${people.draftsInSet}. Drafts with two or more labels: ${people.draftsWithTwoOrMore}.`,
+    `Scored on ${at(people.ranAt)} from the raw answers in \`golden/labels/\`. Browser codes: ${people.browserCodes}. Drafts labelled: ${people.draftsLabelled} of ${people.draftsInSet}. Drafts with two or more labels: ${people.draftsWithTwoOrMore}.`,
+    "",
+    "How these labels were made:",
+    "",
+    "- **Who.** Answers are anonymous, and nobody's identity was checked. The builder reports that all of them are human responses from people other than the builder, more than one person, and that the builder answered none directly.",
+    `- **A guided set.** The builder reports guiding a friend through one entire set of 20, so that set isn't independent of the builder. Which code it is isn't recorded, so it can't be left out. Removing any one code with exactly 20 answers would leave ${people.draftsWithoutOneSetOf20.map((c) => c.drafts).join(", ") || "n/a"} drafts labelled.`,
+    ...fast(people.perCode),
     "",
     `Agreement between people (Cohen's kappa): ${num(people.agreementBetweenPeople.cohensKappa)} over ${people.agreementBetweenPeople.decisionPairs} paired decisions. Agreement with the builder's labels: ${num(people.agreementWithBuilderLabels.cohensKappa)}. The builder settles no disagreement: ${people.unresolvedAndLeftOut} of ${people.ruleDecisions} rule decisions were left out because people split evenly.`,
     "",

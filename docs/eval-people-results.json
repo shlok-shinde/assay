@@ -1,0 +1,253 @@
+{
+  "ranAt": "2026-11-01T13:21:09.892Z",
+  "labelsFrom": "golden/labels",
+  "claim": "Met on the count: 104 drafts labelled, from 6 browser codes. A code is a browser, not a person.",
+  "browserCodes": 6,
+  "perCode": [
+    {
+      "code": "c0w0a2xk5p",
+      "answers": 7,
+      "medianMs": 282896,
+      "mostRulesTicked": 3
+    },
+    {
+      "code": "c80v34wfip",
+      "answers": 40,
+      "medianMs": 45087,
+      "mostRulesTicked": 4
+    },
+    {
+      "code": "c8gcuz3s1l",
+      "answers": 20,
+      "medianMs": 1721,
+      "mostRulesTicked": 4
+    },
+    {
+      "code": "cjbuft5bb6",
+      "answers": 20,
+      "medianMs": 1724,
+      "mostRulesTicked": 9
+    },
+    {
+      "code": "cjlgr70y4q",
+      "answers": 20,
+      "medianMs": 1724,
+      "mostRulesTicked": 6
+    },
+    {
+      "code": "covj253qb8",
+      "answers": 16,
+      "medianMs": 26860,
+      "mostRulesTicked": 4
+    }
+  ],
+  "draftsWithoutOneSetOf20": [
+    {
+      "code": "c8gcuz3s1l",
+      "drafts": 84
+    },
+    {
+      "code": "cjbuft5bb6",
+      "drafts": 84
+    },
+    {
+      "code": "cjlgr70y4q",
+      "drafts": 84
+    }
+  ],
+  "draftsLabelled": 104,
+  "draftsInSet": 104,
+  "draftsWithTwoOrMore": 19,
+  "ruleDecisions": 1976,
+  "unresolvedAndLeftOut": 23,
+  "agreementBetweenPeople": {
+    "cohensKappa": 0.455,
+    "decisionPairs": 361
+  },
+  "agreementWithBuilderLabels": {
+    "cohensKappa": 0.724,
+    "decisions": 2337
+  },
+  "aiCoverage": {
+    "answered": 104,
+    "of": 104,
+    "note": "Combined is scored only on labelled drafts the AI answered."
+  },
+  "rulesOnly": {
+    "rows": [
+      {
+        "category": "accessibility",
+        "tp": 13,
+        "fp": 0,
+        "fn": 10,
+        "precision": 1,
+        "recall": 0.565
+      },
+      {
+        "category": "claim",
+        "tp": 32,
+        "fp": 4,
+        "fn": 11,
+        "precision": 0.889,
+        "recall": 0.744
+      },
+      {
+        "category": "legal",
+        "tp": 7,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.7,
+        "recall": 1
+      },
+      {
+        "category": "message",
+        "tp": 8,
+        "fp": 0,
+        "fn": 7,
+        "precision": 1,
+        "recall": 0.533
+      },
+      {
+        "category": "term",
+        "tp": 18,
+        "fp": 0,
+        "fn": 4,
+        "precision": 1,
+        "recall": 0.818
+      },
+      {
+        "category": "tone",
+        "tp": 14,
+        "fp": 3,
+        "fn": 10,
+        "precision": 0.824,
+        "recall": 0.583
+      }
+    ],
+    "overall": {
+      "tp": 92,
+      "fp": 10,
+      "fn": 42,
+      "precision": 0.902,
+      "recall": 0.687
+    }
+  },
+  "rulesOnlyHeldout": {
+    "rows": [
+      {
+        "category": "accessibility",
+        "tp": 6,
+        "fp": 0,
+        "fn": 5,
+        "precision": 1,
+        "recall": 0.545
+      },
+      {
+        "category": "claim",
+        "tp": 18,
+        "fp": 3,
+        "fn": 8,
+        "precision": 0.857,
+        "recall": 0.692
+      },
+      {
+        "category": "legal",
+        "tp": 6,
+        "fp": 1,
+        "fn": 0,
+        "precision": 0.857,
+        "recall": 1
+      },
+      {
+        "category": "message",
+        "tp": 5,
+        "fp": 0,
+        "fn": 3,
+        "precision": 1,
+        "recall": 0.625
+      },
+      {
+        "category": "term",
+        "tp": 8,
+        "fp": 0,
+        "fn": 0,
+        "precision": 1,
+        "recall": 1
+      },
+      {
+        "category": "tone",
+        "tp": 7,
+        "fp": 2,
+        "fn": 5,
+        "precision": 0.778,
+        "recall": 0.583
+      }
+    ],
+    "overall": {
+      "tp": 50,
+      "fp": 6,
+      "fn": 21,
+      "precision": 0.893,
+      "recall": 0.704
+    }
+  },
+  "combined": {
+    "rows": [
+      {
+        "category": "accessibility",
+        "tp": 13,
+        "fp": 0,
+        "fn": 10,
+        "precision": 1,
+        "recall": 0.565
+      },
+      {
+        "category": "claim",
+        "tp": 32,
+        "fp": 4,
+        "fn": 11,
+        "precision": 0.889,
+        "recall": 0.744
+      },
+      {
+        "category": "legal",
+        "tp": 7,
+        "fp": 3,
+        "fn": 0,
+        "precision": 0.7,
+        "recall": 1
+      },
+      {
+        "category": "message",
+        "tp": 8,
+        "fp": 3,
+        "fn": 7,
+        "precision": 0.727,
+        "recall": 0.533
+      },
+      {
+        "category": "term",
+        "tp": 18,
+        "fp": 0,
+        "fn": 4,
+        "precision": 1,
+        "recall": 0.818
+      },
+      {
+        "category": "tone",
+        "tp": 18,
+        "fp": 9,
+        "fn": 6,
+        "precision": 0.667,
+        "recall": 0.75
+      }
+    ],
+    "overall": {
+      "tp": 96,
+      "fp": 19,
+      "fn": 38,
+      "precision": 0.835,
+      "recall": 0.716
+    }
+  }
+}

@@ -21,6 +21,7 @@ interface Answer {
   coder: string;
   item: string;
   rules: string[];
+  ms?: number;
 }
 
 const opaque = (id: string) => createHash("sha256").update(`assay-golden:${id}`).digest("hex").slice(0, 12);
@@ -42,7 +43,7 @@ function readAnswers(): Answer[] {
       const item = String(r.item_id ?? r.itemId ?? r.id ?? "");
       const rules = (r.rule_ids ?? r.ruleIds ?? r.rules) as string[] | undefined;
       if (!coder || !draftByItem.has(item) || !Array.isArray(rules)) continue;
-      latest.set(`${coder}|${item}`, { coder, item, rules: rules.filter((x) => inManifest.has(x)) });
+      latest.set(`${coder}|${item}`, { coder, item, rules: rules.filter((x) => inManifest.has(x)), ms: typeof r.ms === "number" ? r.ms : undefined });
     }
   }
   return [...latest.values()];
@@ -93,7 +94,9 @@ async function main() {
   for (const [item, labels] of byItem) {
     const draft = draftByItem.get(item)!;
     const out = await runCheck({ text: draft.text, channel: draft.channel, audience: "Everyday skincare buyers", intent: { ...draftIntent(draft.text), confirmed: true }, kit: VELVRA_KIT, rulebookVersion: "3.2", confidential: false, today: TODAY, ai: noCall, cache });
-    const fromRules = new Set(out.findings.filter((f) => f.origin === "rule").flatMap((f) => [f.ruleId, ...f.relatedRuleIds]));
+    // Scored from a run with no AI: a rule finding that absorbs an AI finding lists the AI's rule as related.
+    const alone = await runCheck({ text: draft.text, channel: draft.channel, audience: "Everyday skincare buyers", intent: { ...draftIntent(draft.text), confirmed: true }, kit: VELVRA_KIT, rulebookVersion: "3.2", confidential: false, today: TODAY, ai: null, cache: null });
+    const fromRules = new Set(alone.findings.filter((f) => f.origin === "rule").flatMap((f) => [f.ruleId, ...f.relatedRuleIds]));
     const fromAll = new Set(out.findings.flatMap((f) => [f.ruleId, ...f.relatedRuleIds]));
     if (out.mode === "rules+ai") aiAnswered++;
     for (const rule of RULES) {
@@ -125,14 +128,25 @@ async function main() {
       : n < 100
         ? `Partly delivered: ${n} of ${GOLDEN.length} drafts have labels from people other than the builder.`
         : coders.length >= 2
-          ? `Met as worded: ${n} drafts labelled by ${coders.length} people other than the builder.`
-          : `Met on the count: ${n} drafts labelled, all by one person other than the builder.`;
+          ? `Met on the count: ${n} drafts labelled, from ${coders.length} browser codes. A code is a browser, not a person.`
+          : `Met on the count: ${n} drafts labelled, all from one browser code.`;
+
+  // Answers are anonymous, so how they were given is all the data can say about them. It is reported, never filtered.
+  const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[xs.length >> 1];
+  const perCode = coders.map((code) => {
+    const mine = answers.filter((a) => a.coder === code);
+    const times = mine.flatMap((a) => (a.ms === undefined ? [] : [a.ms]));
+    return { code, answers: mine.length, medianMs: times.length ? median(times) : null, mostRulesTicked: Math.max(...mine.map((a) => a.rules.length)) };
+  });
+  const without = (code: string) => new Set(answers.filter((a) => a.coder !== code).map((a) => a.item)).size;
 
   const results = {
     ranAt: new Date().toISOString(),
     labelsFrom: DIR,
     claim,
-    people: coders.length,
+    browserCodes: coders.length,
+    perCode,
+    draftsWithoutOneSetOf20: perCode.filter((c) => c.answers === 20).map((c) => ({ code: c.code, drafts: without(c.code) })),
     draftsLabelled: n,
     draftsInSet: GOLDEN.length,
     draftsWithTwoOrMore: [...byItem.values()].filter((l) => l.length >= 2).length,
@@ -147,8 +161,8 @@ async function main() {
   };
   writeFileSync(OUT, JSON.stringify(results, null, 2) + "\n");
   console.log(claim);
-  console.log(`People ${coders.length}; drafts ${n}; two or more labels on ${results.draftsWithTwoOrMore}; left out ${unresolved} of ${decisions} rule decisions.`);
-  console.log(`Kappa between people ${results.agreementBetweenPeople.cohensKappa ?? "n/a"}; with builder labels ${results.agreementWithBuilderLabels.cohensKappa ?? "n/a"}.`);
+  console.log(`Browser codes ${coders.length}; drafts ${n}; two or more labels on ${results.draftsWithTwoOrMore}; left out ${unresolved} of ${decisions} rule decisions.`);
+  console.log(`Kappa between labellers ${results.agreementBetweenPeople.cohensKappa ?? "n/a"}; with builder labels ${results.agreementWithBuilderLabels.cohensKappa ?? "n/a"}.`);
   console.log(`Rules only: precision ${results.rulesOnly.overall.precision ?? "n/a"}, recall ${results.rulesOnly.overall.recall ?? "n/a"}.`);
 }
 
