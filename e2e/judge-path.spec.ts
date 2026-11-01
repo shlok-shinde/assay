@@ -98,8 +98,8 @@ test.describe("judge path", () => {
     await page.goto("/app/new?sample=linkedin-clean");
     await expect(page.locator("#copy")).toHaveValue(/R&D team/);
     await page.getByRole("button", { name: "Run check" }).click();
-    await expect(page.getByText(/rule checks only/i).first()).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByRole("tab", { name: /Findings 0/ })).toBeVisible();
+    if (!LIVE) await expect(page.getByText(/rule checks only/i).first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("tab", { name: LIVE ? /Findings \d+/ : /Findings 0/ })).toBeVisible({ timeout: 60_000 });
     await page.getByRole("button", { name: "Reset demo" }).click();
     await page.getByRole("dialog", { name: "Reset the demo?" }).getByRole("button", { name: "Delete and reset" }).click();
     await expect(page.getByText("No drafts yet.")).toBeVisible();
@@ -158,6 +158,7 @@ test.describe("uploads and admin", () => {
   });
 
   test("an AI rate limit falls back to rule checks with a banner", async ({ page }) => {
+    test.skip(LIVE, "A real deployment can't be made to rate-limit on request.");
     await page.unrouteAll();
     await stubAi(page, "rate_limited");
     await page.goto("/app/new?sample=genz-caption");

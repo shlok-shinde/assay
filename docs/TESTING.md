@@ -38,6 +38,10 @@ DATABASE_URL=postgres://postgres:test@localhost:5432/assay_test pnpm test:team
 - **Team server (real Postgres):** links used once under a race, revoked sessions, stale writes, workflow rules enforced on the server, eight approvals at once making one unbroken chain.
 - **Accuracy:** `docs/EVALUATION.md`.
 
+## On production
+
+On 1 Nov 2026 the judge path and the Round 2 upgrade tests ran against the live site with real Gemini (`E2E_BASE_URL=<production> E2E_LIVE=1`): 19 passed, and 1 was skipped because a real deployment can't be made to rate-limit on request. The first such run found a real bug: a stalled `/api/status` request held the rule checks on their spinner. It now has a five-second limit and a test.
+
 ## AI-assisted review
 
 During the build, an AI tool checked screenshots of each screen against a design rubric and Nielsen's heuristics, and an automated inspector measured the pages at 1440, 768 and 390 px. That is a review by a tool, not a usability result.
