@@ -1,46 +1,12 @@
 {
-  "ranAt": "2026-10-31T19:06:25.190Z",
+  "ranAt": "2026-11-01T09:11:09.194Z",
   "factsAsOf": "2026-10-26",
   "labels": "builder, with AI assistance",
   "note": "AI-only is scored on rules the AI is asked to judge. Combined is scored only on drafts the AI answered.",
   "all": {
     "drafts": 104,
-    "answered": 71,
-    "unanswered": [
-      "clean-04",
-      "tone-06",
-      "tone-10",
-      "claim-12",
-      "legal-01",
-      "a11y-05",
-      "voice-02",
-      "launch-01",
-      "launch-08",
-      "legal-05",
-      "legal-06",
-      "legal-07",
-      "legal-08",
-      "legal-09",
-      "legal-10",
-      "multi-01",
-      "multi-02",
-      "multi-03",
-      "multi-04",
-      "multi-05",
-      "multi-06",
-      "multi-07",
-      "multi-08",
-      "multi-09",
-      "multi-10",
-      "multi-11",
-      "multi-12",
-      "near-01",
-      "near-02",
-      "near-03",
-      "near-04",
-      "near-05",
-      "near-06"
-    ],
+    "answered": 104,
+    "unanswered": [],
     "models": [
       "gemini-3.6-flash"
     ],
@@ -73,9 +39,9 @@
         {
           "category": "message",
           "tp": 9,
-          "fp": 1,
+          "fp": 0,
           "fn": 0,
-          "precision": 0.9,
+          "precision": 1,
           "recall": 1
         },
         {
@@ -89,17 +55,17 @@
         {
           "category": "tone",
           "tp": 17,
-          "fp": 2,
+          "fp": 0,
           "fn": 0,
-          "precision": 0.895,
+          "precision": 1,
           "recall": 1
         }
       ],
       "overall": {
         "tp": 103,
-        "fp": 4,
+        "fp": 1,
         "fn": 2,
-        "precision": 0.963,
+        "precision": 0.99,
         "recall": 0.981
       }
     },
@@ -107,65 +73,49 @@
       "rows": [
         {
           "category": "message",
-          "tp": 3,
-          "fp": 0,
-          "fn": 6,
-          "precision": 1,
+          "tp": 5,
+          "fp": 2,
+          "fn": 10,
+          "precision": 0.714,
           "recall": 0.333
         },
         {
           "category": "tone",
-          "tp": 9,
-          "fp": 1,
-          "fn": 5,
-          "precision": 0.9,
-          "recall": 0.643
+          "tp": 16,
+          "fp": 7,
+          "fn": 8,
+          "precision": 0.696,
+          "recall": 0.667
         }
       ],
       "overall": {
-        "tp": 12,
-        "fp": 1,
-        "fn": 11,
-        "precision": 0.923,
-        "recall": 0.522
+        "tp": 21,
+        "fp": 9,
+        "fn": 18,
+        "precision": 0.7,
+        "recall": 0.538
       }
     },
     "combined": {
       "rows": [
         {
           "category": "accessibility",
-          "tp": 4,
+          "tp": 13,
           "fp": 0,
           "fn": 1,
           "precision": 1,
-          "recall": 0.8
+          "recall": 0.929
         },
         {
           "category": "claim",
-          "tp": 15,
+          "tp": 35,
           "fp": 1,
-          "fn": 0,
-          "precision": 0.938,
-          "recall": 1
+          "fn": 1,
+          "precision": 0.972,
+          "recall": 0.972
         },
         {
           "category": "legal",
-          "tp": 1,
-          "fp": 0,
-          "fn": 0,
-          "precision": 1,
-          "recall": 1
-        },
-        {
-          "category": "message",
-          "tp": 5,
-          "fp": 1,
-          "fn": 4,
-          "precision": 0.833,
-          "recall": 0.556
-        },
-        {
-          "category": "term",
           "tp": 10,
           "fp": 0,
           "fn": 0,
@@ -173,46 +123,43 @@
           "recall": 1
         },
         {
+          "category": "message",
+          "tp": 10,
+          "fp": 2,
+          "fn": 5,
+          "precision": 0.833,
+          "recall": 0.667
+        },
+        {
+          "category": "term",
+          "tp": 19,
+          "fp": 0,
+          "fn": 0,
+          "precision": 1,
+          "recall": 1
+        },
+        {
           "category": "tone",
-          "tp": 11,
-          "fp": 3,
-          "fn": 3,
-          "precision": 0.786,
-          "recall": 0.786
+          "tp": 20,
+          "fp": 7,
+          "fn": 4,
+          "precision": 0.741,
+          "recall": 0.833
         }
       ],
       "overall": {
-        "tp": 46,
-        "fp": 5,
-        "fn": 8,
-        "precision": 0.902,
-        "recall": 0.852
+        "tp": 107,
+        "fp": 10,
+        "fn": 11,
+        "precision": 0.915,
+        "recall": 0.907
       }
     }
   },
   "heldout": {
     "drafts": 52,
-    "answered": 34,
-    "unanswered": [
-      "tone-06",
-      "legal-01",
-      "voice-02",
-      "launch-01",
-      "legal-05",
-      "legal-07",
-      "legal-09",
-      "legal-10",
-      "multi-01",
-      "multi-03",
-      "multi-05",
-      "multi-07",
-      "multi-09",
-      "multi-10",
-      "multi-12",
-      "near-02",
-      "near-04",
-      "near-06"
-    ],
+    "answered": 52,
+    "unanswered": [],
     "models": [
       "gemini-3.6-flash"
     ],
@@ -261,17 +208,17 @@
         {
           "category": "tone",
           "tp": 9,
-          "fp": 1,
+          "fp": 0,
           "fn": 0,
-          "precision": 0.9,
+          "precision": 1,
           "recall": 1
         }
       ],
       "overall": {
         "tp": 57,
-        "fp": 1,
+        "fp": 0,
         "fn": 2,
-        "precision": 0.983,
+        "precision": 1,
         "recall": 0.966
       }
     },
@@ -279,42 +226,50 @@
       "rows": [
         {
           "category": "message",
-          "tp": 2,
-          "fp": 0,
-          "fn": 2,
-          "precision": 1,
+          "tp": 4,
+          "fp": 1,
+          "fn": 4,
+          "precision": 0.8,
           "recall": 0.5
         },
         {
           "category": "tone",
-          "tp": 5,
-          "fp": 0,
-          "fn": 0,
-          "precision": 1,
-          "recall": 1
+          "tp": 9,
+          "fp": 5,
+          "fn": 3,
+          "precision": 0.643,
+          "recall": 0.75
         }
       ],
       "overall": {
-        "tp": 7,
-        "fp": 0,
-        "fn": 2,
-        "precision": 1,
-        "recall": 0.778
+        "tp": 13,
+        "fp": 6,
+        "fn": 7,
+        "precision": 0.684,
+        "recall": 0.65
       }
     },
     "combined": {
       "rows": [
         {
           "category": "accessibility",
-          "tp": 2,
+          "tp": 6,
           "fp": 0,
           "fn": 1,
           "precision": 1,
-          "recall": 0.667
+          "recall": 0.857
         },
         {
           "category": "claim",
-          "tp": 8,
+          "tp": 21,
+          "fp": 0,
+          "fn": 1,
+          "precision": 1,
+          "recall": 0.955
+        },
+        {
+          "category": "legal",
+          "tp": 7,
           "fp": 0,
           "fn": 0,
           "precision": 1,
@@ -322,15 +277,15 @@
         },
         {
           "category": "message",
-          "tp": 2,
-          "fp": 0,
+          "tp": 6,
+          "fp": 1,
           "fn": 2,
-          "precision": 1,
-          "recall": 0.5
+          "precision": 0.857,
+          "recall": 0.75
         },
         {
           "category": "term",
-          "tp": 4,
+          "tp": 9,
           "fp": 0,
           "fn": 0,
           "precision": 1,
@@ -338,19 +293,19 @@
         },
         {
           "category": "tone",
-          "tp": 5,
-          "fp": 1,
-          "fn": 0,
-          "precision": 0.833,
-          "recall": 1
+          "tp": 11,
+          "fp": 5,
+          "fn": 1,
+          "precision": 0.688,
+          "recall": 0.917
         }
       ],
       "overall": {
-        "tp": 21,
-        "fp": 1,
-        "fn": 3,
-        "precision": 0.955,
-        "recall": 0.875
+        "tp": 60,
+        "fp": 6,
+        "fn": 5,
+        "precision": 0.909,
+        "recall": 0.923
       }
     }
   }

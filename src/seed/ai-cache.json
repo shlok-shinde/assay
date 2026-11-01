@@ -1,1 +1,221 @@
-[]
+[
+ {
+  "key": "686a7178929ded38b68c9cc8522f9f223e784a6f5db6af440533410c19a475db",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:59.434Z",
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "OMG 😍",
+     "start": 0,
+     "end": 6,
+     "reason": "Velvra prohibits hype and slang superlatives like 'OMG'.",
+     "fix": "",
+     "confidence": 0.95
+    },
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "erase dark spots in just 7 days!",
+     "start": 42,
+     "end": 73,
+     "reason": "Never promise instant, fast, or overnight vanishing results like erasing spots in 7 days.",
+     "fix": "help skin look more even over a few weeks",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "9c2cc3c61361759ff3f49e56015aae3a373976f9441fa073632a4b057e18bcd7",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:51.754Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "a09a608050bc17497e07782a62dc642eeb0672f3dd2893ab524e1e5f6df29ecc",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:51.755Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "8773d5c95c258103beb48340b203f32044eff92b1b1a3578ec007f4e42107cf0",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:51.755Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "23a87e9209d41cccf7795e7891bfd67bb4efa026e255ef5fb46b2e6fbbff3fc5",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:51.755Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "d238463ee4fe340508d1d03932dae94c47851010849339640e7d839f4eadb574",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:51.755Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "868aac7c7802e7818aca4366121a332523aedecf02d98c7118923aeeadb2f5a9",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:51.756Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "41aa2106bbf7a54490e2dd33cca629c6725769c5a8a8cebc3ad191a97aa87774",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:53.594Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "255e71d7a379f61bced6d3d029c32d39c7dd2ce0ceefc25b092685c3696ae6b2",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:53.595Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "ac451d2cb92d4fe338476a6cec818ff4aee572bd4782f63db9aa587f3c193556",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:53.595Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "1e5a9348c153272af687bd7dd42b6e17f80d158cae585b8bfd2f9dd4486c1a44",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:53.595Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "e2bac7fc77780b5665ed57a56d8b573e40373352102d4e24bd76db8f678d6bd9",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:58.097Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "38e4a1d99f958bd47666df5067cb2dcf3857a17e7aec21c60227c9dc004ee441",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:58.097Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "fde8ead711a5a65c7cf92a9c44ddbcb518311c244a9c9407bb25e505adb7cadf",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:09:58.097Z",
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "d0f6a19a588e976f27dcfef6de1113bcd9f7b7fb6d9ec813e7ff8e5cc2737670",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:10:01.480Z",
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "lowkey insane 🔥🔥 zero greasy feel, no cap. your skin will thank you!!!",
+     "start": 18,
+     "end": 88,
+     "reason": "The text uses slang superlatives ('lowkey insane', 'no cap') and multiple exclamation marks, violating the rule against hyping products.",
+     "fix": "feels lightweight without a greasy feel.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "seeded": true
+ },
+ {
+  "key": "f0f82f605eb3e53549d0ab507719c1fe93785d5c18697e8343ba7d0440ebb9b9",
+  "task": "judge",
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:10:07.725Z",
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "OMG 😍🔥💧🌞",
+     "start": 0,
+     "end": 10,
+     "reason": "The text uses hype and slang superlatives like 'OMG' along with multiple emojis, violating the rule against hyping the product.",
+     "fix": "",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "seeded": true
+ }
+]

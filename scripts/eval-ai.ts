@@ -87,7 +87,9 @@ async function run(drafts: GoldenDraft[]) {
       cache,
     });
     const expected = new Set(d.expect);
-    const fromRules = new Set(out.findings.filter((f) => f.origin === "rule").flatMap((f) => [f.ruleId, ...f.relatedRuleIds]));
+    // Scored from a run with no AI: a rule finding that absorbs an AI finding lists the AI's rule as related.
+    const alone = await runCheck({ text: d.text, channel: d.channel, audience: "Everyday skincare buyers", intent: { ...draftIntent(d.text), confirmed: true }, kit: VELVRA_KIT, rulebookVersion: "3.2", confidential: false, today: TODAY, ai: null, cache: null });
+    const fromRules = new Set(alone.findings.filter((f) => f.origin === "rule").flatMap((f) => [f.ruleId, ...f.relatedRuleIds]));
     tally(rules, new Set([...fromRules].filter((id) => !isJudged(id) || ruleOf.get(id)!.modes.length > 1)), new Set([...expected].filter((id) => ruleOf.get(id)!.modes.some((m) => m !== "judgment"))));
     if (out.mode !== "rules+ai") {
       unanswered.push(d.id);
@@ -96,7 +98,9 @@ async function run(drafts: GoldenDraft[]) {
     answered++;
     if (out.aiModel) models.add(out.aiModel);
     // A rule finding the AI agreed with carries the AI's confidence, so it counts as found by the AI too.
-    const fromAi = new Set(out.findings.filter((f) => f.origin === "ai" || f.confidence !== undefined).flatMap((f) => [f.ruleId, ...(f.origin === "ai" ? f.relatedRuleIds : [])]));
+    // So does a rule the AI raised that a rule finding absorbed: it shows up only as a related rule.
+    const absorbed = out.findings.filter((f) => f.origin === "rule").flatMap((f) => f.relatedRuleIds).filter((id) => !fromRules.has(id));
+    const fromAi = new Set([...out.findings.filter((f) => f.origin === "ai" || f.confidence !== undefined).flatMap((f) => [f.ruleId, ...(f.origin === "ai" ? f.relatedRuleIds : [])]), ...absorbed]);
     tally(ai, fromAi, new Set([...expected].filter(isJudged)));
     tally(combined, new Set(out.findings.flatMap((f) => [f.ruleId, ...f.relatedRuleIds])), expected);
   }

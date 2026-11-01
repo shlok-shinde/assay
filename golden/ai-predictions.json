@@ -777,5 +777,478 @@
   },
   "model": "gemini-3.6-flash",
   "at": "2026-10-31T19:23:23.762Z"
+ },
+ "fd71736a294168a985d1b4b17963dbc45b956b85254868ee9502af585f8f1ca6": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:31.530Z"
+ },
+ "f5fcd2f2c203442cac37aa99cdadc64195aeb1a8ee3fb66b84aca6ada024e215": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:35.630Z"
+ },
+ "fb8d0c80aa76477b3a44c4400958968747f880ba0aae9979bce9632b87636bd3": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:39.618Z"
+ },
+ "559f417beba335d8f8c65b44d8b989ff7e6cff53e88addee58b48b37db77296b": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:43.412Z"
+ },
+ "80c5029a9563a144f10eb0d35e6ce022098f009cdc37bd9713437a04584e3089": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "OMG!!!",
+     "start": 0,
+     "end": 6,
+     "reason": "Avoid shouting, runs of exclamation marks, and slang superlatives like 'OMG!!!'.",
+     "fix": "Meet",
+     "confidence": 0.95
+    },
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "clinically proven to erase dark spots overnight.",
+     "start": 27,
+     "end": 75,
+     "reason": "Never promise instant, overnight, or vanishing skin results; skin changes take weeks.",
+     "fix": "designed to help skin look more even over a few weeks with daily use.",
+     "confidence": 0.95
+    },
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-01",
+     "quote": "OMG!!!",
+     "start": 0,
+     "end": 6,
+     "reason": "Maintain a calm, warm, and expert tone rather than shouting or using hyped exclamations.",
+     "fix": "",
+     "confidence": 0.9
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:48.739Z"
+ },
+ "601b52da886328c8592cf4fcab07ac01eb50e61d938ec510dea470c28e882dd5": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:51.806Z"
+ },
+ "8be3e4d903af5e3c5b3ab415ead95328a63d2b71754e655f5e7756c8dcc9d9ab": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s1",
+     "rule_id": "VOICE-03",
+     "quote": "embarrassing flaws",
+     "start": 15,
+     "end": 34,
+     "reason": "The rule prohibits using fear-based beauty language or making people feel bad about their skin, specifically advising to talk about care rather than flaws.",
+     "fix": "uneven skin tone",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:51.807Z"
+ },
+ "cdf5ca52ea1638a48c05fbe210f48e75bebb382dfe9276d1b49a670c82457ed8": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:51.808Z"
+ },
+ "f34dd51200b4cc2ab45d95286b2d1d627c3294afa46f3175f7ce6ba2d04372ca": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:55.491Z"
+ },
+ "dad811696cf1a27b8e661335275c6c2f9c975b665e22c8a8e0ec1161b8ef150a": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "game changer",
+     "start": 5,
+     "end": 17,
+     "reason": "Using hype language like 'game changer' violates the policy against hyperbole and hype in messaging.",
+     "fix": "daily formula",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:02:59.898Z"
+ },
+ "8bd750ecea1fc07ac87f1d3ce33f116b7b615c24783dd5821f8ac82260418dbe": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-01",
+     "quote": "is a must-have.",
+     "start": 32,
+     "end": 47,
+     "reason": "The phrase 'must-have' uses aggressive sales hype rather than explaining calmly like a dermatologist friend.",
+     "fix": "fits easily into your daily routine.",
+     "confidence": 0.85
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:05.021Z"
+ },
+ "d7b141a9c9e51f051d87a1ded8bd2a46763f161bf19adf180c3452aada269a36": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "fairer skin in just 3 days",
+     "start": 19,
+     "end": 44,
+     "reason": "The rule prohibits promising instant, overnight, or vanishing results, as skin changes take weeks. Promising fairer skin in just 3 days violates this guidance.",
+     "fix": "more even skin over a few weeks",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:09.241Z"
+ },
+ "0f0a46041d12c1271ac43ee1dbf83675af0b8517995d9603527fc26cdf1568ed": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "Forever young skin, instantly!",
+     "start": 0,
+     "end": 30,
+     "reason": "The rule prohibits promising instant results. Skin changes take time and should not be described as instant or immediate.",
+     "fix": "Daily protection for healthy-looking skin over time",
+     "confidence": 0.95
+    },
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "Forever young skin, instantly!",
+     "start": 0,
+     "end": 30,
+     "reason": "Exclamation marks and hype language like 'Forever young skin, instantly!' violate the brand rule against hype and shouting.",
+     "fix": "Care for your skin daily with Daily Shield SPF 50.",
+     "confidence": 0.9
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:12.284Z"
+ },
+ "4d8ae33dc6dd048e9c9bc0ddf53605b471cd6302fe46b1880cc7a29b16849a47": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:15.254Z"
+ },
+ "6ac2d6b4b7b43ad5d1b2ea0fb81a5440909e0dd5a4d610464b2bce263078b2d9": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:19.463Z"
+ },
+ "f1e0c27fc149a106fed123eb55c9f05bda35f0d6011b7412f362360169edca4e": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-03",
+     "quote": "Hide your dark spots",
+     "start": 0,
+     "end": 19,
+     "reason": "Avoid fear-based or shaming beauty language that makes people feel bad about their skin or focuses on hiding flaws.",
+     "fix": "Care for uneven skin tone",
+     "confidence": 0.95
+    },
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "It works immediately",
+     "start": 39,
+     "end": 60,
+     "reason": "Do not promise instant or immediate results, as skin changes take time.",
+     "fix": "With daily use, it helps skin look more even over time",
+     "confidence": 0.98
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:23.965Z"
+ },
+ "9c7600e4b46c90e6d21101061466b9c4bc68ab070dff64c163aac7320c4d1231": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:27.544Z"
+ },
+ "a5de3e0472f294fbb0eb8e699215fc2c7647ab97319aaacbbd389e1ddf0749de": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-02",
+     "quote": "insane glow, zero flaws, guaranteed!!!",
+     "start": 0,
+     "end": 38,
+     "reason": "The text uses hype, slang superlatives ('insane glow'), and a run of exclamation marks ('!!!'), which violates the rule against hype.",
+     "fix": "Healthy glow for everyday skin protection.",
+     "confidence": 0.95
+    },
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-03",
+     "quote": "zero flaws",
+     "start": 13,
+     "end": 23,
+     "reason": "The text uses language focusing on skin 'flaws' rather than care, violating the rule against fear-based beauty language.",
+     "fix": "smooth texture",
+     "confidence": 0.9
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:32.769Z"
+ },
+ "93b15d5d7c38c479190e33e76b3a36bff59841dad9c1d044cdc6e4aa2e833fb9": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:35.435Z"
+ },
+ "32ed0e5f59d3b573d1667154a5a5ab95623ce1e33532f197d9e4e3be3edf2e71": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:39.423Z"
+ },
+ "4179a2be1e3b818ca433014be23e98e6df5da52d91dbeafe055ed23f09eeae3b": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:03:43.826Z"
+ },
+ "757c94f39d103c26fdb0d7f07f725731d972241c0f35199d3eb5b983fc668b27": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:06:01.351Z"
+ },
+ "1c1001cde7ca232c9fda3cc919b35894f1c21ec9f94afe6bd6593551dbe8686a": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:06:02.784Z"
+ },
+ "164b4fba1bdbcb5869f73c50c317b4fcca39813a74d07fafc550b74dd392d4e2": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-02",
+     "quote": "Cures sun damage.",
+     "start": 0,
+     "end": 17,
+     "reason": "Promises instant or vanishing results for sun damage rather than discussing gradual care over time.",
+     "fix": "Helps protect skin from sun damage.",
+     "confidence": 0.9
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:06:07.237Z"
+ },
+ "0d966717e458c93f479eac901178a2263ee33f17b734c61ac6b287171428cfb5": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-03",
+     "quote": "Fix your skin flaws",
+     "start": 0,
+     "end": 19,
+     "reason": "The text uses fear-based beauty language by telling the audience to 'fix' their skin 'flaws' instead of talking about skin care.",
+     "fix": "Care for your skin",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:06:14.455Z"
+ },
+ "55f22c8dd72768ba31de9eb39976ba31867160d77780c2ca472cd5509dca52b5": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:06:16.097Z"
+ },
+ "751e38148b060b3ba26e12cb56acf9d5cceb859f74a162df24e1da2071dcf665": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-03",
+     "quote": "anyone skipping it is making a mistake.",
+     "start": 29,
+     "end": 69,
+     "reason": "The messaging uses judgment/guilt-inducing language rather than focusing on positive care.",
+     "fix": "incorporating daily protection helps care for your skin.",
+     "confidence": 0.85
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:06:20.193Z"
+ },
+ "270416aec006096e697786d2f9fc1c9a29488e383650f601711f8959966fdd51": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:06:37.091Z"
+ },
+ "d3c75c7cac10769f36978ce0b09a672deb67957884b37825433ab9b02e535cd7": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "VOICE-03",
+     "quote": "ugly sunburn days",
+     "start": 8,
+     "end": 25,
+     "reason": "Avoid fear-based or negative beauty language that makes people feel bad about their skin or sunburns. Focus on care instead.",
+     "fix": "sunburn days",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:06.480Z"
+ },
+ "d91afb3e80ce04a9347861b549f141ba706d8dbba0f816f6e4484b139599dc44": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:11.698Z"
+ },
+ "93711d99e17982fc2abb73339a143c8d9fc77866c0c9ae7aac6d29c32654f686": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:13.749Z"
+ },
+ "811fd19e06765188ecc7b0b5bd0f5ff94d41c9a52fd26421de70aa34a05d0e75": {
+  "data": {
+   "findings": [
+    {
+     "segment": "s0",
+     "rule_id": "MSG-01",
+     "quote": "New drop. Go get it.",
+     "start": 0,
+     "end": 19,
+     "reason": "Launch messages should connect to our brand pillars instead of using generic, hype-driven language like 'New drop. Go get it.'",
+     "fix": "Meet Daily Shield SPF 50, made for everyday protection.",
+     "confidence": 0.95
+    }
+   ],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:17.536Z"
+ },
+ "7037c251165fe424d2e80dc3684573dc98e7fd5b00c9de7eb43ebf26abb506a8": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:21.939Z"
+ },
+ "921981fd74c19917082fac547018a14c702531a9502477de7bd9e4c6e5956b84": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:50.011Z"
+ },
+ "b52b32256579b642d3402f0e80ebd7472b4b8826bc800ab1cb543c1872a8b074": {
+  "data": {
+   "findings": [],
+   "factChoices": []
+  },
+  "model": "gemini-3.6-flash",
+  "at": "2026-11-01T09:07:54.398Z"
  }
 }
