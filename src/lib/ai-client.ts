@@ -17,7 +17,8 @@ let statusPromise: Promise<AiStatus | null> | null = null;
 
 export function aiStatus(refresh = false): Promise<AiStatus | null> {
   if (!statusPromise || refresh) {
-    statusPromise = fetch("/api/status", { cache: "no-store" })
+    // Rule checks wait on this answer, so it can't be allowed to wait forever.
+    statusPromise = fetch("/api/status", { cache: "no-store", signal: AbortSignal.timeout(5000) })
       .then((r) => (r.ok ? (r.json() as Promise<AiStatus>) : null))
       .catch(() => null)
       // A failed look is not an answer: without this, one dropped request reads as "no AI" for the whole session.

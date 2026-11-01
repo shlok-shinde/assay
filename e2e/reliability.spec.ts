@@ -283,6 +283,16 @@ test.describe("A check that did not finish", () => {
     await expect(page.getByText("2 high-severity still open")).toBeVisible();
   });
 
+  test("a status request that never answers doesn't hold up the rule checks", async ({ page }) => {
+    await stubAi(page);
+    await freshWorkspace(page);
+    await page.route("**/api/status", () => undefined);
+    await page.goto("/app/new?sample=monsoon-email");
+    await expect(page.locator("#copy")).toHaveValue(/RAIN25/);
+    await page.getByRole("button", { name: "Run check" }).click();
+    await expect(page.getByRole("tab", { name: /^Findings \d+/ })).toBeVisible({ timeout: 15_000 });
+  });
+
   test("a check that fell back to rule checks says so, and Try the AI again reads it with the AI", async ({ page }) => {
     await stubAi(page, "rate_limited");
     await freshWorkspace(page);

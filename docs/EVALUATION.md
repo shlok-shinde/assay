@@ -78,7 +78,7 @@ The first run on this set (2026-10-30) stays on record in `docs/eval-first-run-1
 
 Recorded on 2026-11-01 through the deployed route. Coverage: the AI answered 104 of 104 drafts. Models: gemini-3.6-flash. `pnpm eval:ai` replays the recording without calling anything.
 
-Recorded in two sittings. The first, on 1 Nov about 01:10 IST, covered 71 drafts before any label link had gone out. The other 33 were recorded on 1 Nov about 14:30 IST, after people had started labelling: 116 answers were on the server by then. Recording sends the AI each draft, the rules and an Intent Card, never a label,.
+Recorded in two sittings. The first, on 1 Nov about 01:10 IST, covered 71 drafts before any label link had gone out. The other 33 were recorded on 1 Nov about 14:30 IST, after people had started labelling: 116 answers were on the server by then. Recording sends the AI each draft, the rules and an Intent Card, never a label.
 
 AI only, on the rules the AI is asked to judge:
 
