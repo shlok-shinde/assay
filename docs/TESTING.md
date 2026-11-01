@@ -19,6 +19,8 @@ On 1 Nov 2026 the builder also tried team workspaces on the live site, and repor
 - the term check and the AI intent check gave opposite verdicts on the same line;
 - a sample once hung while loading.
 
+The builder also sent the demo fact-expiry alert from Guideline Health on the live site, and reports receiving the email. The daily team digest reaching an owner has not been separately confirmed.
+
 ## How to run the automated tests
 
 ```bash
