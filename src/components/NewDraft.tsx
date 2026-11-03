@@ -122,13 +122,17 @@ export function NewDraft() {
   }, [hasImage]);
 
   const hasContent = draft.text.trim().length > 0 || !!draft.image;
-  const canRun = hasContent && draft.title.trim() && intent.confirmed && !busy;
+  const canRun = hasContent && draft.title.trim() && !busy;
+  // The Intent Card is optional. One the creator hasn't confirmed is not used, so a guess drafted from the
+  // copy never stands in for what they meant; fixes on a blank card say "not checked".
+  const intentUnused = !intent.confirmed;
+  const intentHasText = !!(intent.goal.trim() || intent.keyMessage.trim() || intent.cta.trim());
 
   const run = async () => {
     setError(null);
     setBusy(draft.image ? "Checking the copy and reading the creative…" : "Checking against the rulebook and Claim Ledger…");
     try {
-      const id = await createSubmission({ ...draft, intent });
+      const id = await createSubmission({ ...draft, intent: intent.confirmed ? intent : EMPTY_INTENT });
       const versions = await import("@/store/db").then(({ db }) => db.versions.where("submissionId").equals(id).toArray());
       await checkVersion(id, versions[0].id);
       router.push(`/app/s/${id}`);
@@ -300,7 +304,7 @@ export function NewDraft() {
                 )}
               </div>
             </div>
-            <p className="mt-1.5 text-[13.5px] leading-5 text-muted">What the draft is for. Fixes are checked against it, so they keep your message.</p>
+            <p className="mt-1.5 text-[13.5px] leading-5 text-muted">Optional. What the post is for: fill it in and every fix is checked to keep your key message and call to action. Leave it blank to just check the copy.</p>
             {(
               [
                 ["goal", "Goal", "Launch awareness"],
@@ -341,10 +345,12 @@ export function NewDraft() {
             </button>
             {busy ? (
               <Spinner label={busy} />
+            ) : !canRun ? (
+              <span className="text-[13px] text-muted">{!hasContent ? "Add copy or a file first." : "Give the draft a title."}</span>
             ) : (
-              !canRun && (
+              intentUnused && (
                 <span className="text-[13px] text-muted">
-                  {!hasContent ? "Add copy or a file first." : !draft.title.trim() ? "Give the draft a title." : !intent.confirmed ? "Confirm the Intent Card." : ""}
+                  {intentHasText ? "The Intent Card isn't confirmed, so it won't be used: fixes won't be checked against your message." : "No Intent Card: fixes won't be checked against your message."}
                 </span>
               )
             )}

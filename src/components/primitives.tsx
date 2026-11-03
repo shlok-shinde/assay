@@ -433,21 +433,28 @@ export function Table({ children, label, sticky, maxHeight = 420, minWidth, clas
 
 // ---- Glossary -------------------------------------------------------------
 
-export type TermId = "claim-ledger" | "hallmark" | "intent-card" | "delta-e" | "flesch" | "wcag";
+export type TermId = "claim-ledger" | "hallmark" | "intent-card" | "roles" | "delta-e" | "flesch" | "wcag";
 
-/** What each term means in this app, in plain words. One map, so a definition is never written twice. */
+/**
+ * What each term means in this app, in plain words. One map, so a definition is never written twice.
+ * Each opens with the everyday thing it is, because the first person to try Assay asked exactly that.
+ */
 export const GLOSSARY: Record<TermId, { term: string; body: string }> = {
   "claim-ledger": {
     term: "Claim Ledger",
-    body: "The brand's list of approved facts, each with its exact wording, an owner and the dates it is valid. Assay finds the claims in a draft (numbers, durations, SPF, “clinically proven”) and compares them with the ledger in code, not by AI. Each comes back supported, contradicted, outdated or unsupported, always naming the fact it was compared with.",
+    body: "The brand's list of product facts it is allowed to state, like “SPF 50” or “lasts 8 hours”. Each has its exact wording, an owner and the dates it is valid. Assay finds the claims in a draft (numbers, durations, SPF, “clinically proven”) and compares them with the ledger in code, not by AI. Each comes back supported, contradicted, outdated or unsupported, always naming the fact it was compared with.",
   },
   hallmark: {
     term: "Hallmark",
-    body: "The sealed record written when a reviewer approves a version. It holds a SHA-256 hash of the approved content and of the rulebook, how every finding ended, who approved, which AI models ran, and the hash of the previous Hallmark. Change any old record and every hash after it stops matching; Verify checks them in this browser.",
+    body: "The approval stamp, made so it can't be quietly changed later. It is written when a reviewer approves a version, and holds a SHA-256 hash of the approved content and of the rulebook, how every finding ended, who approved, which AI models ran, and the hash of the previous Hallmark. Change any old record and every hash after it stops matching; Verify checks them in this browser.",
   },
   "intent-card": {
     term: "Intent Card",
-    body: "Three lines the creator confirms before the first check: the goal, the key message and the call to action. When a fix is applied, Assay checks that the key message and the call to action are still in the text, so a fix that satisfies a rule cannot quietly change what the draft is for.",
+    body: "Optional: what the post is for, in three lines (the goal, the key message and the call to action). With it, every fix is checked to still carry your key message and call to action, so a fix that satisfies a rule cannot quietly change what the post says. Leave it blank to just check the copy.",
+  },
+  roles: {
+    term: "Roles",
+    body: "In a real team these are different people. The Creator writes the post and fixes what Assay finds. Compliance (often legal or regulatory) approves or sends back product claims, like SPF or “clinically proven”. The Reviewer, usually the brand or marketing lead, gives the final approval. The Brand Admin keeps the rulebook and Claim Ledger up to date. In this demo you can be each of them: switch here.",
   },
   "delta-e": {
     term: "ΔE (delta E)",

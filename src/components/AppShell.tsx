@@ -16,7 +16,7 @@ import { useAiStatus, useJudgePath, useKit, useRole, useWorkspace } from "@/stor
 import { useUnreadAlerts } from "./alerts";
 import { BookProvider } from "./BookDrawer";
 import { BrandSwitcher, useBrand } from "./BrandSwitcher";
-import { ConfirmProvider, ToastProvider, useAction, useConfirm, useModal, useToast } from "./primitives";
+import { ConfirmProvider, Term, ToastProvider, useAction, useConfirm, useModal, useToast } from "./primitives";
 import { Mark, ROLE_LABEL, StatusPanel } from "./ui";
 
 const ROLES: Role[] = ["creator", "reviewer", "compliance", "admin"];
@@ -313,27 +313,32 @@ function RoleSwitcherView({ role, onPick }: { role?: Role; onPick?: (r: Role) =>
     return () => window.clearTimeout(t);
   }, [role, arrived]);
   return (
-    <div ref={box} role="radiogroup" aria-label="Viewing as" className="relative flex w-max items-center gap-1 rounded-full bg-track p-1">
-      <span ref={pill} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 rounded-full bg-ink opacity-0" />
-      <span className="hidden pl-2 pr-1 text-[12px] text-muted lg:inline">Viewing as</span>
-      {ROLES.map((r) => {
-        const chosen = role === r;
-        return (
-          <button
-            key={r}
-            role="radio"
-            aria-checked={chosen}
-            disabled={!onPick}
-            onClick={() => onPick?.(r)}
-            // Only the text colour fades: a fading fill on the role just left read as a second pill behind the glide.
-            className={`relative h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-[color] active:scale-95 ${
-              chosen ? `font-medium text-sheet delay-100 duration-200 ${arrived === r ? "bg-ink" : ""}` : "text-muted duration-300 hover:text-ink"
-            }`}
-          >
-            {ROLE_LABEL[r]}
-          </button>
-        );
-      })}
+    // The label opens what the roles are, so it sits beside the radio group rather than inside it.
+    <div className="flex w-max items-center rounded-full bg-track p-1">
+      <span className="hidden pl-2 pr-2 text-[12px] text-muted lg:inline">
+        <Term id="roles">Viewing as</Term>
+      </span>
+      <div ref={box} role="radiogroup" aria-label="Viewing as" className="relative flex items-center gap-1">
+        <span ref={pill} aria-hidden="true" className="pointer-events-none absolute left-0 top-0 rounded-full bg-ink opacity-0" />
+        {ROLES.map((r) => {
+          const chosen = role === r;
+          return (
+            <button
+              key={r}
+              role="radio"
+              aria-checked={chosen}
+              disabled={!onPick}
+              onClick={() => onPick?.(r)}
+              // Only the text colour fades: a fading fill on the role just left read as a second pill behind the glide.
+              className={`relative h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-[color] active:scale-95 ${
+                chosen ? `font-medium text-sheet delay-100 duration-200 ${arrived === r ? "bg-ink" : ""}` : "text-muted duration-300 hover:text-ink"
+              }`}
+            >
+              {ROLE_LABEL[r]}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 # Roadmap
 
-Dates assume one builder after the event. Nothing here comes from user research yet, because no outside person has tested Assay ([TESTING.md](TESTING.md)); the first milestone is there to change that, and what it finds reorders the rest.
+Dates assume one builder after the event. Almost nothing here comes from user research yet: one outside person has tried Assay, a friend of the builder ([TESTING.md](TESTING.md)), and what he found was fixed the same day. The first milestone is more sessions, and what they find reorders the rest.
 
 ## November 2026: find out what people actually do
 

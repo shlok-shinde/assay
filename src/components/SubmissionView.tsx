@@ -6,10 +6,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flash, useDealIn, useGlide } from "./motion";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowRight, FileDown, Pencil, Printer, Trash2, Upload } from "lucide-react";
-import type { Finding, ImageAsset } from "@/lib/types";
+import type { Finding, ImageAsset, Role } from "@/lib/types";
 import type { FixPlan } from "@/engine/fix";
 import { db } from "@/store/db";
-import { applyStagedFixes, awaitingRework, blockers, deleteSubmission, draftReport, hydrateImage, isStaged, addComment, resumeAi, retryAi, reviewerDecision, runMissingCheck, saveEditedVersion, stagedFixPlan, stillOpen, submitForReview } from "@/store/actions";
+import { applyStagedFixes, awaitingRework, blockers, deleteSubmission, draftReport, hydrateImage, isStaged, addComment, resumeAi, retryAi, reviewerDecision, runMissingCheck, saveEditedVersion, setRole, stagedFixPlan, stillOpen, submitForReview } from "@/store/actions";
 import { useAiStatus, useKit, useRole } from "@/store/hooks";
 import { CHANNELS } from "@/seed/velvra";
 import { fetchAsFile, imageAsset, IntakeError, parseFile } from "@/lib/parse";
@@ -20,6 +20,7 @@ import { AnnotatedText } from "./AnnotatedText";
 import { DiffView } from "./DiffView";
 import { FindingCard } from "./FindingCard";
 import { FixConflict } from "./FixConflict";
+import { useBrand } from "./BrandSwitcher";
 import { HallmarkPanel } from "./HallmarkPanel";
 import { ImageMarker } from "./ImageMarker";
 import { IntentLine } from "./Intent";
@@ -98,6 +99,11 @@ export function SubmissionView({ id }: { id: string }) {
   const run = (label: string, fn: () => Promise<unknown>) => exec(label, fn);
   // The AI pass again, on a check that fell back to rule checks or read only part of a long draft.
   const again = useAction((checkId: string) => retryAi(checkId), { errorPrefix: "Could not start the AI again", toastError: false });
+  // When the next move is another desk's, one click takes it: the first person to try Assay couldn't tell
+  // who approves, or that in the demo it can be them. A team member whose role is fixed doesn't get it.
+  const brand = useBrand();
+  const canSwitchRole = !brand?.team || brand.team.role === "admin";
+  const actAs = useAction((r: Role) => setRole(r), { errorPrefix: "Could not switch roles" });
   // The record of the draft as a Markdown file: what was checked, found and decided, for someone outside Assay.
   const report = useAction(
     async () => {
@@ -423,6 +429,11 @@ export function SubmissionView({ id }: { id: string }) {
           <span className="font-semibold">Next</span> <span className="text-muted">·</span> {next.text}
         </span>
         {next.yours && <span className="pill bg-active text-ink">Your move</span>}
+        {!next.yours && next.who !== "assay" && canSwitchRole && (
+          <button type="button" className="btn btn-ghost btn-sm -my-1 flex-none" disabled={actAs.busy} onClick={() => actAs.run(next.who as Role)}>
+            Act as {ROLE_LABEL[next.who]}
+          </button>
+        )}
       </p>
       {busy && (
         <div className="mt-3">

@@ -4,7 +4,22 @@ Everything here says who or what did the testing. Automated runs are machines. A
 
 ## People
 
-**Testing by people other than the builder:** none is recorded yet. If that changes, it is written here by the builder from what actually happened: who (by role, not name, unless they agree), what they were asked to do, how long it took, where they got stuck, and their own words.
+**Testing by people other than the builder:** one session, recorded on 3 Nov 2026. Each is written here by the builder from what actually happened: who (by role, not name, unless they agree), how long it took, where they got stuck, and their own words.
+
+**Session 1.** A social media executive at a skincare brand (BCom, two years in the job), a friend of the builder, used the live site. The builder reports that it took him about 2 minutes to understand what the tool is for and about 4.5 minutes to work out how to use it, and that the approval process confused him a little. His answers, as the builder noted them:
+
+- *What he thought it does:* "it's basically checking whether our marketing content follows the brand guidelines. Like a smarter version of checking the brand book manually." It catches things the brand mustn't say, wrong product claims and colours, "and apparently it also handles approvals."
+- *What confused him:* the Intent Card ("Why do I need to fill in the goal, key message and CTA? Can't I just paste the caption and check it?"); the roles ("I'm just a marketing person. Who exactly is supposed to approve this?"); the Hallmark ("Is that just a fancy name for an approval stamp?"); and he wouldn't immediately know what a Claim Ledger is.
+- *Would he use it instead of the PDF brand book:* "Yeah, I'd use this to check posts. Searching through a PDF every time is annoying." But he would keep the PDF: "What if the tool misses something?"
+
+One person, who knows the builder, is a first look, not a measurement.
+
+What changed because of it, the same day:
+
+- **The Intent Card is optional.** Run check works without it, and says that fixes then aren't checked against the message. A card the creator hasn't confirmed is not used, so a guess drafted from the copy never stands in for what they meant.
+- **Who acts next is one click away.** When a draft's next move belongs to another role, the line under its title offers "Act as Compliance" (or Reviewer, or Creator). In a team workspace whose roles are set by its Brand Admin, it isn't offered.
+- **The roles are explained where they are chosen.** "Viewing as" opens what each role does in a real team.
+- **The Hallmark and Claim Ledger definitions open with the everyday thing they are:** an approval stamp that can't be quietly changed later, and the list of product facts the brand may state.
 
 **The −50% review-time target** from Round 1, a timed comparison against the PDF brand book, has not been measured.
 
@@ -50,4 +65,4 @@ During the build, an AI tool checked screenshots of each screen against a design
 
 ## What real evidence would look like
 
-Short sessions with people who review brand content (a brand manager, an agency writer, a compliance reviewer), each given the task and no walkthrough, with time to first decision, where they got stuck, and their own words.
+More sessions like the one above, with people who don't know the builder. Short sessions with people who review brand content (a brand manager, an agency writer, a compliance reviewer), each given the task and no walkthrough, with time to first decision, where they got stuck, and their own words.
