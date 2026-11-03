@@ -55,8 +55,8 @@ export function FindingCard({
     lastStatus.current = f.status;
     const verdict = card.current?.querySelector("[data-verdict]");
     if (!verdict || !motionAllowed()) return;
-    gsap.from(verdict, { scale: 1.5, rotation: -8, opacity: 0, duration: 0.45, ease: "back.out(2.2)", clearProps: "transform,opacity" });
-    gsap.fromTo(card.current, { y: 0 }, { y: 3, duration: 0.07, yoyo: true, repeat: 1, ease: "power1.out", clearProps: "transform" });
+    gsap.fromTo(verdict, { scale: 1.5, rotation: -8, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: 0.45, ease: "back.out(2.2)", overwrite: true, clearProps: "transform,opacity" });
+    gsap.fromTo(card.current, { y: 0 }, { y: 3, duration: 0.07, yoyo: true, repeat: 1, ease: "power1.out", overwrite: true, clearProps: "transform" });
   }, [f.status]);
 
   // The check made when the finding was found (and the AI's reading, once it lands) is what the card says.

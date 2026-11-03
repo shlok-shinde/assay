@@ -16,7 +16,7 @@ export function ScrambleHash({ text, run, title, className = "" }: { text: strin
   useGSAP(
     () => {
       if (!run || !ref.current || !motionAllowed()) return;
-      gsap.to(ref.current, { duration: 0.7, ease: "none", scrambleText: { text, chars: "0123456789abcdef", speed: 0.9, revealDelay: 0.05 } });
+      gsap.to(ref.current, { duration: 0.7, ease: "none", overwrite: true, scrambleText: { text, chars: "0123456789abcdef", speed: 0.9, revealDelay: 0.05 } });
     },
     { dependencies: [run], scope: ref },
   );

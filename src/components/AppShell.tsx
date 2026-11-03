@@ -109,7 +109,10 @@ function JudgePath({ onNavigate }: { onNavigate?: () => void }) {
     const done = new Set(steps.filter((x) => x.done).map((x) => x.id));
     if (seen.current && motionAllowed())
       for (const id of done)
-        if (!seen.current.has(id)) gsap.from(box.current!.querySelector(`[data-tick="${id}"]`), { scale: 0, rotation: -120, duration: 0.5, ease: "back.out(2.6)" });
+        if (!seen.current.has(id)) {
+          const tick = box.current?.querySelector(`[data-tick="${id}"]`);
+          if (tick) gsap.fromTo(tick, { scale: 0, rotation: -120 }, { scale: 1, rotation: 0, duration: 0.5, ease: "back.out(2.6)", overwrite: true, clearProps: "transform" });
+        }
     seen.current = done;
   }, [steps]);
   if (!steps) return null;
@@ -322,7 +325,8 @@ function RoleSwitcherView({ role, onPick }: { role?: Role; onPick?: (r: Role) =>
             aria-checked={chosen}
             disabled={!onPick}
             onClick={() => onPick?.(r)}
-            className={`relative h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-colors active:scale-95 ${
+            // Only the text colour fades: a fading fill on the role just left read as a second pill behind the glide.
+            className={`relative h-7 shrink-0 whitespace-nowrap rounded-full px-3 text-[13px] transition-[color] active:scale-95 ${
               chosen ? `font-medium text-sheet delay-100 duration-200 ${arrived === r ? "bg-ink" : ""}` : "text-muted duration-300 hover:text-ink"
             }`}
           >
@@ -521,10 +525,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   useGSAP(
     () => {
       if (!open || !menu.current || !motionAllowed()) return;
+      // Both ends of the circle are stated: from() aimed it at "none", which can't be tweened, so the menu
+      // stayed clipped to nothing (and swallowed taps, being modal) until it snapped open at the end.
+      // 150% of the circle's reference radius covers the screen from the corner.
       gsap
         .timeline()
-        .from(menu.current, { clipPath: "circle(0% at 28px 24px)", duration: 0.55, ease: "expo.out", clearProps: "clipPath" })
-        .from(menu.current.querySelectorAll("nav a"), { x: -18, opacity: 0, duration: 0.35, stagger: 0.035, ease: "power3.out", clearProps: "transform,opacity" }, 0.12);
+        .fromTo(menu.current, { clipPath: "circle(0% at 28px 24px)" }, { clipPath: "circle(150% at 28px 24px)", duration: 0.55, ease: "expo.out", overwrite: true, clearProps: "clipPath" })
+        .fromTo(menu.current.querySelectorAll("nav a"), { x: -18, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, stagger: 0.035, ease: "power3.out", overwrite: true, clearProps: "transform,opacity" }, 0.12);
     },
     { dependencies: [open] },
   );
