@@ -564,7 +564,7 @@ test.describe("Words a first-time reader meets", () => {
     await freshWorkspace(page);
     await page.goto("/app/new");
     await page.getByRole("button", { name: "Claim Ledger" }).click();
-    await expect(page.getByRole("note", { name: "Claim Ledger" })).toContainText("list of approved facts");
+    await expect(page.getByRole("note", { name: "Claim Ledger" })).toContainText("list of product facts it is allowed to state");
     await page.keyboard.press("Escape");
     await expect(page.getByRole("note", { name: "Claim Ledger" })).toBeHidden();
     await page.getByRole("button", { name: "Intent Card" }).click();
